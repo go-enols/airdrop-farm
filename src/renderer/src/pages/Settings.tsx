@@ -65,7 +65,7 @@ const Settings: React.FC = () => {
       )
       if (payload.status === 'available') {
         setUpdateInfo(payload.data as UpdateInfo)
-      } else if (payload.status === 'progress') {
+      } else if (payload.status === 'downloading') {
         setDownloadProgress(payload.data as { percent: number; transferred: number; total: number })
       } else if (payload.status === 'error') {
         setUpdateError(payload.data as string)
@@ -413,7 +413,7 @@ const Settings: React.FC = () => {
           </div>
         )}
 
-        {updateStatus === 'available' && updateInfo && (
+        {(updateStatus === 'available' || updateStatus === 'downloading') && updateInfo && (
           <div className="px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg space-y-2">
             <p className="text-sm text-blue-800 dark:text-blue-300">
               <strong>{t('updates.updateAvailable')}</strong>

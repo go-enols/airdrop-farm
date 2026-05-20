@@ -46,7 +46,7 @@ const Settings = () => {
       setUpdateStatus(data.status)
       if (data.status === 'available') {
         setUpdateInfo(data.data)
-      } else if (data.status === 'progress') {
+      } else if (data.status === 'downloading') {
         setDownloadProgress(data.data)
       } else if (data.status === 'error') {
         setUpdateError(data.data)
@@ -398,7 +398,7 @@ const Settings = () => {
               className: 'px-4 py-2 text-sm text-danger bg-danger-light rounded-lg',
               children: updateError
             }),
-          updateStatus === 'available' &&
+          (updateStatus === 'available' || updateStatus === 'downloading') &&
             updateInfo &&
             _jsxs('div', {
               className:

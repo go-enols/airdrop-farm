@@ -15,7 +15,7 @@ let httpServer: HttpApiServer
 let taskService: TaskService
 
 // Auto-updater configuration
-autoUpdater.autoDownload = false
+autoUpdater.autoDownload = true
 autoUpdater.autoInstallOnAppQuit = true
 
 function sendUpdateStatusToWindows(status: string, data?: unknown): void {
@@ -41,7 +41,7 @@ autoUpdater.on('error', (err) => {
 })
 
 autoUpdater.on('download-progress', (progress) => {
-  sendUpdateStatusToWindows('progress', {
+  sendUpdateStatusToWindows('downloading', {
     percent: progress.percent,
     transferred: progress.transferred,
     total: progress.total,
@@ -122,6 +122,11 @@ app.whenReady().then(async () => {
   })
 
   createWindow(httpPort)
+
+  // Auto-check for updates on startup (after window is ready)
+  setTimeout(() => {
+    autoUpdater.checkForUpdates()
+  }, 3000)
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow(httpPort)
