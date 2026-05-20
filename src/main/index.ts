@@ -1,6 +1,7 @@
 import { app, shell, BrowserWindow } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { autoUpdater } from 'electron-updater'
 import icon from '../../resources/icon.png?asset'
 import { registerIpcHandlers } from './ipc'
 import { StoreService } from './services/store'
@@ -11,6 +12,49 @@ import { HttpApiServer } from './httpapi/server'
 let store: StoreService
 let httpServer: HttpApiServer
 let taskService: TaskService
+
+// Auto-updater configuration
+autoUpdater.autoDownload = false
+autoUpdater.autoInstallOnAppQuit = true
+
+function sendUpdateStatusToWindows(status: string, data?: unknown): void {
+  for (const win of BrowserWindow.getAllWindows()) {
+    win.webContents.send('update:status', { status, data })
+  }
+}
+
+autoUpdater.on('checking-for-update', () => {
+  sendUpdateStatusToWindows('checking')
+})
+
+autoUpdater.on('update-available', (info) => {
+  sendUpdateStatusToWindows('available', info)
+})
+
+autoUpdater.on('update-not-available', () => {
+  sendUpdateStatusToWindows('not-available')
+})
+
+autoUpdater.on('error', (err) => {
+  sendUpdateStatusToWindows('error', err.message)
+})
+
+autoUpdater.on('download-progress', (progress) => {
+  sendUpdateStatusToWindows('progress', {
+    percent: progress.percent,
+    transferred: progress.transferred,
+    total: progress.total,
+    bytesPerSecond: progress.bytesPerSecond
+  })
+})
+
+autoUpdater.on('update-downloaded', () => {
+  sendUpdateStatusToWindows('downloaded')
+  // Quit and install after a short delay to allow UI to show message
+  setTimeout(() => {
+    autoUpdater.quitAndInstall()
+  }, 1000)
+})
 
 app.commandLine.appendSwitch('disable-gpu-sandbox')
 app.commandLine.appendSwitch('disable-software-rasterizer')

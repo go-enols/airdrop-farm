@@ -1,4 +1,5 @@
 import { ipcMain, IpcMainInvokeEvent, app } from 'electron'
+import { autoUpdater } from 'electron-updater'
 import { StoreService } from '../services/store'
 import { WalletService } from '../services/wallet'
 import { TaskService } from '../services/task'
@@ -150,6 +151,20 @@ export function registerIpcHandlers(services: Services): void {
   register('log:getCategories', () => store.getLogCategories())
   register('log:setLevel', (level) => store.setLogLevel(level as string))
   register('log:getLevel', () => store.getLogLevel())
+
+  // Auto-updater handlers
+  register('update:check', () => {
+    autoUpdater.checkForUpdates()
+    return null
+  })
+  register('update:download', () => {
+    autoUpdater.downloadUpdate()
+    return null
+  })
+  register('update:install', () => {
+    autoUpdater.quitAndInstall()
+    return null
+  })
 
   logger.info('All handlers registered', { count: handlerMap.size })
 }

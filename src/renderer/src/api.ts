@@ -105,3 +105,9 @@ export const proxyProviderApi = {
   update: (id: string, data: Partial<ProxyProvider>) => call<ProxyProvider>('proxyProvider:update', [id, data]),
   delete: (id: string) => call<void>('proxyProvider:delete', [id]),
 }
+
+export const updateApi = {
+  check: () => call<void>('update:check'),
+  download: () => call<void>('update:download'),
+  install: () => call<void>('update:install'),
+}

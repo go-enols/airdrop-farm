@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { settingApi, appApi, captchaKeyApi, proxyProviderApi } from '../api'
+import { settingApi, appApi, captchaKeyApi, proxyProviderApi, updateApi } from '../api'
 import { logApi } from '../api'
-import type { AppInfo, CaptchaKey, ProxyProvider, ListResponse } from '../types'
-import { Save, Info, Plus, Trash2, Edit3, Key, Globe } from 'lucide-react'
+import type { AppInfo, CaptchaKey, ProxyProvider, ListResponse, UpdateInfo } from '../types'
+import { Save, Info, Plus, Trash2, Edit3, Key, Globe, Download, RefreshCw } from 'lucide-react'
 
 const LOG_LEVELS = ['debug', 'info', 'warn', 'error'] as const
 
@@ -38,6 +38,63 @@ const Settings: React.FC = () => {
   const [newSettingKey, setNewSettingKey] = useState('')
   const [deleteSettingKey, setDeleteSettingKey] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState('')
+
+  // Auto-update state
+  const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error'>('idle')
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
+  const [updateError, setUpdateError] = useState('')
+  const [downloadProgress, setDownloadProgress] = useState({ percent: 0, transferred: 0, total: 0 })
+
+  // Listen for update status from main process
+  useEffect(() => {
+    if (!window.electronAPI) return
+
+    const handleUpdateStatus = (...args: unknown[]) => {
+      const data = args[1] as { status: string; data?: unknown }
+      setUpdateStatus(data.status as any)
+      if (data.status === 'available') {
+        setUpdateInfo(data.data as UpdateInfo)
+      } else if (data.status === 'progress') {
+        setDownloadProgress(data.data as any)
+      } else if (data.status === 'error') {
+        setUpdateError(data.data as string)
+      }
+    }
+
+    // on returns a cleanup function
+    return window.electronAPI.on('update:status', handleUpdateStatus)
+  }, [])
+
+  const checkForUpdates = async () => {
+    setUpdateStatus('checking')
+    setUpdateError('')
+    setUpdateInfo(null)
+    try {
+      await updateApi.check()
+    } catch {
+      setUpdateStatus('error')
+      setUpdateError(t('common.error'))
+    }
+  }
+
+  const downloadUpdate = async () => {
+    setUpdateError('')
+    try {
+      await updateApi.download()
+    } catch {
+      setUpdateStatus('error')
+      setUpdateError(t('common.error'))
+    }
+  }
+
+  const installUpdate = async () => {
+    try {
+      await updateApi.install()
+    } catch {
+      setUpdateStatus('error')
+      setUpdateError(t('common.error'))
+    }
+  }
 
   const fetchAppInfo = useCallback(async () => {
     try {
@@ -286,6 +343,98 @@ const Settings: React.FC = () => {
           </div>
         ) : (
           <div className="text-sm text-text-muted">{t('common.loading')}</div>
+        )}
+      </section>
+
+      <section className="border border-border-light rounded-lg p-5 space-y-3 bg-bg-card">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-lg font-semibold text-text-primary">
+            <RefreshCw size={20} />
+            {t('settings.updates')}
+          </div>
+          <button
+            onClick={checkForUpdates}
+            disabled={updateStatus === 'checking' || updateStatus === 'downloading'}
+            className="flex items-center gap-1.5 px-4 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors"
+          >
+            {updateStatus === 'checking' ? (
+              <>
+                <RefreshCw size={16} className="animate-spin" />
+                {t('updates.checking')}
+              </>
+            ) : (
+              <>
+                <RefreshCw size={16} />
+                {t('updates.checkNow')}
+              </>
+            )}
+          </button>
+        </div>
+
+        {updateError && (
+          <div className="px-4 py-2 text-sm text-danger bg-danger-light rounded-lg">
+            {updateError}
+          </div>
+        )}
+
+        {updateStatus === 'available' && updateInfo && (
+          <div className="px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg space-y-2">
+            <p className="text-sm text-blue-800 dark:text-blue-300">
+              <strong>{t('updates.updateAvailable')}</strong>
+            </p>
+            <p className="text-sm text-blue-700 dark:text-blue-400">
+              {t('updates.version')}: <span className="font-mono">{updateInfo.version}</span>
+            </p>
+            <p className="text-sm text-blue-700 dark:text-blue-400">
+              {t('updates.releaseDate')}: {updateInfo.pub_date ? new Date(updateInfo.pub_date).toLocaleDateString() : '-'}
+            </p>
+            <button
+              onClick={downloadUpdate}
+              disabled={(updateStatus as string) === 'downloading'}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors mt-2"
+            >
+              {(updateStatus as string) === 'downloading' ? (
+                <>
+                  <RefreshCw size={16} className="animate-spin" />
+                  {t('updates.downloading')}
+                </>
+              ) : (
+                <>
+                  <Download size={16} />
+                  {t('updates.downloadUpdate')}
+                </>
+              )}
+            </button>
+            {(updateStatus as string) === 'downloading' && downloadProgress.total > 0 && (
+              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mt-2">
+                <div
+                  className="bg-blue-600 h-2.5 rounded-full transition-width duration-300"
+                  style={{ width: `${downloadProgress.percent}%` }}
+                />
+                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                  {Math.round(downloadProgress.percent)}% -{' '}
+                  {(downloadProgress.transferred / 1024 / 1024).toFixed(1)}MB /{' '}
+                  {(downloadProgress.total / 1024 / 1024).toFixed(1)}MB
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {updateStatus === 'downloaded' && (
+          <div className="px-4 py-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+            <p className="text-sm text-green-800 dark:text-green-300 mb-2">{t('updates.updateReady')}</p>
+            <button
+              onClick={installUpdate}
+              className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              {t('updates.restartInstall')}
+            </button>
+          </div>
+        )}
+
+        {updateStatus === 'not-available' && (
+          <p className="text-sm text-text-muted">{t('updates.noUpdates')}</p>
         )}
       </section>
 
