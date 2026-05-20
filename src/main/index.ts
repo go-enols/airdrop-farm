@@ -51,10 +51,6 @@ autoUpdater.on('download-progress', (progress) => {
 
 autoUpdater.on('update-downloaded', () => {
   sendUpdateStatusToWindows('downloaded')
-  // Quit and install after a short delay to allow UI to show message
-  setTimeout(() => {
-    autoUpdater.quitAndInstall()
-  }, 1000)
 })
 
 app.commandLine.appendSwitch('disable-gpu-sandbox')

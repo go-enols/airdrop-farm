@@ -51,15 +51,10 @@ const Settings: React.FC = () => {
   useEffect(() => {
     if (!window.electronAPI) return
 
-    type UpdateStatusData = {
-      status: string
-      data?: unknown
-    }
-
     const handleUpdateStatus = (...args: unknown[]): void => {
-      const data = args[1] as UpdateStatusData
+      const payload = args[0] as { status: string; data?: unknown }
       setUpdateStatus(
-        data.status as
+        payload.status as
           | 'idle'
           | 'checking'
           | 'available'
@@ -68,12 +63,12 @@ const Settings: React.FC = () => {
           | 'downloaded'
           | 'error'
       )
-      if (data.status === 'available') {
-        setUpdateInfo(data.data as UpdateInfo)
-      } else if (data.status === 'progress') {
-        setDownloadProgress(data.data as { percent: number; transferred: number; total: number })
-      } else if (data.status === 'error') {
-        setUpdateError(data.data as string)
+      if (payload.status === 'available') {
+        setUpdateInfo(payload.data as UpdateInfo)
+      } else if (payload.status === 'progress') {
+        setDownloadProgress(payload.data as { percent: number; transferred: number; total: number })
+      } else if (payload.status === 'error') {
+        setUpdateError(payload.data as string)
       }
     }
 

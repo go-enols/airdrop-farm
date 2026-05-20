@@ -40,3 +40,5 @@ appImage:
 npmRebuild: false
 publish:
   provider: github
+  owner: go-enols
+  repo: airdrop-farm

@@ -401,6 +401,19 @@
     "walletCount": "钱包数量",
     "accountCount": "账户数量",
     "proxyCount": "代理数量",
-    "taskCount": "任务数量"
+    "taskCount": "任务数量",
+    "updates": "软件更新"
+  },
+  "updates": {
+    "checkNow": "检查更新",
+    "checking": "正在检查...",
+    "updateAvailable": "有新版本可用",
+    "version": "版本",
+    "releaseDate": "发布日期",
+    "downloadUpdate": "下载更新",
+    "downloading": "正在下载...",
+    "updateReady": "更新已就绪，重启后生效",
+    "restartInstall": "重启安装",
+    "noUpdates": "已是最新版本"
   }
 }

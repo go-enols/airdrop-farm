@@ -52,6 +52,16 @@ jobs:
           npx electron-vite build
           npx electron-builder --${{ matrix.os == 'ubuntu-latest' && 'linux' || matrix.os == 'windows-latest' && 'win' || 'mac' }} --publish never
 
+      - name: Verify yml files exist
+        shell: bash
+        run: |
+          echo "=== dist contents ==="
+          ls -la dist/
+          echo "=== yml files ==="
+          ls -la dist/*.yml 2>/dev/null || echo "WARNING: no yml files found!"
+          echo "=== blockmap files ==="
+          ls -la dist/*.blockmap 2>/dev/null || echo "no blockmap files"
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
@@ -73,8 +83,14 @@ jobs:
 
       - name: List files
         run: |
+          echo "=== workspace root ==="
           ls -la
-          ls -la */
+          echo "=== subdirectories ==="
+          ls -la */ || true
+          echo "=== yml files ==="
+          find . -name '*.yml' -type f || echo "no yml files found"
+          echo "=== blockmap files ==="
+          find . -name '*.blockmap' -type f || echo "no blockmap files found"
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -87,5 +103,15 @@ jobs:
             */*.AppImage
             */*.deb
             */*.snap
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload yml and blockmap files
+        shell: bash
+        run: |
+          for f in $(find . -name '*.yml' -o -name '*.blockmap' | sort); do
+            echo "Uploading $f"
+            gh release upload ${{ github.ref_name }} "$f" --repo ${{ github.repository }} --clobber
+          done
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
