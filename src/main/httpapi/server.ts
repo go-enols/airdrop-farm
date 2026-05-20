@@ -45,8 +45,9 @@ export class HttpApiServer {
         resolve()
         return
       }
-      this.server.close(() => {
-        logger.info('HTTP API server stopped')
+      const srv = this.server
+      this.server = null
+      srv.close(() => {
         resolve()
       })
     })

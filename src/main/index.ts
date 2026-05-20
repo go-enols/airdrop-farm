@@ -8,6 +8,7 @@ import { StoreService } from './services/store'
 import { WalletService } from './services/wallet'
 import { TaskService } from './services/task'
 import { HttpApiServer } from './httpapi/server'
+import { Logger } from './utils/logger'
 
 let store: StoreService
 let httpServer: HttpApiServer
@@ -137,7 +138,12 @@ app.on('window-all-closed', () => {
   }
 })
 
+let isQuitting = false
+
 app.on('before-quit', (e) => {
+  if (isQuitting) return
+  isQuitting = true
+  Logger.shutdown()
   e.preventDefault()
   taskService.cleanup()
   httpServer

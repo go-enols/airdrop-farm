@@ -1,3 +1,29 @@
+/**
+ * Monkey-patch process.stdout/stderr.write to silently ignore EPIPE errors.
+ *
+ * EPIPE occurs when the parent process pipe is closed (e.g. terminal closed
+ * or app is shutting down), but Node.js still tries to write to stdout/stderr.
+ * This catches ALL EPIPE regardless of origin: Logger, raw console.*, HTTP
+ * server internals, or any third-party code.
+ */
+function wrapStream(stream: NodeJS.WriteStream): void {
+  const orig = stream.write.bind(stream) as typeof stream.write
+  stream.write = function (...args: Parameters<typeof orig>): boolean {
+    try {
+      return orig(...args)
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === 'EPIPE') {
+        // Swallow EPIPE silently — stream is gone, nothing to do
+        return false
+      }
+      throw err
+    }
+  } as typeof stream.write
+}
+
+wrapStream(process.stdout)
+wrapStream(process.stderr)
+
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error'
 
 const LOG_LEVEL_PRIORITY: Record<LogLevel, number> = {
@@ -17,10 +43,22 @@ function resolveLogLevel(): LogLevel {
 
 const currentLogLevel: LogLevel = resolveLogLevel()
 
+let isShuttingDown = false
+
 export class Logger {
   constructor(public readonly category: string) {}
 
+  /**
+   * Signal all loggers to suppress further output.
+   * Call this early in app 'before-quit' so that late cleanup logging
+   * doesn't attempt to write to a broken pipe.
+   */
+  static shutdown(): void {
+    isShuttingDown = true
+  }
+
   private shouldLog(level: LogLevel): boolean {
+    if (isShuttingDown) return false
     return LOG_LEVEL_PRIORITY[level] >= LOG_LEVEL_PRIORITY[currentLogLevel]
   }
 
