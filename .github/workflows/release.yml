@@ -37,8 +37,13 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Clear electron-builder cache
+      - name: Clear electron-builder cache (Unix)
+        if: runner.os != 'Windows'
         run: rm -rf ~/.cache/electron-builder
+
+      - name: Fix app-builder permissions (Linux)
+        if: runner.os == 'Linux'
+        run: chmod +x node_modules/app-builder-bin/linux/x64/app-builder
 
       - name: Build
         env:
