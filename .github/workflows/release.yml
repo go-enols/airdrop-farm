@@ -46,11 +46,11 @@ jobs:
         run: chmod +x node_modules/app-builder-bin/linux/x64/app-builder
 
       - name: Build
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
         run: |
           rm -f .npmrc
-          npm run build:${{ matrix.os == 'ubuntu-latest' && 'linux' || matrix.os == 'windows-latest' && 'win' || 'mac' }}
+          npx electron-vite build
+          npx electron-builder --${{ matrix.os == 'ubuntu-latest' && 'linux' || matrix.os == 'windows-latest' && 'win' || 'mac' }} --publish never
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
