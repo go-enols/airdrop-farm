@@ -61,7 +61,7 @@ const Proxies: React.FC = () => {
     }
   }, [search])
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (): Promise<void> => {
     setLoading(true)
     try {
       const res = await proxyApi.list(page, PAGE_SIZE, debouncedSearch)
@@ -74,10 +74,11 @@ const Proxies: React.FC = () => {
   }, [page, debouncedSearch])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData()
   }, [fetchData])
 
-  const handleAdd = async () => {
+  const handleAdd = async (): Promise<void> => {
     try {
       setErrorMsg('')
       await proxyApi.create({
@@ -98,7 +99,7 @@ const Proxies: React.FC = () => {
     }
   }
 
-  const handleEdit = async () => {
+  const handleEdit = async (): Promise<void> => {
     if (!editingProxy) return
     try {
       setErrorMsg('')
@@ -120,7 +121,7 @@ const Proxies: React.FC = () => {
     }
   }
 
-  const handleDelete = async () => {
+  const handleDelete = async (): Promise<void> => {
     if (!deleteId) return
     try {
       await proxyApi.delete(deleteId)
@@ -136,7 +137,7 @@ const Proxies: React.FC = () => {
     }
   }
 
-  const handleBatchDelete = async () => {
+  const handleBatchDelete = async (): Promise<void> => {
     if (selectedIds.size === 0) return
     try {
       await proxyApi.batchDelete(Array.from(selectedIds))
@@ -148,17 +149,19 @@ const Proxies: React.FC = () => {
     }
   }
 
-  const copyProxyAddress = async (proxy: Proxy) => {
+  const copyProxyAddress = async (proxy: Proxy): Promise<void> => {
     const auth = proxy.username ? `${proxy.username}:${proxy.password}@` : ''
     const address = `${proxy.protocol}://${auth}${proxy.host}:${proxy.port}`
     try {
       await navigator.clipboard.writeText(address)
       setCopiedId(proxy.id)
       setTimeout(() => setCopiedId(null), 2000)
-    } catch {}
+    } catch {
+      // Ignore clipboard errors
+    }
   }
 
-  const openEditModal = (proxy: Proxy) => {
+  const openEditModal = (proxy: Proxy): void => {
     setEditingProxy(proxy)
     setForm({
       protocol: proxy.protocol,
@@ -173,14 +176,14 @@ const Proxies: React.FC = () => {
     setErrorMsg('')
   }
 
-  const openAddModal = () => {
+  const openAddModal = (): void => {
     setShowAdd(true)
     setForm({ ...emptyForm })
     setLabelInput('')
     setErrorMsg('')
   }
 
-  const addLabel = () => {
+  const addLabel = (): void => {
     const trimmed = labelInput.trim()
     if (trimmed && !form.labels.includes(trimmed)) {
       setForm((f) => ({ ...f, labels: [...f.labels, trimmed] }))
@@ -188,11 +191,11 @@ const Proxies: React.FC = () => {
     }
   }
 
-  const removeLabel = (label: string) => {
+  const removeLabel = (label: string): void => {
     setForm((f) => ({ ...f, labels: f.labels.filter((l) => l !== label) }))
   }
 
-  const toggleSelect = (id: string) => {
+  const toggleSelect = (id: string): void => {
     setSelectedIds((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
@@ -201,7 +204,7 @@ const Proxies: React.FC = () => {
     })
   }
 
-  const toggleSelectAll = () => {
+  const toggleSelectAll = (): void => {
     if (!data) return
     if (selectedIds.size === data.items.length) {
       setSelectedIds(new Set())
@@ -212,7 +215,7 @@ const Proxies: React.FC = () => {
 
   const allSelected = data ? data.items.length > 0 && selectedIds.size === data.items.length : false
 
-  const renderForm = () => (
+  const renderForm = (): React.JSX.Element => (
     <div className="space-y-3">
       <div>
         <label className="block text-sm font-medium mb-1">{t('proxies.protocol')}</label>

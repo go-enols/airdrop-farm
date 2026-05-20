@@ -9,7 +9,7 @@ const Stats: React.FC = () => {
   const [stats, setStats] = useState<StatsAggregate | null>(null)
   const [loading, setLoading] = useState(false)
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (): Promise<void> => {
     setLoading(true)
     try {
       const res = await appApi.getStats()
@@ -22,15 +22,18 @@ const Stats: React.FC = () => {
   }, [])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData()
   }, [fetchData])
 
-  const formatRate = (rate: number | null) => {
+  const formatRate = (rate: number | null): string => {
     if (rate === null) return '—'
     return `${(rate * 100).toFixed(1)}%`
   }
 
-  const distributionEntries = (dist: Record<string, number> | null | undefined) => {
+  const distributionEntries = (
+    dist: Record<string, number> | null | undefined
+  ): Array<[string, number]> => {
     return Object.entries(dist || {}).sort((a, b) => b[1] - a[1])
   }
 

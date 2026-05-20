@@ -18,9 +18,11 @@ let discoveredPort: number | null = null
 
 function getElectronHttpPort(): number | null {
   try {
-    const ep = (window as any).electronAPI
+    const ep = window.electronAPI
     if (ep?.httpPort && typeof ep.httpPort === 'number') return ep.httpPort
-  } catch {}
+  } catch {
+    // Ignore access errors
+  }
   return null
 }
 
@@ -32,7 +34,9 @@ export function setActiveTransport(t: TransportType): void {
   activeTransport = t
   try {
     localStorage.setItem(TRANSPORT_KEY, t)
-  } catch {}
+  } catch {
+    // Ignore storage errors
+  }
 }
 
 function getForcedTransport(): TransportType | null {
@@ -42,16 +46,18 @@ function getForcedTransport(): TransportType | null {
     if (forced === 'ipc' || forced === 'http') return forced
     const stored = localStorage.getItem(TRANSPORT_KEY)
     if (stored === 'ipc' || stored === 'http') return stored
-  } catch {}
+  } catch {
+    // Ignore access errors
+  }
   return null
 }
 
 async function callIPC<T>(channel: string, args: unknown[]): Promise<T> {
-  const electronAPI = (window as any).electronAPI
+  const electronAPI = window.electronAPI
   if (!electronAPI?.invoke) {
     throw new Error('IPC: electronAPI not available')
   }
-  const result: ApiResult<T> = await electronAPI.invoke(channel, ...args)
+  const result = (await electronAPI.invoke(channel, ...args)) as ApiResult<T>
   if (result.error) {
     throw Object.assign(new Error(result.error.message), {
       code: result.error.code,
@@ -180,11 +186,13 @@ export async function checkHTTPHealth(): Promise<boolean> {
       })
       clearTimeout(timer)
       if (resp.ok) return true
-    } catch {}
+    } catch {
+      continue
+    }
   }
   return false
 }
 
 export function checkIPCHealth(): boolean {
-  return !!(window as any).electronAPI?.invoke
+  return !!window.electronAPI?.invoke
 }

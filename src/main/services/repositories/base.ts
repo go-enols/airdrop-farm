@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3'
 import type { ListResponse } from '../../../shared/types'
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export abstract class BaseRepository<_T = unknown> {
   protected db: Database.Database
   private _stmts: Map<string, Database.Statement>

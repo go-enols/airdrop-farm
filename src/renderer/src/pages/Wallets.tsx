@@ -33,7 +33,7 @@ const WALLET_TYPE_BADGE: Record<string, string> = {
   sui: 'bg-wallet-sui-bg text-wallet-sui-text'
 }
 
-const truncateAddress = (addr: string) =>
+const truncateAddress = (addr: string): string =>
   addr.length > 10 ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr
 
 const Wallets: React.FC = () => {
@@ -113,12 +113,12 @@ const Wallets: React.FC = () => {
     }
   }, [search])
 
-  const showError = (msg: string) => {
+  const showError = (msg: string): void => {
     setErrorMsg(msg)
     setTimeout(() => setErrorMsg(''), 3000)
   }
 
-  const showSuccess = (msg: string) => {
+  const showSuccess = (msg: string): void => {
     setSuccessMsg(msg)
     setTimeout(() => setSuccessMsg(''), 2000)
   }
@@ -136,13 +136,14 @@ const Wallets: React.FC = () => {
     } finally {
       setLoading(false)
     }
-  }, [page, pageSize, debouncedSearch])
+  }, [page, pageSize, debouncedSearch, t])
 
   useEffect(() => {
-    fetchWallets()
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchWallets()
   }, [fetchWallets])
 
-  const handleCopy = async (text: string, id: string, type: 'address' | 'pk') => {
+  const handleCopy = async (text: string, id: string, type: 'address' | 'pk'): Promise<void> => {
     try {
       await navigator.clipboard.writeText(text)
       if (type === 'address') setCopiedId(id)
@@ -156,7 +157,7 @@ const Wallets: React.FC = () => {
     }
   }
 
-  const togglePrivateKey = async (wallet: Wallet) => {
+  const togglePrivateKey = async (wallet: Wallet): Promise<void> => {
     if (visiblePrivateKeys.has(wallet.id)) {
       setVisiblePrivateKeys((prev) => {
         const next = new Set(prev)
@@ -182,7 +183,7 @@ const Wallets: React.FC = () => {
     }
   }
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (): Promise<void> => {
     setGenerating(true)
     setGeneratedKey(null)
     try {
@@ -195,7 +196,7 @@ const Wallets: React.FC = () => {
     }
   }
 
-  const handleGenerateMnemonic = async () => {
+  const handleGenerateMnemonic = async (): Promise<void> => {
     setGeneratingMnemonic(true)
     setGeneratedMnemonic('')
     setMnemonicDerivedResults([])
@@ -209,7 +210,7 @@ const Wallets: React.FC = () => {
     }
   }
 
-  const handleDeriveFromGeneratedMnemonic = async () => {
+  const handleDeriveFromGeneratedMnemonic = async (): Promise<void> => {
     if (!generatedMnemonic || mnemonicImportTypes.length === 0) return
     setMnemonicDeriving(true)
     setMnemonicDerivedResults([])
@@ -227,7 +228,7 @@ const Wallets: React.FC = () => {
     }
   }
 
-  const handleSaveCreated = async () => {
+  const handleSaveCreated = async (): Promise<void> => {
     if (!generatedKey) return
     setSaving(true)
     try {
@@ -248,7 +249,7 @@ const Wallets: React.FC = () => {
     }
   }
 
-  const handleSaveMnemonicDerived = async () => {
+  const handleSaveMnemonicDerived = async (): Promise<void> => {
     if (mnemonicDerivedResults.length === 0) return
     setMnemonicSaving(true)
     try {
@@ -271,7 +272,7 @@ const Wallets: React.FC = () => {
     }
   }
 
-  const handleDerive = async () => {
+  const handleDerive = async (): Promise<void> => {
     if (importTypes.length === 0) return
     setDeriving(true)
     setDerivedResults([])
@@ -285,7 +286,7 @@ const Wallets: React.FC = () => {
     }
   }
 
-  const handleSaveImported = async () => {
+  const handleSaveImported = async (): Promise<void> => {
     if (derivedResults.length === 0) return
     setImportSaving(true)
     try {
@@ -308,7 +309,7 @@ const Wallets: React.FC = () => {
     }
   }
 
-  const handleDelete = async () => {
+  const handleDelete = async (): Promise<void> => {
     if (!deleteTarget) return
     setDeleting(true)
     try {
@@ -328,7 +329,7 @@ const Wallets: React.FC = () => {
     }
   }
 
-  const handleBatchDelete = async () => {
+  const handleBatchDelete = async (): Promise<void> => {
     if (selectedIds.size === 0) return
     setBatchDeleting(true)
     try {
@@ -345,13 +346,13 @@ const Wallets: React.FC = () => {
     }
   }
 
-  const handleEdit = (wallet: Wallet) => {
+  const handleEdit = (wallet: Wallet): void => {
     setEditTarget(wallet)
     setEditLabels([...wallet.labels])
     setEditLabelInput('')
   }
 
-  const handleSaveEdit = async () => {
+  const handleSaveEdit = async (): Promise<void> => {
     if (!editTarget) return
     setEditSaving(true)
     try {
@@ -366,7 +367,7 @@ const Wallets: React.FC = () => {
     }
   }
 
-  const addEditLabel = () => {
+  const addEditLabel = (): void => {
     const trimmed = editLabelInput.trim()
     if (trimmed && !editLabels.includes(trimmed)) {
       setEditLabels([...editLabels, trimmed])
@@ -374,30 +375,30 @@ const Wallets: React.FC = () => {
     setEditLabelInput('')
   }
 
-  const removeEditLabel = (label: string) => {
+  const removeEditLabel = (label: string): void => {
     setEditLabels(editLabels.filter((l) => l !== label))
   }
 
-  const handleEditLabelKeyDown = (e: React.KeyboardEvent) => {
+  const handleEditLabelKeyDown = (e: React.KeyboardEvent): void => {
     if (e.key === 'Enter') {
       e.preventDefault()
       addEditLabel()
     }
   }
 
-  const toggleImportType = (type: WalletType) => {
+  const toggleImportType = (type: WalletType): void => {
     setImportTypes((prev) =>
       prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
     )
   }
 
-  const toggleMnemonicImportType = (type: WalletType) => {
+  const toggleMnemonicImportType = (type: WalletType): void => {
     setMnemonicImportTypes((prev) =>
       prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
     )
   }
 
-  const toggleSelectAll = () => {
+  const toggleSelectAll = (): void => {
     if (selectedIds.size === wallets.length) {
       setSelectedIds(new Set())
       setShowBatchBar(false)
@@ -407,7 +408,7 @@ const Wallets: React.FC = () => {
     }
   }
 
-  const toggleSelect = (id: string) => {
+  const toggleSelect = (id: string): void => {
     setSelectedIds((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
@@ -417,7 +418,7 @@ const Wallets: React.FC = () => {
     })
   }
 
-  const handleExport = async () => {
+  const handleExport = async (): Promise<void> => {
     try {
       const res = await walletApi.list(1, 99999, '')
       const blob = new Blob([JSON.stringify(res.items, null, 2)], { type: 'application/json' })
@@ -433,7 +434,7 @@ const Wallets: React.FC = () => {
     }
   }
 
-  const closeCreateModal = () => {
+  const closeCreateModal = (): void => {
     setShowCreateModal(false)
     setCreateTab('keypair')
     setCreateType('evm')
@@ -444,7 +445,7 @@ const Wallets: React.FC = () => {
     setMnemonicDerivedResults([])
   }
 
-  const closeImportModal = () => {
+  const closeImportModal = (): void => {
     setShowImportModal(false)
     setMnemonic('')
     setImportTypes(['evm'])

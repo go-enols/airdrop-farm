@@ -174,6 +174,7 @@ describe('Wallet CRUD', () => {
       walletType: 'evm',
       labels: []
     })
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const w3 = store.createWallet({
       address: '0xbd3',
       privateKey: null,

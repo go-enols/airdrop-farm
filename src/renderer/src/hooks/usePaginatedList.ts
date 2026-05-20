@@ -28,6 +28,8 @@ export function usePaginatedList<T>(
   const [error, setError] = useState(false)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const apiFnRef = useRef(apiFn)
+  // Intentionally update ref to get latest apiFn on every render - this is a common React pattern
+  // eslint-disable-next-line react-hooks/refs
   apiFnRef.current = apiFn
 
   useEffect(() => {
@@ -58,6 +60,7 @@ export function usePaginatedList<T>(
   }, [page, pageSize, debouncedSearch])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData()
   }, [fetchData])
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Plus,
@@ -62,7 +62,7 @@ const Tasks: React.FC = () => {
       return
     }
 
-    const fetchProgress = async () => {
+    const fetchProgress = async (): Promise<void> => {
       const entries = await Promise.all(
         runningTasks.map(async (task) => {
           try {
@@ -100,12 +100,12 @@ const Tasks: React.FC = () => {
     return () => clearTimeout(timer)
   }, [errorMsg])
 
-  const showError = (msg: string) => setErrorMsg(msg)
+  const showError = (msg: string): void => setErrorMsg(msg)
 
   const handleAction = async (
     action: 'start' | 'stop' | 'pause' | 'resume' | 'delete',
     id: string
-  ) => {
+  ): Promise<void> => {
     try {
       await taskApi[action](id)
       refresh()
@@ -114,7 +114,7 @@ const Tasks: React.FC = () => {
     }
   }
 
-  const handleToggleExpand = async (taskId: string) => {
+  const handleToggleExpand = async (taskId: string): Promise<void> => {
     if (expandedId === taskId) {
       setExpandedId(null)
       setLogs([])
@@ -133,7 +133,7 @@ const Tasks: React.FC = () => {
     }
   }
 
-  const handleClearLogs = async (taskId: string) => {
+  const handleClearLogs = async (taskId: string): Promise<void> => {
     try {
       await taskApi.clearLogs(taskId)
       setLogs([])
@@ -142,7 +142,7 @@ const Tasks: React.FC = () => {
     }
   }
 
-  const handleTemplateSelect = (templateId: string) => {
+  const handleTemplateSelect = (templateId: string): void => {
     setSelectedTemplateId(templateId)
     if (templateId) {
       const tpl = templates.find((t) => t.id === templateId)
@@ -153,7 +153,7 @@ const Tasks: React.FC = () => {
     }
   }
 
-  const handleCreate = async () => {
+  const handleCreate = async (): Promise<void> => {
     let config: Record<string, unknown>
     try {
       config = JSON.parse(newConfig)
@@ -176,14 +176,14 @@ const Tasks: React.FC = () => {
     }
   }
 
-  const handleOpenEdit = (task: Task) => {
+  const handleOpenEdit = (task: Task): void => {
     setEditTask(task)
     setEditScriptFolder(task.scriptFolder)
     setEditConfig(JSON.stringify(task.config, null, 2))
     setShowEdit(true)
   }
 
-  const handleEdit = async () => {
+  const handleEdit = async (): Promise<void> => {
     if (!editTask) return
     let config: Record<string, unknown>
     try {
@@ -205,7 +205,7 @@ const Tasks: React.FC = () => {
     }
   }
 
-  const toggleSelect = (id: string) => {
+  const toggleSelect = (id: string): void => {
     setSelectedIds((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
@@ -214,7 +214,7 @@ const Tasks: React.FC = () => {
     })
   }
 
-  const toggleSelectAll = () => {
+  const toggleSelectAll = (): void => {
     if (!items.length) return
     if (selectedIds.size === items.length) {
       setSelectedIds(new Set())
@@ -223,7 +223,7 @@ const Tasks: React.FC = () => {
     }
   }
 
-  const handleBatchAction = async (action: 'start' | 'stop' | 'delete') => {
+  const handleBatchAction = async (action: 'start' | 'stop' | 'delete'): Promise<void> => {
     const ids = Array.from(selectedIds)
     if (ids.length === 0) return
     try {
@@ -235,12 +235,12 @@ const Tasks: React.FC = () => {
     }
   }
 
-  const formatTime = (v: string | null) => {
+  const formatTime = (v: string | null): string => {
     if (!v) return '-'
     return new Date(v).toLocaleString()
   }
 
-  const renderActionButtons = (task: Task) => {
+  const renderActionButtons = (task: Task): React.JSX.Element => {
     const btnBase = 'p-1.5 rounded-lg transition-colors '
     const s = task.status
 

@@ -51,13 +51,27 @@ const Settings: React.FC = () => {
   useEffect(() => {
     if (!window.electronAPI) return
 
-    const handleUpdateStatus = (...args: unknown[]) => {
-      const data = args[1] as { status: string; data?: unknown }
-      setUpdateStatus(data.status as any)
+    type UpdateStatusData = {
+      status: string
+      data?: unknown
+    }
+
+    const handleUpdateStatus = (...args: unknown[]): void => {
+      const data = args[1] as UpdateStatusData
+      setUpdateStatus(
+        data.status as
+          | 'idle'
+          | 'checking'
+          | 'available'
+          | 'not-available'
+          | 'downloading'
+          | 'downloaded'
+          | 'error'
+      )
       if (data.status === 'available') {
         setUpdateInfo(data.data as UpdateInfo)
       } else if (data.status === 'progress') {
-        setDownloadProgress(data.data as any)
+        setDownloadProgress(data.data as { percent: number; transferred: number; total: number })
       } else if (data.status === 'error') {
         setUpdateError(data.data as string)
       }
@@ -67,7 +81,7 @@ const Settings: React.FC = () => {
     return window.electronAPI.on('update:status', handleUpdateStatus)
   }, [])
 
-  const checkForUpdates = async () => {
+  const checkForUpdates = async (): Promise<void> => {
     setUpdateStatus('checking')
     setUpdateError('')
     setUpdateInfo(null)
@@ -79,7 +93,7 @@ const Settings: React.FC = () => {
     }
   }
 
-  const downloadUpdate = async () => {
+  const downloadUpdate = async (): Promise<void> => {
     setUpdateError('')
     try {
       await updateApi.download()
@@ -89,7 +103,7 @@ const Settings: React.FC = () => {
     }
   }
 
-  const installUpdate = async () => {
+  const installUpdate = async (): Promise<void> => {
     try {
       await updateApi.install()
     } catch {
@@ -98,43 +112,54 @@ const Settings: React.FC = () => {
     }
   }
 
-  const fetchAppInfo = useCallback(async () => {
+  const fetchAppInfo = useCallback(async (): Promise<void> => {
     try {
       const info = await appApi.getInfo()
       setAppInfo(info)
-    } catch {}
+    } catch {
+      // Ignore fetch errors
+    }
   }, [])
 
-  const fetchLogLevel = useCallback(async () => {
+  const fetchLogLevel = useCallback(async (): Promise<void> => {
     try {
       const level = await logApi.getLevel()
       setLogLevel(level)
-    } catch {}
+    } catch {
+      // Ignore fetch errors
+    }
   }, [])
 
-  const fetchSettings = useCallback(async () => {
+  const fetchSettings = useCallback(async (): Promise<void> => {
     try {
       const all = await settingApi.getAll()
       setSettings(all)
       setEdited(all)
-    } catch {}
+    } catch {
+      // Ignore fetch errors
+    }
   }, [])
 
-  const fetchCaptchaKeys = useCallback(async () => {
+  const fetchCaptchaKeys = useCallback(async (): Promise<void> => {
     try {
       const res = await captchaKeyApi.list()
       setCaptchaKeys(res)
-    } catch {}
+    } catch {
+      // Ignore fetch errors
+    }
   }, [])
 
-  const fetchProxyProviders = useCallback(async () => {
+  const fetchProxyProviders = useCallback(async (): Promise<void> => {
     try {
       const res = await proxyProviderApi.list()
       setProxyProviders(res)
-    } catch {}
+    } catch {
+      // Ignore fetch errors
+    }
   }, [])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchAppInfo()
     fetchLogLevel()
     fetchSettings()
@@ -142,7 +167,7 @@ const Settings: React.FC = () => {
     fetchProxyProviders()
   }, [fetchAppInfo, fetchLogLevel, fetchSettings, fetchCaptchaKeys, fetchProxyProviders])
 
-  const handleSaveLogLevel = async () => {
+  const handleSaveLogLevel = async (): Promise<void> => {
     setLogLevelSaving(true)
     try {
       await logApi.setLevel(logLevel)
@@ -155,7 +180,7 @@ const Settings: React.FC = () => {
     }
   }
 
-  const handleSaveSettings = async () => {
+  const handleSaveSettings = async (): Promise<void> => {
     setSaving(true)
     try {
       const entries = Object.entries(edited)
@@ -168,7 +193,7 @@ const Settings: React.FC = () => {
     }
   }
 
-  const handleAddSetting = async () => {
+  const handleAddSetting = async (): Promise<void> => {
     const key = newSettingKey.trim()
     if (!key) return
     try {
@@ -181,7 +206,7 @@ const Settings: React.FC = () => {
     }
   }
 
-  const handleDeleteSetting = async () => {
+  const handleDeleteSetting = async (): Promise<void> => {
     if (!deleteSettingKey) return
     try {
       await settingApi.delete(deleteSettingKey)
@@ -201,19 +226,19 @@ const Settings: React.FC = () => {
     }
   }
 
-  const openCaptchaKeyAdd = () => {
+  const openCaptchaKeyAdd = (): void => {
     setEditingCaptchaKey(null)
     setCaptchaKeyForm({ provider: '', apiKey: '' })
     setShowCaptchaKeyForm(true)
   }
 
-  const openCaptchaKeyEdit = (item: CaptchaKey) => {
+  const openCaptchaKeyEdit = (item: CaptchaKey): void => {
     setEditingCaptchaKey(item)
     setCaptchaKeyForm({ provider: item.provider, apiKey: item.apiKey })
     setShowCaptchaKeyForm(true)
   }
 
-  const handleSaveCaptchaKey = async () => {
+  const handleSaveCaptchaKey = async (): Promise<void> => {
     try {
       if (editingCaptchaKey) {
         await captchaKeyApi.update(editingCaptchaKey.id, {
@@ -234,7 +259,7 @@ const Settings: React.FC = () => {
     }
   }
 
-  const handleDeleteCaptchaKey = async () => {
+  const handleDeleteCaptchaKey = async (): Promise<void> => {
     if (!deleteCaptchaKeyId) return
     try {
       await captchaKeyApi.delete(deleteCaptchaKeyId)
@@ -245,7 +270,7 @@ const Settings: React.FC = () => {
     }
   }
 
-  const openProxyProviderAdd = () => {
+  const openProxyProviderAdd = (): void => {
     setEditingProxyProvider(null)
     setProxyProviderForm({
       name: '',
@@ -257,7 +282,7 @@ const Settings: React.FC = () => {
     setShowProxyProviderForm(true)
   }
 
-  const openProxyProviderEdit = (item: ProxyProvider) => {
+  const openProxyProviderEdit = (item: ProxyProvider): void => {
     setEditingProxyProvider(item)
     setProxyProviderForm({
       name: item.name,
@@ -269,7 +294,7 @@ const Settings: React.FC = () => {
     setShowProxyProviderForm(true)
   }
 
-  const handleSaveProxyProvider = async () => {
+  const handleSaveProxyProvider = async (): Promise<void> => {
     try {
       if (editingProxyProvider) {
         await proxyProviderApi.update(editingProxyProvider.id, {
@@ -297,7 +322,7 @@ const Settings: React.FC = () => {
     }
   }
 
-  const handleDeleteProxyProvider = async () => {
+  const handleDeleteProxyProvider = async (): Promise<void> => {
     if (!deleteProxyProviderId) return
     try {
       await proxyProviderApi.delete(deleteProxyProviderId)

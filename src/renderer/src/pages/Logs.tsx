@@ -59,31 +59,35 @@ const Logs: React.FC = () => {
     }
   }, [level, category, debouncedSearch, since, until, limit])
 
-  const fetchCategories = useCallback(async () => {
+  const fetchCategories = useCallback(async (): Promise<void> => {
     try {
       const cats = await logApi.getCategories()
       setCategories(cats)
-    } catch {}
+    } catch {
+      // Ignore fetch errors
+    }
   }, [])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchCategories()
   }, [fetchCategories])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData()
   }, [fetchData])
 
-  const handleRefresh = () => {
+  const handleRefresh = (): void => {
     fetchData()
     fetchCategories()
   }
 
-  const loadMore = () => {
+  const loadMore = (): void => {
     setLimit((l) => l + INITIAL_LIMIT)
   }
 
-  const handleClearLogs = async () => {
+  const handleClearLogs = async (): Promise<void> => {
     setClearing(true)
     try {
       await logApi.deleteLogs()
@@ -97,7 +101,7 @@ const Logs: React.FC = () => {
     }
   }
 
-  const handleExportLogs = () => {
+  const handleExportLogs = (): void => {
     if (!data?.items.length) return
     const exportData = data.items.map((log) => ({
       timestamp: log.timestamp,
@@ -117,7 +121,7 @@ const Logs: React.FC = () => {
     URL.revokeObjectURL(url)
   }
 
-  const formatTime = (ts: string) => {
+  const formatTime = (ts: string): string => {
     try {
       return new Date(ts).toLocaleString()
     } catch {

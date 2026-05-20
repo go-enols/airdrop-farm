@@ -67,17 +67,19 @@ const Accounts: React.FC = () => {
   }, [form, t, fetchData])
 
   const handleDelete = useCallback(
-    async (id: string) => {
+    async (id: string): Promise<void> => {
       if (!window.confirm(t('accounts.confirmDelete'))) return
       try {
         await accountApi.delete(id)
         fetchData()
-      } catch {}
+      } catch {
+        // Ignore delete errors
+      }
     },
     [t, fetchData]
   )
 
-  const openEdit = (item: Account) => {
+  const openEdit = (item: Account): void => {
     setEditingItem(item)
     setEditForm({
       pool: item.pool,

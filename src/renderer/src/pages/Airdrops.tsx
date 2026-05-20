@@ -140,17 +140,19 @@ const Airdrops: React.FC = () => {
   }, [form, t, refresh])
 
   const handleDelete = useCallback(
-    async (id: string) => {
+    async (id: string): Promise<void> => {
       if (!window.confirm(t('airdrops.confirmDelete'))) return
       try {
         await airdropApi.delete(id)
         refresh()
-      } catch {}
+      } catch {
+        // Ignore delete errors
+      }
     },
     [t, refresh]
   )
 
-  const openEdit = (item: AirdropProject) => {
+  const openEdit = (item: AirdropProject): void => {
     setEditingItem(item)
     setEditForm({
       name: item.name,
@@ -203,22 +205,22 @@ const Airdrops: React.FC = () => {
     }
   }, [editingItem, editForm, t, refresh])
 
-  const addLink = () => {
+  const addLink = (): void => {
     setEditForm((f) => ({ ...f, links: [...f.links, { label: '', url: '' }] }))
   }
 
-  const removeLink = (index: number) => {
+  const removeLink = (index: number): void => {
     setEditForm((f) => ({ ...f, links: f.links.filter((_, i) => i !== index) }))
   }
 
-  const updateLink = (index: number, field: keyof AirdropLink, value: string) => {
+  const updateLink = (index: number, field: keyof AirdropLink, value: string): void => {
     setEditForm((f) => ({
       ...f,
       links: f.links.map((l, i) => (i === index ? { ...l, [field]: value } : l))
     }))
   }
 
-  const addTask = () => {
+  const addTask = (): void => {
     setEditForm((f) => ({
       ...f,
       tasks: [
@@ -234,18 +236,18 @@ const Airdrops: React.FC = () => {
     }))
   }
 
-  const removeTask = (index: number) => {
+  const removeTask = (index: number): void => {
     setEditForm((f) => ({ ...f, tasks: f.tasks.filter((_, i) => i !== index) }))
   }
 
-  const updateTask = (index: number, field: keyof AirdropTaskItem, value: string) => {
+  const updateTask = (index: number, field: keyof AirdropTaskItem, value: string): void => {
     setEditForm((f) => ({
       ...f,
       tasks: f.tasks.map((t, i) => (i === index ? { ...t, [field]: value } : t))
     }))
   }
 
-  const addEarning = () => {
+  const addEarning = (): void => {
     setEditForm((f) => ({
       ...f,
       earnings: [
@@ -261,18 +263,18 @@ const Airdrops: React.FC = () => {
     }))
   }
 
-  const removeEarning = (index: number) => {
+  const removeEarning = (index: number): void => {
     setEditForm((f) => ({ ...f, earnings: f.earnings.filter((_, i) => i !== index) }))
   }
 
-  const updateEarning = (index: number, field: keyof Earning, value: string | number) => {
+  const updateEarning = (index: number, field: keyof Earning, value: string | number): void => {
     setEditForm((f) => ({
       ...f,
       earnings: f.earnings.map((e, i) => (i === index ? { ...e, [field]: value } : e))
     }))
   }
 
-  const toggleExpand = (id: string) => {
+  const toggleExpand = (id: string): void => {
     setExpandedId((prev) => (prev === id ? null : id))
   }
 

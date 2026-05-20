@@ -36,10 +36,11 @@ const Scheduler: React.FC = () => {
   }, [t])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData()
   }, [fetchData])
 
-  const handleCreate = async () => {
+  const handleCreate = async (): Promise<void> => {
     if (!form.templateId.trim() || !form.cronExpression.trim()) return
     setCreating(true)
     setError(null)
@@ -62,7 +63,7 @@ const Scheduler: React.FC = () => {
     }
   }
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string): Promise<void> => {
     if (!window.confirm(t('scheduler.confirmDelete'))) return
     try {
       await schedulerApi.delete(id)
@@ -72,7 +73,7 @@ const Scheduler: React.FC = () => {
     }
   }
 
-  const handleToggle = async (item: ScheduledTask) => {
+  const handleToggle = async (item: ScheduledTask): Promise<void> => {
     setTogglingId(item.id)
     setError(null)
     try {
@@ -85,13 +86,13 @@ const Scheduler: React.FC = () => {
     }
   }
 
-  const openEdit = (item: ScheduledTask) => {
+  const openEdit = (item: ScheduledTask): void => {
     setEditingItem(item)
     setEditForm({ cronExpression: item.cronExpression })
     setEditError(null)
   }
 
-  const handleEdit = async () => {
+  const handleEdit = async (): Promise<void> => {
     if (!editingItem) return
     setSaving(true)
     setEditError(null)
@@ -108,7 +109,7 @@ const Scheduler: React.FC = () => {
     }
   }
 
-  const formatTime = (time: string | null) => {
+  const formatTime = (time: string | null): string => {
     if (!time) return '—'
     return new Date(time).toLocaleString()
   }

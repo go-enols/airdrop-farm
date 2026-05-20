@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -41,7 +41,7 @@ function StatCard({
   value: number | string
   color: string
   trend?: { value: number; isUp: boolean }
-}) {
+}): React.JSX.Element {
   return (
     <div className="bg-bg-card rounded-xl p-6 border border-border-light hover:border-primary/30 transition-all duration-300">
       <div className="flex items-center justify-between">
@@ -67,7 +67,7 @@ function StatCard({
   )
 }
 
-function StatusBadge({ status, label }: { status: string; label: string }) {
+function StatusBadge({ status, label }: { status: string; label: string }): React.JSX.Element {
   const statusClass = `bg-status-${status}-bg text-status-${status}-text border-status-${status}-text/20`
 
   return (
@@ -88,7 +88,7 @@ function QuickActionButton({
   icon: React.ElementType
   label: string
   onClick: () => void
-}) {
+}): React.JSX.Element {
   return (
     <button
       onClick={onClick}
@@ -102,7 +102,7 @@ function QuickActionButton({
   )
 }
 
-function AirdropCard({ airdrop }: { airdrop: AirdropProject }) {
+function AirdropCard({ airdrop }: { airdrop: AirdropProject }): React.JSX.Element {
   const statusLabels: Record<string, string> = {
     ongoing: '进行中',
     completed: '已完成',
@@ -163,7 +163,7 @@ function AirdropCard({ airdrop }: { airdrop: AirdropProject }) {
   )
 }
 
-export default function Dashboard() {
+export default function Dashboard(): React.JSX.Element {
   const { t } = useTranslation()
   const navigate = useNavigate()
 
@@ -173,7 +173,7 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async (): Promise<void> => {
     try {
       setError(null)
       setRefreshing(true)
@@ -192,11 +192,12 @@ export default function Dashboard() {
       setLoading(false)
       setRefreshing(false)
     }
-  }
+  }, [t])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData()
-  }, [])
+  }, [fetchData])
 
   if (loading) {
     return (

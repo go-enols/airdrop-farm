@@ -50,6 +50,7 @@ const Templates: React.FC = () => {
   }, [t])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData()
   }, [fetchData])
 
@@ -69,10 +70,11 @@ const Templates: React.FC = () => {
   const paged = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (page > totalPages) setPage(totalPages)
   }, [totalPages, page])
 
-  const handleCreate = async () => {
+  const handleCreate = async (): Promise<void> => {
     if (!form.name.trim() || !form.type.trim() || !form.version.trim()) return
     let parsedSchema: Record<string, unknown> = {}
     try {
@@ -101,7 +103,7 @@ const Templates: React.FC = () => {
     }
   }
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string): Promise<void> => {
     if (!window.confirm(t('templates.confirmDelete'))) return
     try {
       await templateApi.delete(id)
@@ -111,7 +113,7 @@ const Templates: React.FC = () => {
     }
   }
 
-  const openEdit = (item: Template) => {
+  const openEdit = (item: Template): void => {
     setEditingItem(item)
     setEditForm({
       name: item.name,
@@ -122,7 +124,7 @@ const Templates: React.FC = () => {
     setEditError(null)
   }
 
-  const handleEdit = async () => {
+  const handleEdit = async (): Promise<void> => {
     if (!editingItem) return
     let parsedSchema: Record<string, unknown> = {}
     try {
