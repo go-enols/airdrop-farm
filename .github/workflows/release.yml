@@ -37,10 +37,15 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Clear electron-builder cache
+        run: rm -rf ~/.cache/electron-builder
+
       - name: Build
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm run build:${{ matrix.os == 'ubuntu-latest' && 'linux' || matrix.os == 'windows-latest' && 'win' || 'mac' }}
+        run: |
+          rm -f .npmrc
+          npm run build:${{ matrix.os == 'ubuntu-latest' && 'linux' || matrix.os == 'windows-latest' && 'win' || 'mac' }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
