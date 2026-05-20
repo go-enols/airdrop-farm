@@ -42,7 +42,7 @@ const Settings = () => {
   useEffect(() => {
     if (!window.electronAPI) return
     const handleUpdateStatus = (...args) => {
-      const data = args[1]
+      const data = args[0]
       setUpdateStatus(data.status)
       if (data.status === 'available') {
         setUpdateInfo(data.data)
