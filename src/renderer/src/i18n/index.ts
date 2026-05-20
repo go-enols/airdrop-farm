@@ -6,7 +6,7 @@ i18n.use(initReactI18next).init({
   resources: { 'zh-CN': { translation: zhCN } },
   lng: 'zh-CN',
   fallbackLng: 'zh-CN',
-  interpolation: { escapeValue: false },
+  interpolation: { escapeValue: false }
 })
 
 export default i18n

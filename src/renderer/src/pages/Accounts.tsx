@@ -12,11 +12,17 @@ const Accounts: React.FC = () => {
   const { t } = useTranslation()
   const { templates } = useTemplateList()
   const {
-    items, total, page, totalPages, loading, error, setPage, setSearch, search, refresh: fetchData
-  } = usePaginatedList<Account>(
-    (p, ps, s) => accountApi.list(p, ps, s),
-    PAGE_SIZE
-  )
+    items,
+    total,
+    page,
+    totalPages,
+    loading,
+    error,
+    setPage,
+    setSearch,
+    search,
+    refresh: fetchData
+  } = usePaginatedList<Account>((p, ps, s) => accountApi.list(p, ps, s), PAGE_SIZE)
   const [showCreate, setShowCreate] = useState(false)
   const [form, setForm] = useState({ templateId: '', pool: '', notes: '', labels: '', data: '{}' })
   const [creating, setCreating] = useState(false)
@@ -42,7 +48,12 @@ const Accounts: React.FC = () => {
         templateId: form.templateId.trim(),
         data: parsedData,
         pool: form.pool.trim(),
-        labels: form.labels ? form.labels.split(',').map(l => l.trim()).filter(Boolean) : [],
+        labels: form.labels
+          ? form.labels
+              .split(',')
+              .map((l) => l.trim())
+              .filter(Boolean)
+          : [],
         notes: form.notes.trim()
       })
       setShowCreate(false)
@@ -55,13 +66,16 @@ const Accounts: React.FC = () => {
     }
   }, [form, t, fetchData])
 
-  const handleDelete = useCallback(async (id: string) => {
-    if (!window.confirm(t('accounts.confirmDelete'))) return
-    try {
-      await accountApi.delete(id)
-      fetchData()
-    } catch {}
-  }, [t, fetchData])
+  const handleDelete = useCallback(
+    async (id: string) => {
+      if (!window.confirm(t('accounts.confirmDelete'))) return
+      try {
+        await accountApi.delete(id)
+        fetchData()
+      } catch {}
+    },
+    [t, fetchData]
+  )
 
   const openEdit = (item: Account) => {
     setEditingItem(item)
@@ -89,7 +103,12 @@ const Accounts: React.FC = () => {
       await accountApi.update(editingItem.id, {
         pool: editForm.pool.trim(),
         notes: editForm.notes.trim(),
-        labels: editForm.labels ? editForm.labels.split(',').map(l => l.trim()).filter(Boolean) : [],
+        labels: editForm.labels
+          ? editForm.labels
+              .split(',')
+              .map((l) => l.trim())
+              .filter(Boolean)
+          : [],
         data: parsedData
       })
       setEditingItem(null)
@@ -122,7 +141,9 @@ const Accounts: React.FC = () => {
       </div>
 
       {(error || createError) && (
-        <div className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-4 py-2">{createError || t('common.error')}</div>
+        <div className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-4 py-2">
+          {createError || t('common.error')}
+        </div>
       )}
 
       {loading ? (
@@ -140,34 +161,58 @@ const Accounts: React.FC = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-bg-tertiary">
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('accounts.templateId')}</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('accounts.pool')}</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('accounts.labels')}</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('accounts.notes')}</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('accounts.createdAt')}</th>
-                  <th className="text-right px-4 py-3 font-medium text-gray-600">{t('accounts.actions')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">
+                    {t('accounts.templateId')}
+                  </th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">
+                    {t('accounts.pool')}
+                  </th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">
+                    {t('accounts.labels')}
+                  </th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">
+                    {t('accounts.notes')}
+                  </th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">
+                    {t('accounts.createdAt')}
+                  </th>
+                  <th className="text-right px-4 py-3 font-medium text-gray-600">
+                    {t('accounts.actions')}
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((item) => (
-                  <tr key={item.id} className="border-b border-gray-50 hover:bg-bg-tertiary transition-colors">
+                  <tr
+                    key={item.id}
+                    className="border-b border-gray-50 hover:bg-bg-tertiary transition-colors"
+                  >
                     <td className="px-4 py-3 text-xs">
-                      {templates.find(t => t.id === item.templateId)?.name || item.templateId}
+                      {templates.find((t) => t.id === item.templateId)?.name || item.templateId}
                     </td>
                     <td className="px-4 py-3">{item.pool}</td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
-                        {item.labels.length > 0
-                          ? item.labels.map((l, i) => (
-                              <span key={i} className="inline-block px-2 py-0.5 text-xs bg-blue-50 text-blue-600 rounded-full">
-                                {l}
-                              </span>
-                            ))
-                          : <span className="text-gray-300">—</span>}
+                        {item.labels.length > 0 ? (
+                          item.labels.map((l, i) => (
+                            <span
+                              key={i}
+                              className="inline-block px-2 py-0.5 text-xs bg-blue-50 text-blue-600 rounded-full"
+                            >
+                              {l}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-gray-300">—</span>
+                        )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 max-w-[200px] truncate text-text-muted">{item.notes || '—'}</td>
-                    <td className="px-4 py-3 text-text-muted text-xs">{new Date(item.createdAt).toLocaleString()}</td>
+                    <td className="px-4 py-3 max-w-[200px] truncate text-text-muted">
+                      {item.notes || '—'}
+                    </td>
+                    <td className="px-4 py-3 text-text-muted text-xs">
+                      {new Date(item.createdAt).toLocaleString()}
+                    </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button
@@ -201,23 +246,33 @@ const Accounts: React.FC = () => {
         </>
       )}
 
-      <Modal open={showCreate} onClose={() => setShowCreate(false)} title={t('accounts.createAccount')}>
+      <Modal
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+        title={t('accounts.createAccount')}
+      >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('accounts.templateId')}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('accounts.templateId')}
+            </label>
             <select
               value={form.templateId}
               onChange={(e) => setForm((f) => ({ ...f, templateId: e.target.value }))}
               className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="">{t('accounts.selectTemplate', '请选择模板')}</option>
-              {templates.map(t => (
-                <option key={t.id} value={t.id}>{t.name} ({t.type})</option>
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name} ({t.type})
+                </option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('accounts.pool')}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('accounts.pool')}
+            </label>
             <input
               type="text"
               value={form.pool}
@@ -226,7 +281,9 @@ const Accounts: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('accounts.labels')}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('accounts.labels')}
+            </label>
             <input
               type="text"
               value={form.labels}
@@ -236,7 +293,9 @@ const Accounts: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('accounts.notes')}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('accounts.notes')}
+            </label>
             <input
               type="text"
               value={form.notes}
@@ -245,7 +304,9 @@ const Accounts: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('accounts.data')} (JSON)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('accounts.data')} (JSON)
+            </label>
             <textarea
               value={form.data}
               onChange={(e) => setForm((f) => ({ ...f, data: e.target.value }))}
@@ -254,12 +315,13 @@ const Accounts: React.FC = () => {
             />
           </div>
         </div>
-        {createError && (
-          <div className="text-red-600 text-sm mt-3">{createError}</div>
-        )}
+        {createError && <div className="text-red-600 text-sm mt-3">{createError}</div>}
         <div className="flex justify-end gap-3 mt-6">
           <button
-            onClick={() => { setShowCreate(false); setCreateError(null) }}
+            onClick={() => {
+              setShowCreate(false)
+              setCreateError(null)
+            }}
             className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
           >
             {t('common.cancel')}
@@ -274,10 +336,17 @@ const Accounts: React.FC = () => {
         </div>
       </Modal>
 
-      <Modal open={!!editingItem} onClose={() => setEditingItem(null)} title={t('accounts.editAccount')} scrollable>
+      <Modal
+        open={!!editingItem}
+        onClose={() => setEditingItem(null)}
+        title={t('accounts.editAccount')}
+        scrollable
+      >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('accounts.pool')}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('accounts.pool')}
+            </label>
             <input
               type="text"
               value={editForm.pool}
@@ -286,7 +355,9 @@ const Accounts: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('accounts.labels')}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('accounts.labels')}
+            </label>
             <input
               type="text"
               value={editForm.labels}
@@ -296,7 +367,9 @@ const Accounts: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('accounts.notes')}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('accounts.notes')}
+            </label>
             <input
               type="text"
               value={editForm.notes}
@@ -305,7 +378,9 @@ const Accounts: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('accounts.data')} (JSON)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('accounts.data')} (JSON)
+            </label>
             <textarea
               value={editForm.data}
               onChange={(e) => setEditForm((f) => ({ ...f, data: e.target.value }))}
@@ -314,9 +389,7 @@ const Accounts: React.FC = () => {
             />
           </div>
         </div>
-        {editError && (
-          <div className="text-red-600 text-sm mt-3">{editError}</div>
-        )}
+        {editError && <div className="text-red-600 text-sm mt-3">{editError}</div>}
         <div className="flex justify-end gap-3 mt-6">
           <button
             onClick={() => setEditingItem(null)}

@@ -25,5 +25,5 @@ export type {
   UpdateInfo,
   AirdropStatus,
   AirdropProjectType,
-  AirdropTaskStatus,
+  AirdropTaskStatus
 } from '../../../shared/types'

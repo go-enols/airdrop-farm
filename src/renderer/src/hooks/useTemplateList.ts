@@ -12,8 +12,9 @@ export function useTemplateList(): UseTemplateListResult {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    templateApi.list()
-      .then(res => setTemplates(res.items || []))
+    templateApi
+      .list()
+      .then((res) => setTemplates(res.items || []))
       .catch((err) => {
         console.warn('Failed to load templates', err)
         setTemplates([])

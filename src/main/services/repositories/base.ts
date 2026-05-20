@@ -29,12 +29,20 @@ export abstract class BaseRepository<_T = unknown> {
 
   protected fromJson<V>(val: string | null): V | null {
     if (val === null) return null
-    try { return JSON.parse(val) as V } catch { return null }
+    try {
+      return JSON.parse(val) as V
+    } catch {
+      return null
+    }
   }
 
   protected fromJsonArray<V>(val: string | null): V[] {
     if (val === null) return []
-    try { return JSON.parse(val) as V[] } catch { return [] }
+    try {
+      return JSON.parse(val) as V[]
+    } catch {
+      return []
+    }
   }
 
   protected nowISO(): string {
@@ -49,12 +57,14 @@ export abstract class BaseRepository<_T = unknown> {
     mapper: (row: Record<string, unknown>) => V,
     searchParams?: unknown[]
   ): ListResponse<V> {
-    const total = ((searchParams ? countStmt.get(...searchParams) : countStmt.get()) as Record<string, number>).cnt
+    const total = (
+      (searchParams ? countStmt.get(...searchParams) : countStmt.get()) as Record<string, number>
+    ).cnt
     const totalPages = Math.max(1, Math.ceil(total / pageSize))
     const offset = (page - 1) * pageSize
     const rows = searchParams
-      ? listStmt.all(...searchParams, pageSize, offset) as Record<string, unknown>[]
-      : listStmt.all(pageSize, offset) as Record<string, unknown>[]
+      ? (listStmt.all(...searchParams, pageSize, offset) as Record<string, unknown>[])
+      : (listStmt.all(pageSize, offset) as Record<string, unknown>[])
     return { items: rows.map(mapper), total, page, pageSize, totalPages }
   }
 }

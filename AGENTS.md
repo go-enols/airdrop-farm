@@ -49,10 +49,12 @@ src/
 Both transports share the same `handlerMap` in `src/main/ipc/index.ts`. The `executeHandler()` function is the single entry point for all API calls regardless of transport.
 
 **Transport selection logic** (in `src/renderer/src/transport.ts`):
+
 - Force mode: URL param `?transport=http` or `localStorage['app-transport']`
 - Auto mode: IPC first → HTTP fallback → remember working transport
 
 **Adding a new API endpoint:**
+
 1. Add handler in `src/main/ipc/index.ts` via `register('channel:name', handler)`
 2. Add typed method in `src/renderer/src/api.ts` via `call<T>('channel:name', [args])`
 3. Both IPC and HTTP automatically support the new endpoint

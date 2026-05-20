@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 const mockCall = vi.hoisted(() => vi.fn())
 
 vi.mock('../../src/renderer/src/transport', () => ({
-  call: mockCall,
+  call: mockCall
 }))
 
 import { appApi, walletApi, settingApi, logApi } from '../../src/renderer/src/api'
@@ -78,7 +78,14 @@ describe('api', () => {
     it('logApi.query calls call with log:query and undefined args', async () => {
       mockCall.mockResolvedValueOnce({} as any)
       await logApi.query()
-      expect(mockCall).toHaveBeenCalledWith('log:query', [undefined, undefined, undefined, undefined, undefined, undefined])
+      expect(mockCall).toHaveBeenCalledWith('log:query', [
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined
+      ])
     })
   })
 })

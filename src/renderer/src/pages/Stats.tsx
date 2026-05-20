@@ -128,7 +128,9 @@ const Stats: React.FC = () => {
                 {Object.entries(stats.taskDurationDistribution || {})
                   .sort(([a], [b]) => a.localeCompare(b))
                   .map(([range, count]) => {
-                    const maxCount = Math.max(...Object.values(stats.taskDurationDistribution || {}))
+                    const maxCount = Math.max(
+                      ...Object.values(stats.taskDurationDistribution || {})
+                    )
                     const widthPercent = maxCount > 0 ? (count / maxCount) * 100 : 0
                     return (
                       <div key={range} className="flex items-center gap-3">
@@ -139,7 +141,9 @@ const Stats: React.FC = () => {
                             style={{ width: `${widthPercent}%` }}
                           />
                         </div>
-                        <span className="text-sm font-medium text-text-primary w-12 text-right">{count}</span>
+                        <span className="text-sm font-medium text-text-primary w-12 text-right">
+                          {count}
+                        </span>
                       </div>
                     )
                   })}
@@ -153,13 +157,20 @@ const Stats: React.FC = () => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border-light">
-                    <th className="text-left px-4 py-2 font-medium text-text-secondary">{t('stats.templateName')}</th>
-                    <th className="text-right px-4 py-2 font-medium text-text-secondary">{t('stats.taskCount')}</th>
+                    <th className="text-left px-4 py-2 font-medium text-text-secondary">
+                      {t('stats.templateName')}
+                    </th>
+                    <th className="text-right px-4 py-2 font-medium text-text-secondary">
+                      {t('stats.taskCount')}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {(stats.templateUsage || []).map((item, i) => (
-                    <tr key={i} className="border-b border-border-light/50 hover:bg-bg-card-hover transition-colors">
+                    <tr
+                      key={i}
+                      className="border-b border-border-light/50 hover:bg-bg-card-hover transition-colors"
+                    >
                       <td className="px-4 py-2">{item.templateName}</td>
                       <td className="px-4 py-2 text-right font-medium">{item.taskCount}</td>
                     </tr>
@@ -175,19 +186,36 @@ const Stats: React.FC = () => {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border-light">
-                    <th className="text-left px-4 py-2 font-medium text-text-secondary">{t('stats.templateName')}</th>
-                    <th className="text-right px-4 py-2 font-medium text-text-secondary">{t('stats.successCount')}</th>
-                    <th className="text-right px-4 py-2 font-medium text-text-secondary">{t('stats.errorCount')}</th>
-                    <th className="text-right px-4 py-2 font-medium text-text-secondary">{t('stats.successRate')}</th>
+                    <th className="text-left px-4 py-2 font-medium text-text-secondary">
+                      {t('stats.templateName')}
+                    </th>
+                    <th className="text-right px-4 py-2 font-medium text-text-secondary">
+                      {t('stats.successCount')}
+                    </th>
+                    <th className="text-right px-4 py-2 font-medium text-text-secondary">
+                      {t('stats.errorCount')}
+                    </th>
+                    <th className="text-right px-4 py-2 font-medium text-text-secondary">
+                      {t('stats.successRate')}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {(stats.templateRanking || []).map((item, i) => (
-                    <tr key={i} className="border-b border-border-light/50 hover:bg-bg-card-hover transition-colors">
+                    <tr
+                      key={i}
+                      className="border-b border-border-light/50 hover:bg-bg-card-hover transition-colors"
+                    >
                       <td className="px-4 py-2">{item.templateName}</td>
-                      <td className="px-4 py-2 text-right text-success font-medium">{item.successCount}</td>
-                      <td className="px-4 py-2 text-right text-danger font-medium">{item.errorCount}</td>
-                      <td className="px-4 py-2 text-right font-medium">{formatRate(item.successRate)}</td>
+                      <td className="px-4 py-2 text-right text-success font-medium">
+                        {item.successCount}
+                      </td>
+                      <td className="px-4 py-2 text-right text-danger font-medium">
+                        {item.errorCount}
+                      </td>
+                      <td className="px-4 py-2 text-right font-medium">
+                        {formatRate(item.successRate)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

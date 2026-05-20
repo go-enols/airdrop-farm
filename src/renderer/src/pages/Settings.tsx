@@ -31,7 +31,7 @@ const Settings: React.FC = () => {
     apiUrl: '',
     apiKey: '',
     protocol: 'http' as 'http' | 'https' | 'socks5',
-    refreshInterval: 300,
+    refreshInterval: 300
   })
   const [deleteProxyProviderId, setDeleteProxyProviderId] = useState<string | null>(null)
 
@@ -40,7 +40,9 @@ const Settings: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState('')
 
   // Auto-update state
-  const [updateStatus, setUpdateStatus] = useState<'idle' | 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error'>('idle')
+  const [updateStatus, setUpdateStatus] = useState<
+    'idle' | 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error'
+  >('idle')
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
   const [updateError, setUpdateError] = useState('')
   const [downloadProgress, setDownloadProgress] = useState({ percent: 0, transferred: 0, total: 0 })
@@ -216,13 +218,13 @@ const Settings: React.FC = () => {
       if (editingCaptchaKey) {
         await captchaKeyApi.update(editingCaptchaKey.id, {
           provider: captchaKeyForm.provider,
-          apiKey: captchaKeyForm.apiKey,
+          apiKey: captchaKeyForm.apiKey
         })
       } else {
         await captchaKeyApi.create({
           provider: captchaKeyForm.provider,
           apiKey: captchaKeyForm.apiKey,
-          balance: 0,
+          balance: 0
         })
       }
       setShowCaptchaKeyForm(false)
@@ -245,7 +247,13 @@ const Settings: React.FC = () => {
 
   const openProxyProviderAdd = () => {
     setEditingProxyProvider(null)
-    setProxyProviderForm({ name: '', apiUrl: '', apiKey: '', protocol: 'http', refreshInterval: 300 })
+    setProxyProviderForm({
+      name: '',
+      apiUrl: '',
+      apiKey: '',
+      protocol: 'http',
+      refreshInterval: 300
+    })
     setShowProxyProviderForm(true)
   }
 
@@ -256,7 +264,7 @@ const Settings: React.FC = () => {
       apiUrl: item.apiUrl,
       apiKey: item.apiKey,
       protocol: item.protocol,
-      refreshInterval: item.refreshInterval,
+      refreshInterval: item.refreshInterval
     })
     setShowProxyProviderForm(true)
   }
@@ -269,7 +277,7 @@ const Settings: React.FC = () => {
           apiUrl: proxyProviderForm.apiUrl,
           apiKey: proxyProviderForm.apiKey,
           protocol: proxyProviderForm.protocol,
-          refreshInterval: proxyProviderForm.refreshInterval,
+          refreshInterval: proxyProviderForm.refreshInterval
         })
       } else {
         await proxyProviderApi.create({
@@ -279,7 +287,7 @@ const Settings: React.FC = () => {
           protocol: proxyProviderForm.protocol,
           refreshInterval: proxyProviderForm.refreshInterval,
           lastSync: null,
-          labels: [],
+          labels: []
         })
       }
       setShowProxyProviderForm(false)
@@ -300,14 +308,18 @@ const Settings: React.FC = () => {
     }
   }
 
-  const hasChanges = Object.keys(edited).some((key) => edited[key] !== settings[key]) || Object.keys(edited).length !== Object.keys(settings).length
+  const hasChanges =
+    Object.keys(edited).some((key) => edited[key] !== settings[key]) ||
+    Object.keys(edited).length !== Object.keys(settings).length
 
   return (
     <div className="space-y-6 max-w-3xl">
       {errorMsg && (
         <div className="px-4 py-2 text-sm text-danger bg-danger-light rounded-lg flex items-center justify-between">
           <span>{errorMsg}</span>
-          <button onClick={() => setErrorMsg('')} className="text-danger/70 hover:text-danger">&times;</button>
+          <button onClick={() => setErrorMsg('')} className="text-danger/70 hover:text-danger">
+            &times;
+          </button>
         </div>
       )}
 
@@ -329,7 +341,9 @@ const Settings: React.FC = () => {
               {appInfo.dbConnected ? (
                 <span className="text-success">Connected</span>
               ) : (
-                <span className="text-danger">Disconnected{appInfo.dbError ? `: ${appInfo.dbError}` : ''}</span>
+                <span className="text-danger">
+                  Disconnected{appInfo.dbError ? `: ${appInfo.dbError}` : ''}
+                </span>
               )}
             </div>
             <div className="text-text-muted">{t('dashboard.stats.wallets')}</div>
@@ -339,7 +353,9 @@ const Settings: React.FC = () => {
             <div className="text-text-muted">{t('dashboard.stats.proxies')}</div>
             <div className="text-text-primary">{appInfo.proxyCount}</div>
             <div className="text-text-muted">{t('dashboard.stats.tasks')}</div>
-            <div className="text-text-primary">{appInfo.taskCount} ({appInfo.runningTaskCount} running)</div>
+            <div className="text-text-primary">
+              {appInfo.taskCount} ({appInfo.runningTaskCount} running)
+            </div>
           </div>
         ) : (
           <div className="text-sm text-text-muted">{t('common.loading')}</div>
@@ -386,7 +402,8 @@ const Settings: React.FC = () => {
               {t('updates.version')}: <span className="font-mono">{updateInfo.version}</span>
             </p>
             <p className="text-sm text-blue-700 dark:text-blue-400">
-              {t('updates.releaseDate')}: {updateInfo.pub_date ? new Date(updateInfo.pub_date).toLocaleDateString() : '-'}
+              {t('updates.releaseDate')}:{' '}
+              {updateInfo.pub_date ? new Date(updateInfo.pub_date).toLocaleDateString() : '-'}
             </p>
             <button
               onClick={downloadUpdate}
@@ -423,7 +440,9 @@ const Settings: React.FC = () => {
 
         {updateStatus === 'downloaded' && (
           <div className="px-4 py-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-            <p className="text-sm text-green-800 dark:text-green-300 mb-2">{t('updates.updateReady')}</p>
+            <p className="text-sm text-green-800 dark:text-green-300 mb-2">
+              {t('updates.updateReady')}
+            </p>
             <button
               onClick={installUpdate}
               className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
@@ -447,7 +466,9 @@ const Settings: React.FC = () => {
             className="px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
           >
             {LOG_LEVELS.map((l) => (
-              <option key={l} value={l}>{l.toUpperCase()}</option>
+              <option key={l} value={l}>
+                {l.toUpperCase()}
+              </option>
             ))}
           </select>
           <button
@@ -458,9 +479,7 @@ const Settings: React.FC = () => {
             <Save size={16} />
             {logLevelSaving ? t('common.loading') : t('common.save')}
           </button>
-          {logLevelMsg && (
-            <span className="text-sm text-success">{logLevelMsg}</span>
-          )}
+          {logLevelMsg && <span className="text-sm text-success">{logLevelMsg}</span>}
         </div>
       </section>
 
@@ -485,10 +504,18 @@ const Settings: React.FC = () => {
             <table className="w-full text-sm">
               <thead className="bg-bg-tertiary">
                 <tr>
-                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">{t('settings.provider')}</th>
-                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">{t('settings.apiKey')}</th>
-                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">{t('settings.balance')}</th>
-                  <th className="px-4 py-2.5 text-right font-medium text-text-muted">{t('common.actions')}</th>
+                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                    {t('settings.provider')}
+                  </th>
+                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                    {t('settings.apiKey')}
+                  </th>
+                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                    {t('settings.balance')}
+                  </th>
+                  <th className="px-4 py-2.5 text-right font-medium text-text-muted">
+                    {t('common.actions')}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-light/50">
@@ -499,10 +526,16 @@ const Settings: React.FC = () => {
                     <td className="px-4 py-2.5">{item.balance}</td>
                     <td className="px-4 py-2.5 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => openCaptchaKeyEdit(item)} className="p-1 text-text-muted hover:text-primary hover:bg-primary-light rounded transition-colors">
+                        <button
+                          onClick={() => openCaptchaKeyEdit(item)}
+                          className="p-1 text-text-muted hover:text-primary hover:bg-primary-light rounded transition-colors"
+                        >
                           <Edit3 size={16} />
                         </button>
-                        <button onClick={() => setDeleteCaptchaKeyId(item.id)} className="p-1 text-danger hover:bg-danger-light rounded transition-colors">
+                        <button
+                          onClick={() => setDeleteCaptchaKeyId(item.id)}
+                          className="p-1 text-danger hover:bg-danger-light rounded transition-colors"
+                        >
                           <Trash2 size={16} />
                         </button>
                       </div>
@@ -536,11 +569,21 @@ const Settings: React.FC = () => {
             <table className="w-full text-sm">
               <thead className="bg-bg-tertiary">
                 <tr>
-                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">{t('settings.providerName')}</th>
-                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">{t('settings.apiUrl')}</th>
-                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">{t('proxies.protocol')}</th>
-                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">{t('settings.refreshInterval')}</th>
-                  <th className="px-4 py-2.5 text-right font-medium text-text-muted">{t('common.actions')}</th>
+                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                    {t('settings.providerName')}
+                  </th>
+                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                    {t('settings.apiUrl')}
+                  </th>
+                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                    {t('proxies.protocol')}
+                  </th>
+                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                    {t('settings.refreshInterval')}
+                  </th>
+                  <th className="px-4 py-2.5 text-right font-medium text-text-muted">
+                    {t('common.actions')}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-light/50">
@@ -552,10 +595,16 @@ const Settings: React.FC = () => {
                     <td className="px-4 py-2.5">{item.refreshInterval}s</td>
                     <td className="px-4 py-2.5 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => openProxyProviderEdit(item)} className="p-1 text-text-muted hover:text-primary hover:bg-primary-light rounded transition-colors">
+                        <button
+                          onClick={() => openProxyProviderEdit(item)}
+                          className="p-1 text-text-muted hover:text-primary hover:bg-primary-light rounded transition-colors"
+                        >
                           <Edit3 size={16} />
                         </button>
-                        <button onClick={() => setDeleteProxyProviderId(item.id)} className="p-1 text-danger hover:bg-danger-light rounded transition-colors">
+                        <button
+                          onClick={() => setDeleteProxyProviderId(item.id)}
+                          className="p-1 text-danger hover:bg-danger-light rounded transition-colors"
+                        >
                           <Trash2 size={16} />
                         </button>
                       </div>
@@ -599,7 +648,9 @@ const Settings: React.FC = () => {
             type="text"
             value={newSettingKey}
             onChange={(e) => setNewSettingKey(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleAddSetting() }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleAddSetting()
+            }}
             placeholder={t('common.newKey') + '...'}
             className="w-48 px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
           />
@@ -615,10 +666,10 @@ const Settings: React.FC = () => {
         {hasChanges && (
           <div className="flex justify-end pt-2">
             <button
-            onClick={handleSaveSettings}
-            disabled={saving}
-            className="flex items-center gap-1.5 px-4 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors"
-          >
+              onClick={handleSaveSettings}
+              disabled={saving}
+              className="flex items-center gap-1.5 px-4 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors"
+            >
               <Save size={16} />
               {saving ? t('common.loading') : t('common.save')}
             </button>
@@ -627,12 +678,22 @@ const Settings: React.FC = () => {
       </section>
 
       {showCaptchaKeyForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowCaptchaKeyForm(false)}>
-          <div className="bg-bg-card rounded-xl shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold text-text-primary mb-4">{editingCaptchaKey ? t('settings.editCaptchaKey') : t('settings.addCaptchaKey')}</h2>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setShowCaptchaKeyForm(false)}
+        >
+          <div
+            className="bg-bg-card rounded-xl shadow-xl w-full max-w-md p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-lg font-semibold text-text-primary mb-4">
+              {editingCaptchaKey ? t('settings.editCaptchaKey') : t('settings.addCaptchaKey')}
+            </h2>
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1">{t('settings.provider')}</label>
+                <label className="block text-sm font-medium text-text-secondary mb-1">
+                  {t('settings.provider')}
+                </label>
                 <input
                   type="text"
                   value={captchaKeyForm.provider}
@@ -641,7 +702,9 @@ const Settings: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1">{t('settings.apiKey')}</label>
+                <label className="block text-sm font-medium text-text-secondary mb-1">
+                  {t('settings.apiKey')}
+                </label>
                 <input
                   type="text"
                   value={captchaKeyForm.apiKey}
@@ -651,10 +714,16 @@ const Settings: React.FC = () => {
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">
-              <button onClick={() => setShowCaptchaKeyForm(false)} className="px-4 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover transition-colors">
+              <button
+                onClick={() => setShowCaptchaKeyForm(false)}
+                className="px-4 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover transition-colors"
+              >
                 {t('common.cancel')}
               </button>
-              <button onClick={handleSaveCaptchaKey} className="px-4 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors">
+              <button
+                onClick={handleSaveCaptchaKey}
+                className="px-4 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
+              >
                 {t('common.save')}
               </button>
             </div>
@@ -663,12 +732,24 @@ const Settings: React.FC = () => {
       )}
 
       {showProxyProviderForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowProxyProviderForm(false)}>
-          <div className="bg-bg-card rounded-xl shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold text-text-primary mb-4">{editingProxyProvider ? t('settings.editProxyProvider') : t('settings.addProxyProvider')}</h2>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setShowProxyProviderForm(false)}
+        >
+          <div
+            className="bg-bg-card rounded-xl shadow-xl w-full max-w-md p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-lg font-semibold text-text-primary mb-4">
+              {editingProxyProvider
+                ? t('settings.editProxyProvider')
+                : t('settings.addProxyProvider')}
+            </h2>
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1">{t('settings.providerName')}</label>
+                <label className="block text-sm font-medium text-text-secondary mb-1">
+                  {t('settings.providerName')}
+                </label>
                 <input
                   type="text"
                   value={proxyProviderForm.name}
@@ -677,7 +758,9 @@ const Settings: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1">{t('settings.apiUrl')}</label>
+                <label className="block text-sm font-medium text-text-secondary mb-1">
+                  {t('settings.apiUrl')}
+                </label>
                 <input
                   type="text"
                   value={proxyProviderForm.apiUrl}
@@ -686,7 +769,9 @@ const Settings: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1">{t('settings.apiKey')}</label>
+                <label className="block text-sm font-medium text-text-secondary mb-1">
+                  {t('settings.apiKey')}
+                </label>
                 <input
                   type="text"
                   value={proxyProviderForm.apiKey}
@@ -695,10 +780,17 @@ const Settings: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1">{t('proxies.protocol')}</label>
+                <label className="block text-sm font-medium text-text-secondary mb-1">
+                  {t('proxies.protocol')}
+                </label>
                 <select
                   value={proxyProviderForm.protocol}
-                  onChange={(e) => setProxyProviderForm((f) => ({ ...f, protocol: e.target.value as 'http' | 'https' | 'socks5' }))}
+                  onChange={(e) =>
+                    setProxyProviderForm((f) => ({
+                      ...f,
+                      protocol: e.target.value as 'http' | 'https' | 'socks5'
+                    }))
+                  }
                   className="w-full px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   <option value="http">HTTP</option>
@@ -707,20 +799,30 @@ const Settings: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1">{t('settings.refreshInterval')}</label>
+                <label className="block text-sm font-medium text-text-secondary mb-1">
+                  {t('settings.refreshInterval')}
+                </label>
                 <input
                   type="number"
                   value={proxyProviderForm.refreshInterval}
-                  onChange={(e) => setProxyProviderForm((f) => ({ ...f, refreshInterval: Number(e.target.value) }))}
+                  onChange={(e) =>
+                    setProxyProviderForm((f) => ({ ...f, refreshInterval: Number(e.target.value) }))
+                  }
                   className="w-full px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">
-              <button onClick={() => setShowProxyProviderForm(false)} className="px-4 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover transition-colors">
+              <button
+                onClick={() => setShowProxyProviderForm(false)}
+                className="px-4 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover transition-colors"
+              >
                 {t('common.cancel')}
               </button>
-              <button onClick={handleSaveProxyProvider} className="px-4 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors">
+              <button
+                onClick={handleSaveProxyProvider}
+                className="px-4 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
+              >
                 {t('common.save')}
               </button>
             </div>
@@ -729,15 +831,29 @@ const Settings: React.FC = () => {
       )}
 
       {deleteCaptchaKeyId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setDeleteCaptchaKeyId(null)}>
-          <div className="bg-bg-card rounded-xl shadow-xl w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setDeleteCaptchaKeyId(null)}
+        >
+          <div
+            className="bg-bg-card rounded-xl shadow-xl w-full max-w-sm p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 className="text-lg font-semibold text-text-primary mb-2">{t('common.delete')}</h2>
-            <p className="text-sm text-text-secondary mb-6">{t('settings.confirmDeleteCaptchaKey')}</p>
+            <p className="text-sm text-text-secondary mb-6">
+              {t('settings.confirmDeleteCaptchaKey')}
+            </p>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setDeleteCaptchaKeyId(null)} className="px-4 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover transition-colors">
+              <button
+                onClick={() => setDeleteCaptchaKeyId(null)}
+                className="px-4 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover transition-colors"
+              >
                 {t('common.cancel')}
               </button>
-              <button onClick={handleDeleteCaptchaKey} className="px-4 py-1.5 text-sm bg-danger text-white rounded-lg hover:bg-danger-hover transition-colors">
+              <button
+                onClick={handleDeleteCaptchaKey}
+                className="px-4 py-1.5 text-sm bg-danger text-white rounded-lg hover:bg-danger-hover transition-colors"
+              >
                 {t('common.delete')}
               </button>
             </div>
@@ -746,15 +862,29 @@ const Settings: React.FC = () => {
       )}
 
       {deleteProxyProviderId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setDeleteProxyProviderId(null)}>
-          <div className="bg-bg-card rounded-xl shadow-xl w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setDeleteProxyProviderId(null)}
+        >
+          <div
+            className="bg-bg-card rounded-xl shadow-xl w-full max-w-sm p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 className="text-lg font-semibold text-text-primary mb-2">{t('common.delete')}</h2>
-            <p className="text-sm text-text-secondary mb-6">{t('settings.confirmDeleteProxyProvider')}</p>
+            <p className="text-sm text-text-secondary mb-6">
+              {t('settings.confirmDeleteProxyProvider')}
+            </p>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setDeleteProxyProviderId(null)} className="px-4 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover transition-colors">
+              <button
+                onClick={() => setDeleteProxyProviderId(null)}
+                className="px-4 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover transition-colors"
+              >
                 {t('common.cancel')}
               </button>
-              <button onClick={handleDeleteProxyProvider} className="px-4 py-1.5 text-sm bg-danger text-white rounded-lg hover:bg-danger-hover transition-colors">
+              <button
+                onClick={handleDeleteProxyProvider}
+                className="px-4 py-1.5 text-sm bg-danger text-white rounded-lg hover:bg-danger-hover transition-colors"
+              >
                 {t('common.delete')}
               </button>
             </div>
@@ -763,15 +893,29 @@ const Settings: React.FC = () => {
       )}
 
       {deleteSettingKey && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setDeleteSettingKey(null)}>
-          <div className="bg-bg-card rounded-xl shadow-xl w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold text-text-primary mb-2">{t('common.deleteSetting')}</h2>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setDeleteSettingKey(null)}
+        >
+          <div
+            className="bg-bg-card rounded-xl shadow-xl w-full max-w-sm p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-lg font-semibold text-text-primary mb-2">
+              {t('common.deleteSetting')}
+            </h2>
             <p className="text-sm text-text-secondary mb-6">{t('common.confirmDeleteSetting')}</p>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setDeleteSettingKey(null)} className="px-4 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover transition-colors">
+              <button
+                onClick={() => setDeleteSettingKey(null)}
+                className="px-4 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover transition-colors"
+              >
                 {t('common.cancel')}
               </button>
-              <button onClick={handleDeleteSetting} className="px-4 py-1.5 text-sm bg-danger text-white rounded-lg hover:bg-danger-hover transition-colors">
+              <button
+                onClick={handleDeleteSetting}
+                className="px-4 py-1.5 text-sm bg-danger text-white rounded-lg hover:bg-danger-hover transition-colors"
+              >
                 {t('common.delete')}
               </button>
             </div>

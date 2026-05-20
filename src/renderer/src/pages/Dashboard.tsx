@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { 
-  Wallet, 
-  User, 
-  Globe, 
-  Zap, 
-  RefreshCw, 
-  Activity, 
-  CheckCircle, 
-  XCircle, 
-  Plus, 
-  ArrowRight, 
+import {
+  Wallet,
+  User,
+  Globe,
+  Zap,
+  RefreshCw,
+  Activity,
+  CheckCircle,
+  XCircle,
+  Plus,
+  ArrowRight,
   Clock,
   TrendingUp,
   Layers,
@@ -26,14 +26,20 @@ const statusIcons: Record<string, React.ReactNode> = {
   error: <XCircle className="w-4 h-4" />,
   idle: <Clock className="w-4 h-4" />,
   paused: <Clock className="w-4 h-4" />,
-  stopped: <XCircle className="w-4 h-4" />,
+  stopped: <XCircle className="w-4 h-4" />
 }
 
-function StatCard({ icon: Icon, label, value, color, trend }: { 
-  icon: React.ElementType; 
-  label: string; 
-  value: number | string; 
-  color: string;
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  color,
+  trend
+}: {
+  icon: React.ElementType
+  label: string
+  value: number | string
+  color: string
   trend?: { value: number; isUp: boolean }
 }) {
   return (
@@ -43,7 +49,9 @@ function StatCard({ icon: Icon, label, value, color, trend }: {
           <Icon className="w-6 h-6" />
         </div>
         {trend && (
-          <div className={`flex items-center gap-1 text-sm ${trend.isUp ? 'text-success' : 'text-danger'}`}>
+          <div
+            className={`flex items-center gap-1 text-sm ${trend.isUp ? 'text-success' : 'text-danger'}`}
+          >
             <TrendingUp className={`w-4 h-4 ${trend.isUp ? '' : 'rotate-180'}`} />
             <span>{trend.value}%</span>
           </div>
@@ -51,7 +59,9 @@ function StatCard({ icon: Icon, label, value, color, trend }: {
       </div>
       <div className="mt-4">
         <p className="text-text-muted text-sm">{label}</p>
-        <p className="text-2xl font-bold mt-1 text-text-primary">{typeof value === 'number' ? value.toLocaleString() : value}</p>
+        <p className="text-2xl font-bold mt-1 text-text-primary">
+          {typeof value === 'number' ? value.toLocaleString() : value}
+        </p>
       </div>
     </div>
   )
@@ -59,16 +69,26 @@ function StatCard({ icon: Icon, label, value, color, trend }: {
 
 function StatusBadge({ status, label }: { status: string; label: string }) {
   const statusClass = `bg-status-${status}-bg text-status-${status}-text border-status-${status}-text/20`
-  
+
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${statusClass} border`}>
+    <span
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${statusClass} border`}
+    >
       {statusIcons[status] || statusIcons.idle}
       {label}
     </span>
   )
 }
 
-function QuickActionButton({ icon: Icon, label, onClick }: { icon: React.ElementType; label: string; onClick: () => void }) {
+function QuickActionButton({
+  icon: Icon,
+  label,
+  onClick
+}: {
+  icon: React.ElementType
+  label: string
+  onClick: () => void
+}) {
   return (
     <button
       onClick={onClick}
@@ -87,47 +107,55 @@ function AirdropCard({ airdrop }: { airdrop: AirdropProject }) {
     ongoing: '进行中',
     completed: '已完成',
     cancelled: '已取消',
-    claimed: '已领取',
+    claimed: '已领取'
   }
-  
+
   const typeLabels: Record<string, string> = {
     testnet: '测试网',
     mainnet: '主网',
     galxe: 'Galxe',
     quest: '任务',
     social: '社交',
-    other: '其他',
+    other: '其他'
   }
-  
+
   const statusColors: Record<string, string> = {
     ongoing: 'bg-primary',
     completed: 'bg-success',
     cancelled: 'bg-danger',
-    claimed: 'bg-purple-500',
+    claimed: 'bg-purple-500'
   }
-  
+
   const typeColors: Record<string, string> = {
     testnet: 'bg-cyan-500',
     mainnet: 'bg-primary',
     galxe: 'bg-warning',
     quest: 'bg-purple-500',
     social: 'bg-pink-500',
-    other: 'bg-bg-tertiary0',
+    other: 'bg-bg-tertiary0'
   }
-  
+
   return (
     <div className="bg-bg-card rounded-xl p-5 border border-border-light hover:border-primary/30 transition-all duration-200">
       <div className="flex items-start justify-between mb-3">
         <h4 className="font-semibold text-text-primary">{airdrop.name}</h4>
-        <span className={`w-2.5 h-2.5 rounded-full ${statusColors[airdrop.status] || 'bg-bg-tertiary0'}`} />
+        <span
+          className={`w-2.5 h-2.5 rounded-full ${statusColors[airdrop.status] || 'bg-bg-tertiary0'}`}
+        />
       </div>
       <p className="text-sm text-text-secondary mb-4 line-clamp-2">{airdrop.description}</p>
       <div className="flex flex-wrap gap-2">
-        <span className="px-2 py-1 rounded-md text-xs bg-primary/20 text-primary">{airdrop.chain}</span>
-        <span className={`px-2 py-1 rounded-md text-xs ${statusColors[airdrop.status] || 'bg-bg-tertiary0'}/20 text-white/80`}>
+        <span className="px-2 py-1 rounded-md text-xs bg-primary/20 text-primary">
+          {airdrop.chain}
+        </span>
+        <span
+          className={`px-2 py-1 rounded-md text-xs ${statusColors[airdrop.status] || 'bg-bg-tertiary0'}/20 text-white/80`}
+        >
           {statusLabels[airdrop.status] || airdrop.status}
         </span>
-        <span className={`px-2 py-1 rounded-md text-xs ${typeColors[airdrop.projectType] || 'bg-bg-tertiary0'}/20 text-white/80`}>
+        <span
+          className={`px-2 py-1 rounded-md text-xs ${typeColors[airdrop.projectType] || 'bg-bg-tertiary0'}/20 text-white/80`}
+        >
           {typeLabels[airdrop.projectType] || airdrop.projectType}
         </span>
       </div>
@@ -138,7 +166,7 @@ function AirdropCard({ airdrop }: { airdrop: AirdropProject }) {
 export default function Dashboard() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  
+
   const [stats, setStats] = useState<StatsAggregate | null>(null)
   const [airdrops, setAirdrops] = useState<AirdropProject[]>([])
   const [loading, setLoading] = useState(true)
@@ -153,7 +181,7 @@ export default function Dashboard() {
       const [, statsData, airdropsData] = await Promise.all([
         appApi.getInfo(),
         appApi.getStats(),
-        airdropApi.list(1, 4, ''),
+        airdropApi.list(1, 4, '')
       ])
 
       setStats(statsData)
@@ -193,7 +221,7 @@ export default function Dashboard() {
     )
   }
 
-  const ongoingAirdrops = airdrops.filter(a => a.status === 'ongoing')
+  const ongoingAirdrops = airdrops.filter((a) => a.status === 'ongoing')
 
   return (
     <div className="p-6 space-y-6 animate-fade-in">
@@ -245,17 +273,14 @@ export default function Dashboard() {
             <Layers className="w-5 h-5 text-primary" />
             {t('dashboard.taskStatusDistribution')}
           </h2>
-          
+
           {stats?.taskStatusDistribution ? (
             <div className="space-y-3">
               {Object.entries(stats.taskStatusDistribution).map(([status, count]) => (
                 <div key={status} className="flex items-center gap-3">
-                  <StatusBadge 
-                    status={status} 
-                    label={t(`dashboard.status.${status}`) || status} 
-                  />
+                  <StatusBadge status={status} label={t(`dashboard.status.${status}`) || status} />
                   <div className="flex-1 h-2 bg-bg-tertiary rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className={`h-full bg-status-${status}-bg`}
                       style={{ width: `${(count / (stats.taskTotal || 1)) * 100}%` }}
                     />
@@ -305,7 +330,7 @@ export default function Dashboard() {
             <Activity className="w-5 h-5 text-primary" />
             {t('dashboard.airdropOverview')}
           </h2>
-          <button 
+          <button
             onClick={() => navigate('/airdrops')}
             className="flex items-center gap-1 text-sm text-primary hover:text-primary-hover transition-colors"
           >
@@ -313,10 +338,10 @@ export default function Dashboard() {
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
-        
+
         {ongoingAirdrops.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {ongoingAirdrops.map(airdrop => (
+            {ongoingAirdrops.map((airdrop) => (
               <AirdropCard key={airdrop.id} airdrop={airdrop} />
             ))}
           </div>
@@ -330,7 +355,9 @@ export default function Dashboard() {
 
       {stats?.recentTaskResults && stats.recentTaskResults.length > 0 && (
         <div className="bg-bg-card rounded-xl p-6 border border-border-light">
-          <h2 className="text-lg font-semibold mb-4 text-text-primary">{t('dashboard.recentActivity')}</h2>
+          <h2 className="text-lg font-semibold mb-4 text-text-primary">
+            {t('dashboard.recentActivity')}
+          </h2>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -354,17 +381,17 @@ export default function Dashboard() {
               </thead>
               <tbody>
                 {stats.recentTaskResults.map((task, index) => (
-                  <tr 
-                    key={index} 
+                  <tr
+                    key={index}
                     className="border-b border-border-light/50 hover:bg-bg-card-hover transition-colors"
                   >
                     <td className="py-3 px-4 text-sm text-text-primary max-w-xs truncate">
                       {task.scriptFolder}
                     </td>
                     <td className="py-3 px-4">
-                      <StatusBadge 
-                        status={task.status} 
-                        label={t(`dashboard.status.${task.status}`) || task.status} 
+                      <StatusBadge
+                        status={task.status}
+                        label={t(`dashboard.status.${task.status}`) || task.status}
                       />
                     </td>
                     <td className="py-3 px-4 text-sm text-text-secondary">

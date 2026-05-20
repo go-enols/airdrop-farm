@@ -16,9 +16,10 @@ const Pagination: React.FC<PaginationProps> = ({
   onPrev,
   onNext,
   totalCountText,
-  pageText,
+  pageText
 }) => {
-  const btnClass = 'p-2 rounded-lg border border-border-light hover:bg-bg-card-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors'
+  const btnClass =
+    'p-2 rounded-lg border border-border-light hover:bg-bg-card-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors'
   const textClass = 'text-sm text-text-muted min-w-[80px] text-center'
 
   if (totalCountText) {
@@ -29,9 +30,7 @@ const Pagination: React.FC<PaginationProps> = ({
           <button onClick={onPrev} disabled={page <= 1} className={btnClass}>
             <ChevronLeft size={16} />
           </button>
-          <span className={textClass}>
-            {pageText || `${page} / ${totalPages}`}
-          </span>
+          <span className={textClass}>{pageText || `${page} / ${totalPages}`}</span>
           <button onClick={onNext} disabled={page >= totalPages} className={btnClass}>
             <ChevronRight size={16} />
           </button>
@@ -45,9 +44,7 @@ const Pagination: React.FC<PaginationProps> = ({
       <button onClick={onPrev} disabled={page <= 1} className={btnClass}>
         <ChevronLeft size={16} />
       </button>
-      <span className={textClass}>
-        {pageText || `${page} / ${totalPages}`}
-      </span>
+      <span className={textClass}>{pageText || `${page} / ${totalPages}`}</span>
       <button onClick={onNext} disabled={page >= totalPages} className={btnClass}>
         <ChevronRight size={16} />
       </button>

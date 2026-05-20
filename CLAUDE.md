@@ -5,16 +5,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ### Install dependencies
+
 ```bash
 npm install
 ```
 
 ### Development
+
 ```bash
 npm run dev
 ```
 
 ### Build
+
 ```bash
 npm run build              # Build all targets
 npm run build:win         # Build for Windows
@@ -24,6 +27,7 @@ npm run build:unpack      # Build unpacked directory
 ```
 
 ### Type checking
+
 ```bash
 npm run typecheck                    # Check both main and renderer
 npm run typecheck:node               # Check main process only
@@ -31,12 +35,14 @@ npm run typecheck:web                # Check renderer only
 ```
 
 ### Linting and formatting
+
 ```bash
 npm run lint                         # Run ESLint
 npm run format                       # Run Prettier write
 ```
 
 ### Testing
+
 ```bash
 npm run test                         # Run all tests
 npm run test:watch                   # Watch mode
@@ -44,6 +50,7 @@ npm run test:coverage                # Coverage report
 ```
 
 ### Rebuild native modules (better-sqlite3)
+
 ```bash
 npm run rebuild:electron            # Rebuild for Electron
 npm run rebuild:node                # Rebuild for Node
@@ -52,7 +59,9 @@ npm run rebuild:node                # Rebuild for Node
 ## Architecture
 
 ### Overview
+
 Airdrop Farm is a full-stack desktop application for managing crypto airdrop operations. Built with:
+
 - **Electron** - Desktop shell
 - **React 19 + TypeScript** - Frontend UI
 - **better-sqlite3** - Local data persistence
@@ -89,16 +98,19 @@ src/
 ### Communication Architecture
 
 **Dual transport with automatic fallback**:
+
 1. **IPC (primary)** — `window.electronAPI.invoke(channel, ...args)` via Electron context bridge
 2. **HTTP (fallback)** — `POST http://127.0.0.1:PORT/api/call {channel, args}`
 
 Both transports share the same `handlerMap` in `src/main/ipc/index.ts`. The `executeHandler()` function is the single entry point for all API calls regardless of transport.
 
 **Transport selection logic** (in `src/renderer/src/transport.ts`):
+
 - Force mode: URL param `?transport=http` or `localStorage['app-transport']`
 - Auto mode: Try IPC first → fallback to HTTP → remember working transport
 
 **Adding a new API endpoint**:
+
 1. Add handler in `src/main/ipc/index.ts` via `register('channel:name', handler)`
 2. Add typed method in `src/renderer/src/api.ts` using `call<T>('channel:name', [args])`
 3. Both IPC and HTTP automatically support the new endpoint
@@ -108,6 +120,7 @@ Both transports share the same `handlerMap` in `src/main/ipc/index.ts`. The `exe
 SQLite via `better-sqlite3` stored at `userData/airdrop-farm.db`.
 
 **Tables**:
+
 - `wallets` — EVM/Solana/SUI/Bitcoin wallets (supports HD derivation)
 - `accounts` — Created accounts from templates
 - `proxies` — Configured proxies
@@ -125,6 +138,7 @@ SQLite via `better-sqlite3` stored at `userData/airdrop-farm.db`.
 All JSON fields are automatically serialized/deserialized by `StoreService`. Database operations use synchronous better-sqlite3 API, no async/await needed.
 
 ### Supported Blockchains
+
 - EVM (via ethers.js)
 - Solana (via @solana/web3.js)
 - SUI (via @mysten/sui.js)

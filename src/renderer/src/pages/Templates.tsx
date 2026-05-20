@@ -30,7 +30,9 @@ const Templates: React.FC = () => {
       setDebouncedSearch(search)
       setPage(1)
     }, 300)
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
   }, [search])
 
   const fetchData = useCallback(async () => {
@@ -173,7 +175,9 @@ const Templates: React.FC = () => {
       </div>
 
       {error && (
-        <div className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-4 py-2">{error}</div>
+        <div className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-4 py-2">
+          {error}
+        </div>
       )}
 
       {loading ? (
@@ -191,17 +195,32 @@ const Templates: React.FC = () => {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-bg-tertiary">
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('templates.name')}</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('templates.type')}</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('templates.version')}</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('templates.isLocal')}</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">{t('templates.updatedAt')}</th>
-                  <th className="text-right px-4 py-3 font-medium text-gray-600">{t('templates.actions')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">
+                    {t('templates.name')}
+                  </th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">
+                    {t('templates.type')}
+                  </th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">
+                    {t('templates.version')}
+                  </th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">
+                    {t('templates.isLocal')}
+                  </th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">
+                    {t('templates.updatedAt')}
+                  </th>
+                  <th className="text-right px-4 py-3 font-medium text-gray-600">
+                    {t('templates.actions')}
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {paged.map((item) => (
-                  <tr key={item.id} className="border-b border-gray-50 hover:bg-bg-tertiary transition-colors">
+                  <tr
+                    key={item.id}
+                    className="border-b border-gray-50 hover:bg-bg-tertiary transition-colors"
+                  >
                     <td className="px-4 py-3 font-medium">{item.name}</td>
                     <td className="px-4 py-3 text-gray-600">{item.type}</td>
                     <td className="px-4 py-3 font-mono text-xs">{item.version}</td>
@@ -216,7 +235,9 @@ const Templates: React.FC = () => {
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-text-muted text-xs">{new Date(item.updatedAt).toLocaleString()}</td>
+                    <td className="px-4 py-3 text-text-muted text-xs">
+                      {new Date(item.updatedAt).toLocaleString()}
+                    </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button
@@ -273,7 +294,9 @@ const Templates: React.FC = () => {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('templates.name')}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('templates.name')}
+            </label>
             <input
               type="text"
               value={form.name}
@@ -282,7 +305,9 @@ const Templates: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('templates.type')}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('templates.type')}
+            </label>
             <input
               type="text"
               value={form.type}
@@ -291,7 +316,9 @@ const Templates: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('templates.version')}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('templates.version')}
+            </label>
             <input
               type="text"
               value={form.version}
@@ -300,7 +327,9 @@ const Templates: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('templates.schema')} (JSON)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('templates.schema')} (JSON)
+            </label>
             <textarea
               value={form.schema}
               onChange={(e) => setForm((f) => ({ ...f, schema: e.target.value }))}
@@ -309,9 +338,7 @@ const Templates: React.FC = () => {
             />
           </div>
         </div>
-        {error && (
-          <div className="text-red-600 text-sm mt-3">{error}</div>
-        )}
+        {error && <div className="text-red-600 text-sm mt-3">{error}</div>}
         <div className="flex justify-end gap-3 mt-6">
           <button
             onClick={() => setShowCreate(false)}
@@ -336,7 +363,9 @@ const Templates: React.FC = () => {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('templates.name')}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('templates.name')}
+            </label>
             <input
               type="text"
               value={editForm.name}
@@ -345,7 +374,9 @@ const Templates: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('templates.type')}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('templates.type')}
+            </label>
             <input
               type="text"
               value={editForm.type}
@@ -354,7 +385,9 @@ const Templates: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('templates.version')}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('templates.version')}
+            </label>
             <input
               type="text"
               value={editForm.version}
@@ -363,7 +396,9 @@ const Templates: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('templates.schema')} (JSON)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('templates.schema')} (JSON)
+            </label>
             <textarea
               value={editForm.schema}
               onChange={(e) => setEditForm((f) => ({ ...f, schema: e.target.value }))}
@@ -372,9 +407,7 @@ const Templates: React.FC = () => {
             />
           </div>
         </div>
-        {editError && (
-          <div className="text-red-600 text-sm mt-3">{editError}</div>
-        )}
+        {editError && <div className="text-red-600 text-sm mt-3">{editError}</div>}
         <div className="flex justify-end gap-3 mt-6">
           <button
             onClick={() => setEditingItem(null)}
@@ -384,7 +417,9 @@ const Templates: React.FC = () => {
           </button>
           <button
             onClick={handleEdit}
-            disabled={saving || !editForm.name.trim() || !editForm.type.trim() || !editForm.version.trim()}
+            disabled={
+              saving || !editForm.name.trim() || !editForm.type.trim() || !editForm.version.trim()
+            }
             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {t('common.save')}

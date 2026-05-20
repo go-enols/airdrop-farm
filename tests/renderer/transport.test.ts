@@ -2,11 +2,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
 describe('transport', () => {
-  let call: typeof import('../../src/renderer/src/transport')['call']
-  let checkHTTPHealth: typeof import('../../src/renderer/src/transport')['checkHTTPHealth']
-  let checkIPCHealth: typeof import('../../src/renderer/src/transport')['checkIPCHealth']
-  let setActiveTransport: typeof import('../../src/renderer/src/transport')['setActiveTransport']
-  let getActiveTransport: typeof import('../../src/renderer/src/transport')['getActiveTransport']
+  let call: (typeof import('../../src/renderer/src/transport'))['call']
+  let checkHTTPHealth: (typeof import('../../src/renderer/src/transport'))['checkHTTPHealth']
+  let checkIPCHealth: (typeof import('../../src/renderer/src/transport'))['checkIPCHealth']
+  let setActiveTransport: (typeof import('../../src/renderer/src/transport'))['setActiveTransport']
+  let getActiveTransport: (typeof import('../../src/renderer/src/transport'))['getActiveTransport']
 
   beforeEach(async () => {
     vi.resetModules()
@@ -34,7 +34,7 @@ describe('transport', () => {
       ;(window as any).electronAPI = undefined
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ data: 'test' }),
+        json: () => Promise.resolve({ data: 'test' })
       })
       vi.stubGlobal('fetch', mockFetch)
       const result = await call<string>('test:channel')
@@ -49,7 +49,7 @@ describe('transport', () => {
       localStorage.setItem('app-transport', 'http')
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: () => Promise.resolve({ data: 'http-data' }),
+        json: () => Promise.resolve({ data: 'http-data' })
       })
       vi.stubGlobal('fetch', mockFetch)
       ;(window as any).electronAPI = { invoke: vi.fn().mockResolvedValue({ data: 'ipc-data' }) }
@@ -77,7 +77,7 @@ describe('transport', () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 500,
-        json: () => Promise.resolve({ error: { message: 'HTTP error' } }),
+        json: () => Promise.resolve({ error: { message: 'HTTP error' } })
       })
       vi.stubGlobal('fetch', mockFetch)
       await expect(call('test:channel')).rejects.toThrow('IPC error')

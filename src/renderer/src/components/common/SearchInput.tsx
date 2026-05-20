@@ -14,7 +14,7 @@ const SearchInput: React.FC<SearchInputProps> = ({
   onChange,
   placeholder,
   className = '',
-  inputClassName = 'pl-9 pr-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary w-64 bg-bg-card',
+  inputClassName = 'pl-9 pr-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary w-64 bg-bg-card'
 }) => {
   return (
     <div className={`relative ${className}`}>

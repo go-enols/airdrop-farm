@@ -41,7 +41,10 @@ export class HttpApiServer {
 
   stop(): Promise<void> {
     return new Promise((resolve) => {
-      if (!this.server) { resolve(); return }
+      if (!this.server) {
+        resolve()
+        return
+      }
       this.server.close(() => {
         logger.info('HTTP API server stopped')
         resolve()
@@ -84,7 +87,11 @@ export class HttpApiServer {
 
         if (!channel || typeof channel !== 'string') {
           res.writeHead(400)
-          res.end(JSON.stringify({ error: { message: 'Missing or invalid channel', code: 'VALIDATION_ERROR' } }))
+          res.end(
+            JSON.stringify({
+              error: { message: 'Missing or invalid channel', code: 'VALIDATION_ERROR' }
+            })
+          )
           return
         }
 

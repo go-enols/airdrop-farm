@@ -49,13 +49,15 @@ describe('IPC Handler Integration', () => {
   })
 
   it('wallet:create + wallet:get creates and retrieves a wallet', async () => {
-    const createResult = await executeHandler('wallet:create', [{
-      address: '0x1234567890abcdef',
-      privateKey: '0xpk',
-      mnemonic: null,
-      walletType: 'evm',
-      labels: ['test']
-    }])
+    const createResult = await executeHandler('wallet:create', [
+      {
+        address: '0x1234567890abcdef',
+        privateKey: '0xpk',
+        mnemonic: null,
+        walletType: 'evm',
+        labels: ['test']
+      }
+    ])
     expect(createResult.error).toBeUndefined()
     const created = createResult.data as { id: string }
     expect(created.id).toBeDefined()
@@ -66,13 +68,15 @@ describe('IPC Handler Integration', () => {
   })
 
   it('wallet:delete removes the wallet', async () => {
-    const createResult = await executeHandler('wallet:create', [{
-      address: '0xabc',
-      privateKey: null,
-      mnemonic: null,
-      walletType: 'evm',
-      labels: []
-    }])
+    const createResult = await executeHandler('wallet:create', [
+      {
+        address: '0xabc',
+        privateKey: null,
+        mnemonic: null,
+        walletType: 'evm',
+        labels: []
+      }
+    ])
     const id = (createResult.data as { id: string }).id
 
     await executeHandler('wallet:delete', [id])

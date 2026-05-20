@@ -1,99 +1,104 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme {
   --color-primary: #3b82f6;
   --color-primary-hover: #2563eb;
   --color-primary-light: #dbeafe;
-  
+
   --color-success: #22c55e;
   --color-success-hover: #16a34a;
   --color-success-light: #dcfce7;
-  
+
   --color-warning: #f59e0b;
   --color-warning-hover: #d97706;
   --color-warning-light: #fef3c7;
-  
+
   --color-danger: #ef4444;
   --color-danger-hover: #dc2626;
   --color-danger-light: #fee2e2;
-  
+
   --color-info: #0ea5e9;
   --color-info-hover: #0284c7;
   --color-info-light: #e0f2fe;
-  
+
   --color-bg-page: #f9fafb;
   --color-bg-card: #ffffff;
   --color-bg-card-hover: #f9fafb;
   --color-bg-tertiary: #f3f4f6;
-  
+
   --color-border-light: #e5e7eb;
   --color-border-hover: #d1d5db;
-  
+
   --color-text-primary: #111827;
   --color-text-secondary: #4b5563;
   --color-text-muted: #6b7280;
-  
+
   --color-status-running-bg: #dbeafe;
   --color-status-running-text: #1d4ed8;
-  
+
   --color-status-complete-bg: #dcfce7;
   --color-status-complete-text: #15803d;
-  
+
   --color-status-error-bg: #fee2e2;
   --color-status-error-text: #b91c1c;
-  
+
   --color-status-idle-bg: #f3f4f6;
   --color-status-idle-text: #6b7280;
-  
+
   --color-status-paused-bg: #fef3c7;
   --color-status-paused-text: #b45309;
-  
+
   --color-status-stopped-bg: #ffedd5;
   --color-status-stopped-text: #92400e;
-  
+
   --color-status-active-bg: #dcfce7;
   --color-status-active-text: #15803d;
-  
+
   --color-status-inactive-bg: #f3f4f6;
   --color-status-inactive-text: #6b7280;
-  
+
   --color-status-expired-bg: #fee2e2;
   --color-status-expired-text: #b91c1c;
-  
+
   --color-wallet-evm-bg: #dbeafe;
   --color-wallet-evm-text: #1d4ed8;
-  
+
   --color-wallet-solana-bg: #e9d5ff;
   --color-wallet-solana-text: #7e22ce;
-  
+
   --color-wallet-sui-bg: #cffafe;
   --color-wallet-sui-text: #0e7490;
-  
+
   --color-orange: #f97316;
   --color-orange-light: #ffedd5;
-  
+
   --color-border-input: #d1d5db;
   --color-border-input-dark: #4b5563;
-  
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  
+
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
   --animate-fade-in: fade-in 0.2s ease-out;
 }
 
 @keyframes fade-in {
-  0% { opacity: 0; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 @layer base {
   * {
     box-sizing: border-box;
   }
-  
+
   html {
     scroll-behavior: smooth;
   }
-  
+
   body {
     font-family: var(--font-sans);
     background-color: var(--color-bg-page);
@@ -104,7 +109,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-  
+
   #root {
     min-height: 100vh;
   }
@@ -114,18 +119,18 @@
   .scrollbar-thin {
     scrollbar-width: thin;
   }
-  
+
   .scrollbar-thumb-gray {
     scrollbar-color: var(--color-border-light) transparent;
   }
-  
+
   .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  
+
   .select-all {
     user-select: all;
   }
@@ -137,50 +142,50 @@
     --color-bg-card: #111827;
     --color-bg-card-hover: #1f2937;
     --color-bg-tertiary: #1f2937;
-    
+
     --color-border-light: #374151;
     --color-border-hover: #4b5563;
-    
+
     --color-text-primary: #f9fafb;
     --color-text-secondary: #d1d5db;
     --color-text-muted: #9ca3af;
-    
+
     --color-status-running-bg: #1e3a8a;
     --color-status-running-text: #60a5fa;
-    
+
     --color-status-complete-bg: #14532d;
     --color-status-complete-text: #4ade80;
-    
+
     --color-status-error-bg: #7f1d1d;
     --color-status-error-text: #f87171;
-    
+
     --color-status-idle-bg: #1f2937;
     --color-status-idle-text: #9ca3af;
-    
+
     --color-status-paused-bg: #78350f;
     --color-status-paused-text: #fcd34d;
-    
+
     --color-status-stopped-bg: #92400e;
     --color-status-stopped-text: #fb923c;
-    
+
     --color-status-active-bg: #14532d;
     --color-status-active-text: #4ade80;
-    
+
     --color-status-inactive-bg: #1f2937;
     --color-status-inactive-text: #9ca3af;
-    
+
     --color-status-expired-bg: #7f1d1d;
     --color-status-expired-text: #f87171;
-    
+
     --color-wallet-evm-bg: #1e3a8a;
     --color-wallet-evm-text: #60a5fa;
-    
+
     --color-wallet-solana-bg: #581c87;
     --color-wallet-solana-text: #c084fc;
-    
+
     --color-wallet-sui-bg: #164e63;
     --color-wallet-sui-text: #22d3ee;
-    
+
     scrollbar-color: #374151 transparent;
   }
 }
@@ -190,49 +195,49 @@
   --color-bg-card: #111827;
   --color-bg-card-hover: #1f2937;
   --color-bg-tertiary: #1f2937;
-  
+
   --color-border-light: #374151;
   --color-border-hover: #4b5563;
-  
+
   --color-text-primary: #f9fafb;
   --color-text-secondary: #d1d5db;
   --color-text-muted: #9ca3af;
-  
+
   --color-status-running-bg: #1e3a8a;
   --color-status-running-text: #60a5fa;
-  
+
   --color-status-complete-bg: #14532d;
   --color-status-complete-text: #4ade80;
-  
+
   --color-status-error-bg: #7f1d1d;
   --color-status-error-text: #f87171;
-  
+
   --color-status-idle-bg: #1f2937;
   --color-status-idle-text: #9ca3af;
-  
+
   --color-status-paused-bg: #78350f;
   --color-status-paused-text: #fcd34d;
-  
+
   --color-status-stopped-bg: #92400e;
   --color-status-stopped-text: #fb923c;
-  
+
   --color-status-active-bg: #14532d;
   --color-status-active-text: #4ade80;
-  
+
   --color-status-inactive-bg: #1f2937;
   --color-status-inactive-text: #9ca3af;
-  
+
   --color-status-expired-bg: #7f1d1d;
   --color-status-expired-text: #f87171;
-  
+
   --color-wallet-evm-bg: #1e3a8a;
   --color-wallet-evm-text: #60a5fa;
-  
+
   --color-wallet-solana-bg: #581c87;
   --color-wallet-solana-text: #c084fc;
-  
+
   --color-wallet-sui-bg: #164e63;
   --color-wallet-sui-text: #22d3ee;
-  
+
   scrollbar-color: #374151 transparent;
 }

@@ -10,11 +10,19 @@ export class WalletRepository extends BaseRepository<Wallet> {
   }
 
   prepareStatements(): void {
-    this.setStmt('wallet.insert', this.db.prepare('INSERT INTO wallets (id, address, private_key, mnemonic, wallet_type, labels, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'))
+    this.setStmt(
+      'wallet.insert',
+      this.db.prepare(
+        'INSERT INTO wallets (id, address, private_key, mnemonic, wallet_type, labels, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      )
+    )
     this.setStmt('wallet.getById', this.db.prepare('SELECT * FROM wallets WHERE id = ?'))
     this.setStmt('wallet.delete', this.db.prepare('DELETE FROM wallets WHERE id = ?'))
     this.setStmt('wallet.count', this.db.prepare('SELECT COUNT(*) as cnt FROM wallets'))
-    this.setStmt('wallet.countByType', this.db.prepare('SELECT wallet_type, COUNT(*) as cnt FROM wallets GROUP BY wallet_type'))
+    this.setStmt(
+      'wallet.countByType',
+      this.db.prepare('SELECT wallet_type, COUNT(*) as cnt FROM wallets GROUP BY wallet_type')
+    )
   }
 
   private rowToWallet(row: Record<string, unknown>): Wallet {
@@ -30,7 +38,7 @@ export class WalletRepository extends BaseRepository<Wallet> {
   }
 
   count(): number {
-    return ((this.stmt('wallet.count').get()) as Record<string, number>).cnt
+    return (this.stmt('wallet.count').get() as Record<string, number>).cnt
   }
 
   countByType(): Record<string, number> {
@@ -45,7 +53,15 @@ export class WalletRepository extends BaseRepository<Wallet> {
   createWallet(data: Omit<Wallet, 'id' | 'createdAt'>): Wallet {
     const id = uuidv4()
     const createdAt = this.nowISO()
-    this.stmt('wallet.insert').run(id, data.address, data.privateKey ?? null, data.mnemonic ?? null, data.walletType, this.toJson(data.labels), createdAt)
+    this.stmt('wallet.insert').run(
+      id,
+      data.address,
+      data.privateKey ?? null,
+      data.mnemonic ?? null,
+      data.walletType,
+      this.toJson(data.labels),
+      createdAt
+    )
     return this.getWallet(id)!
   }
 
@@ -56,12 +72,21 @@ export class WalletRepository extends BaseRepository<Wallet> {
 
   listWallets(page = 1, pageSize = 20, search?: string): ListResponse<Wallet> {
     if (search) {
-      const countStmt = this.db.prepare("SELECT COUNT(*) as cnt FROM wallets WHERE address LIKE ? OR wallet_type LIKE ?")
-      const listStmt = this.db.prepare("SELECT * FROM wallets WHERE address LIKE ? OR wallet_type LIKE ? ORDER BY created_at DESC LIMIT ? OFFSET ?")
-      return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToWallet(r), [`%${search}%`, `%${search}%`])
+      const countStmt = this.db.prepare(
+        'SELECT COUNT(*) as cnt FROM wallets WHERE address LIKE ? OR wallet_type LIKE ?'
+      )
+      const listStmt = this.db.prepare(
+        'SELECT * FROM wallets WHERE address LIKE ? OR wallet_type LIKE ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
+      )
+      return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToWallet(r), [
+        `%${search}%`,
+        `%${search}%`
+      ])
     }
     const countStmt = this.stmt('wallet.count')
-    const listStmt = this.db.prepare("SELECT * FROM wallets ORDER BY created_at DESC LIMIT ? OFFSET ?")
+    const listStmt = this.db.prepare(
+      'SELECT * FROM wallets ORDER BY created_at DESC LIMIT ? OFFSET ?'
+    )
     return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToWallet(r))
   }
 
@@ -69,9 +94,18 @@ export class WalletRepository extends BaseRepository<Wallet> {
     const existing = this.getWallet(id)
     if (!existing) return null
     const updated = { ...existing, ...data }
-    this.db.prepare('UPDATE wallets SET address=?, private_key=?, mnemonic=?, wallet_type=?, labels=? WHERE id=?').run(
-      updated.address, updated.privateKey ?? null, updated.mnemonic ?? null, updated.walletType, this.toJson(updated.labels), id
-    )
+    this.db
+      .prepare(
+        'UPDATE wallets SET address=?, private_key=?, mnemonic=?, wallet_type=?, labels=? WHERE id=?'
+      )
+      .run(
+        updated.address,
+        updated.privateKey ?? null,
+        updated.mnemonic ?? null,
+        updated.walletType,
+        this.toJson(updated.labels),
+        id
+      )
     return this.getWallet(id)
   }
 
@@ -87,7 +121,15 @@ export class WalletRepository extends BaseRepository<Wallet> {
       for (const item of data) {
         const id = uuidv4()
         const createdAt = this.nowISO()
-        insert.run(id, item.address, item.privateKey ?? null, item.mnemonic ?? null, item.walletType, this.toJson(item.labels), createdAt)
+        insert.run(
+          id,
+          item.address,
+          item.privateKey ?? null,
+          item.mnemonic ?? null,
+          item.walletType,
+          this.toJson(item.labels),
+          createdAt
+        )
         count++
       }
       return count

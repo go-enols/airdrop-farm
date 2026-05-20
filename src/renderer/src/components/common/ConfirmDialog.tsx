@@ -22,7 +22,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   confirmText = 'Delete',
   cancelText = 'Cancel',
   danger = true,
-  loading = false,
+  loading = false
 }) => {
   return (
     <Modal open={open} onClose={onClose} title={title} maxWidth="max-w-sm">

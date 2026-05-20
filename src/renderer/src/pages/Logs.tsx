@@ -12,7 +12,7 @@ const levelColor: Record<string, string> = {
   debug: 'bg-gray-100 text-gray-600 dark:bg-bg-tertiary dark:text-gray-400',
   info: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
   warn: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300',
-  error: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300',
+  error: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
 }
 
 const LEVELS = ['debug', 'info', 'warn', 'error'] as const
@@ -21,7 +21,7 @@ const levelLabelKey: Record<string, string> = {
   debug: 'logs.levelDebug',
   info: 'logs.levelInfo',
   warn: 'logs.levelWarn',
-  error: 'logs.levelError',
+  error: 'logs.levelError'
 }
 
 const Logs: React.FC = () => {
@@ -49,7 +49,7 @@ const Logs: React.FC = () => {
         debouncedSearch || undefined,
         since || undefined,
         until || undefined,
-        limit,
+        limit
       )
       setData(res)
     } catch {
@@ -104,7 +104,7 @@ const Logs: React.FC = () => {
       level: log.level,
       category: log.category,
       message: log.message,
-      fields: log.fields,
+      fields: log.fields
     }))
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
@@ -130,7 +130,9 @@ const Logs: React.FC = () => {
       {errorMsg && (
         <div className="px-4 py-2 text-sm text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/30 rounded-lg flex items-center justify-between">
           <span>{errorMsg}</span>
-          <button onClick={() => setErrorMsg('')} className="text-red-500 hover:text-red-700">&times;</button>
+          <button onClick={() => setErrorMsg('')} className="text-red-500 hover:text-red-700">
+            &times;
+          </button>
         </div>
       )}
 
@@ -150,7 +152,9 @@ const Logs: React.FC = () => {
           >
             <option value="">{t('logs.level')}</option>
             {LEVELS.map((l) => (
-              <option key={l} value={l}>{t(levelLabelKey[l])}</option>
+              <option key={l} value={l}>
+                {t(levelLabelKey[l])}
+              </option>
             ))}
           </select>
           <select
@@ -160,7 +164,9 @@ const Logs: React.FC = () => {
           >
             <option value="">{t('common.type')}</option>
             {categories.map((c) => (
-              <option key={c} value={c}>{c}</option>
+              <option key={c} value={c}>
+                {c}
+              </option>
             ))}
           </select>
           <div className="flex items-center gap-1">
@@ -214,23 +220,39 @@ const Logs: React.FC = () => {
             <table className="w-full text-sm">
               <thead className="bg-bg-tertiary">
                 <tr>
-                  <th className="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-400 w-44">{t('logs.timestamp')}</th>
-                  <th className="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-400 w-20">{t('logs.level')}</th>
-                  <th className="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-400 w-32">{t('common.type')}</th>
-                  <th className="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-400">{t('logs.message')}</th>
+                  <th className="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-400 w-44">
+                    {t('logs.timestamp')}
+                  </th>
+                  <th className="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-400 w-20">
+                    {t('logs.level')}
+                  </th>
+                  <th className="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-400 w-32">
+                    {t('common.type')}
+                  </th>
+                  <th className="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-400">
+                    {t('logs.message')}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {data.items.map((log) => (
                   <tr key={log.id} className="hover:bg-bg-tertiary dark:hover:bg-gray-800/50">
-                    <td className="px-4 py-2.5 font-mono text-xs text-text-muted dark:text-gray-400">{formatTime(log.timestamp)}</td>
+                    <td className="px-4 py-2.5 font-mono text-xs text-text-muted dark:text-gray-400">
+                      {formatTime(log.timestamp)}
+                    </td>
                     <td className="px-4 py-2.5">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${levelColor[log.level] || levelColor.debug}`}>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${levelColor[log.level] || levelColor.debug}`}
+                      >
                         {t(levelLabelKey[log.level] || log.level)}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 text-xs text-gray-600 dark:text-gray-400">{log.category}</td>
-                    <td className="px-4 py-2.5 text-xs font-mono break-all max-w-xl">{log.message}</td>
+                    <td className="px-4 py-2.5 text-xs text-gray-600 dark:text-gray-400">
+                      {log.category}
+                    </td>
+                    <td className="px-4 py-2.5 text-xs font-mono break-all max-w-xl">
+                      {log.message}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -251,15 +273,30 @@ const Logs: React.FC = () => {
       )}
 
       {showClearConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowClearConfirm(false)}>
-          <div className="dark:bg-bg-card dark:bg-bg-card rounded-xl shadow-xl w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          onClick={() => setShowClearConfirm(false)}
+        >
+          <div
+            className="dark:bg-bg-card dark:bg-bg-card rounded-xl shadow-xl w-full max-w-sm p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 className="text-lg font-semibold mb-2">{t('logs.clearLogs')}</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">{t('logs.confirmClearLogs')}</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+              {t('logs.confirmClearLogs')}
+            </p>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setShowClearConfirm(false)} className="px-4 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800">
+              <button
+                onClick={() => setShowClearConfirm(false)}
+                className="px-4 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
                 {t('common.cancel')}
               </button>
-              <button onClick={handleClearLogs} disabled={clearing} className="px-4 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50">
+              <button
+                onClick={handleClearLogs}
+                disabled={clearing}
+                className="px-4 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+              >
                 {clearing ? t('common.loading') : t('common.delete')}
               </button>
             </div>

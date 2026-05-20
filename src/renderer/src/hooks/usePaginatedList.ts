@@ -61,5 +61,16 @@ export function usePaginatedList<T>(
     fetchData()
   }, [fetchData])
 
-  return { items, total, page, totalPages, loading, error, setPage, setSearch, search, refresh: fetchData }
+  return {
+    items,
+    total,
+    page,
+    totalPages,
+    loading,
+    error,
+    setPage,
+    setSearch,
+    search,
+    refresh: fetchData
+  }
 }

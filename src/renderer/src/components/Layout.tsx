@@ -2,8 +2,19 @@ import React, { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
-  LayoutDashboard, Wallet, User, Globe, Zap, FileText,
-  Gift, BarChart3, Clock, ScrollText, Settings, Menu, X
+  LayoutDashboard,
+  Wallet,
+  User,
+  Globe,
+  Zap,
+  FileText,
+  Gift,
+  BarChart3,
+  Clock,
+  ScrollText,
+  Settings,
+  Menu,
+  X
 } from 'lucide-react'
 
 const NAV_ITEMS = [
@@ -17,7 +28,7 @@ const NAV_ITEMS = [
   { path: '/stats', icon: BarChart3, key: 'nav.stats' },
   { path: '/scheduler', icon: Clock, key: 'nav.scheduler' },
   { path: '/logs', icon: ScrollText, key: 'nav.logs' },
-  { path: '/settings', icon: Settings, key: 'nav.settings' },
+  { path: '/settings', icon: Settings, key: 'nav.settings' }
 ]
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -28,10 +39,15 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
   return (
     <div className="flex h-screen bg-bg-page">
-      <aside className={`${collapsed ? 'w-16' : 'w-52'} flex flex-col border-r border-border-light bg-bg-card transition-all duration-200`}>
+      <aside
+        className={`${collapsed ? 'w-16' : 'w-52'} flex flex-col border-r border-border-light bg-bg-card transition-all duration-200`}
+      >
         <div className="flex items-center justify-between h-12 px-3 border-b border-border-light">
           {!collapsed && <span className="font-bold text-sm text-text-primary">Airdrop Farm</span>}
-          <button onClick={() => setCollapsed(!collapsed)} className="p-1 rounded hover:bg-bg-tertiary">
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="p-1 rounded hover:bg-bg-tertiary"
+          >
             {collapsed ? <Menu size={16} /> : <X size={16} />}
           </button>
         </div>

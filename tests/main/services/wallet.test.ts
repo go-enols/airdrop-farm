@@ -98,11 +98,7 @@ describe('WalletService', () => {
     })
 
     it('derives multiple wallet types simultaneously', async () => {
-      const results = await walletService.deriveFromMnemonic(mnemonic, 2, [
-        'evm',
-        'solana',
-        'sui'
-      ])
+      const results = await walletService.deriveFromMnemonic(mnemonic, 2, ['evm', 'solana', 'sui'])
       expect(results).toHaveLength(6)
       const evmResults = results.filter((r) => r.walletType === 'evm')
       const solanaResults = results.filter((r) => r.walletType === 'solana')
@@ -152,10 +148,7 @@ describe('WalletService', () => {
       'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about'
 
     it('derives and saves multiple wallets to database', async () => {
-      const wallets = await walletService.deriveAndSaveFromMnemonic(mnemonic, 2, [
-        'evm',
-        'solana'
-      ])
+      const wallets = await walletService.deriveAndSaveFromMnemonic(mnemonic, 2, ['evm', 'solana'])
       expect(wallets).toHaveLength(4)
       for (const wallet of wallets) {
         expect(wallet.id).toBeDefined()

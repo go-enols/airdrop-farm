@@ -23,7 +23,10 @@ export class TaskService {
   private runningTasks = new Map<string, RunningTask>()
   private rendererSender: RendererSender | undefined
 
-  constructor(private store: StoreService, options?: TaskServiceOptions) {
+  constructor(
+    private store: StoreService,
+    options?: TaskServiceOptions
+  ) {
     this.rendererSender = options?.rendererSender
   }
 
@@ -38,7 +41,7 @@ export class TaskService {
     this.runningTasks.set(id, {
       process: null,
       status: 'running',
-      progress: { percent: 0, message: 'Starting...' },
+      progress: { percent: 0, message: 'Starting...' }
     })
 
     this.store.taskRepo.addTaskLog(id, 'info', 'Task started')
@@ -116,7 +119,10 @@ export class TaskService {
           running.process.kill('SIGTERM')
         }
       } catch (err) {
-        logger.warn('Failed to kill running process on shutdown', { taskId: id, error: String(err) })
+        logger.warn('Failed to kill running process on shutdown', {
+          taskId: id,
+          error: String(err)
+        })
       }
     }
     this.runningTasks.clear()

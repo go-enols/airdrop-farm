@@ -13,21 +13,24 @@ export function useApi<T>(apiFn: (...args: unknown[]) => Promise<T>): UseApiResu
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const execute = useCallback(async (...args: unknown[]): Promise<T | null> => {
-    setLoading(true)
-    setError(null)
-    try {
-      const result = await apiFn(...args)
-      setData(result)
-      return result
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err)
-      setError(message)
-      return null
-    } finally {
-      setLoading(false)
-    }
-  }, [apiFn])
+  const execute = useCallback(
+    async (...args: unknown[]): Promise<T | null> => {
+      setLoading(true)
+      setError(null)
+      try {
+        const result = await apiFn(...args)
+        setData(result)
+        return result
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err)
+        setError(message)
+        return null
+      } finally {
+        setLoading(false)
+      }
+    },
+    [apiFn]
+  )
 
   const reset = useCallback(() => {
     setData(null)

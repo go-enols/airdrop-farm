@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
-const httpPortArg = process.argv.find(a => a.startsWith('--http-port='))
+const httpPortArg = process.argv.find((a) => a.startsWith('--http-port='))
 const httpPort = httpPortArg ? Number(httpPortArg.split('=')[1]) : 34116
 
 const api = {
@@ -8,7 +8,8 @@ const api = {
     return ipcRenderer.invoke(channel, ...args)
   },
   on: (channel: string, callback: (...args: unknown[]) => void): (() => void) => {
-    const handler = (_event: Electron.IpcRendererEvent, ...args: unknown[]): void => callback(...args)
+    const handler = (_event: Electron.IpcRendererEvent, ...args: unknown[]): void =>
+      callback(...args)
     ipcRenderer.on(channel, handler)
     return () => ipcRenderer.removeListener(channel, handler)
   },

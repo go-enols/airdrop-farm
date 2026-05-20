@@ -64,7 +64,15 @@ describe('HttpApiServer', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         channel: 'wallet:create',
-        args: [{ address: '0x1234567890abcdef1234567890abcdef12345678', privateKey: null, mnemonic: null, walletType: 'evm', labels: [] }]
+        args: [
+          {
+            address: '0x1234567890abcdef1234567890abcdef12345678',
+            privateKey: null,
+            mnemonic: null,
+            walletType: 'evm',
+            labels: []
+          }
+        ]
       })
     })
     expect(res.status).toBe(200)

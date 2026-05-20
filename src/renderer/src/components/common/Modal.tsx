@@ -15,7 +15,7 @@ const Modal: React.FC<ModalProps> = ({
   title,
   children,
   maxWidth = 'max-w-md',
-  scrollable = true,
+  scrollable = true
 }) => {
   if (!open) return null
 

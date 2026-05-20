@@ -10,13 +10,29 @@ export class ProxyRepository extends BaseRepository<Proxy> {
   }
 
   prepareStatements(): void {
-    this.setStmt('proxy.insert', this.db.prepare('INSERT INTO proxies (id, protocol, host, port, username, password, status, labels, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'))
+    this.setStmt(
+      'proxy.insert',
+      this.db.prepare(
+        'INSERT INTO proxies (id, protocol, host, port, username, password, status, labels, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      )
+    )
     this.setStmt('proxy.getById', this.db.prepare('SELECT * FROM proxies WHERE id = ?'))
-    this.setStmt('proxy.update', this.db.prepare('UPDATE proxies SET protocol=?, host=?, port=?, username=?, password=?, status=?, labels=? WHERE id=?'))
+    this.setStmt(
+      'proxy.update',
+      this.db.prepare(
+        'UPDATE proxies SET protocol=?, host=?, port=?, username=?, password=?, status=?, labels=? WHERE id=?'
+      )
+    )
     this.setStmt('proxy.delete', this.db.prepare('DELETE FROM proxies WHERE id = ?'))
     this.setStmt('proxy.count', this.db.prepare('SELECT COUNT(*) as cnt FROM proxies'))
-    this.setStmt('proxy.countByProtocol', this.db.prepare('SELECT protocol, COUNT(*) as cnt FROM proxies GROUP BY protocol'))
-    this.setStmt('proxy.countByStatus', this.db.prepare('SELECT status, COUNT(*) as cnt FROM proxies GROUP BY status'))
+    this.setStmt(
+      'proxy.countByProtocol',
+      this.db.prepare('SELECT protocol, COUNT(*) as cnt FROM proxies GROUP BY protocol')
+    )
+    this.setStmt(
+      'proxy.countByStatus',
+      this.db.prepare('SELECT status, COUNT(*) as cnt FROM proxies GROUP BY status')
+    )
   }
 
   private rowToProxy(row: Record<string, unknown>): Proxy {
@@ -34,7 +50,7 @@ export class ProxyRepository extends BaseRepository<Proxy> {
   }
 
   count(): number {
-    return ((this.stmt('proxy.count').get()) as Record<string, number>).cnt
+    return (this.stmt('proxy.count').get() as Record<string, number>).cnt
   }
 
   countByProtocol(): Record<string, number> {
@@ -58,7 +74,17 @@ export class ProxyRepository extends BaseRepository<Proxy> {
   createProxy(data: Omit<Proxy, 'id' | 'createdAt'>): Proxy {
     const id = uuidv4()
     const createdAt = this.nowISO()
-    this.stmt('proxy.insert').run(id, data.protocol, data.host, data.port, data.username ?? null, data.password ?? null, data.status, this.toJson(data.labels), createdAt)
+    this.stmt('proxy.insert').run(
+      id,
+      data.protocol,
+      data.host,
+      data.port,
+      data.username ?? null,
+      data.password ?? null,
+      data.status,
+      this.toJson(data.labels),
+      createdAt
+    )
     return this.getProxy(id)!
   }
 
@@ -69,12 +95,21 @@ export class ProxyRepository extends BaseRepository<Proxy> {
 
   listProxies(page = 1, pageSize = 20, search?: string): ListResponse<Proxy> {
     if (search) {
-      const countStmt = this.db.prepare("SELECT COUNT(*) as cnt FROM proxies WHERE host LIKE ? OR protocol LIKE ?")
-      const listStmt = this.db.prepare("SELECT * FROM proxies WHERE host LIKE ? OR protocol LIKE ? ORDER BY created_at DESC LIMIT ? OFFSET ?")
-      return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToProxy(r), [`%${search}%`, `%${search}%`])
+      const countStmt = this.db.prepare(
+        'SELECT COUNT(*) as cnt FROM proxies WHERE host LIKE ? OR protocol LIKE ?'
+      )
+      const listStmt = this.db.prepare(
+        'SELECT * FROM proxies WHERE host LIKE ? OR protocol LIKE ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
+      )
+      return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToProxy(r), [
+        `%${search}%`,
+        `%${search}%`
+      ])
     }
     const countStmt = this.stmt('proxy.count')
-    const listStmt = this.db.prepare("SELECT * FROM proxies ORDER BY created_at DESC LIMIT ? OFFSET ?")
+    const listStmt = this.db.prepare(
+      'SELECT * FROM proxies ORDER BY created_at DESC LIMIT ? OFFSET ?'
+    )
     return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToProxy(r))
   }
 
@@ -82,7 +117,16 @@ export class ProxyRepository extends BaseRepository<Proxy> {
     const existing = this.getProxy(id)
     if (!existing) return null
     const updated = { ...existing, ...data }
-    this.stmt('proxy.update').run(updated.protocol, updated.host, updated.port, updated.username ?? null, updated.password ?? null, updated.status, this.toJson(updated.labels), id)
+    this.stmt('proxy.update').run(
+      updated.protocol,
+      updated.host,
+      updated.port,
+      updated.username ?? null,
+      updated.password ?? null,
+      updated.status,
+      this.toJson(updated.labels),
+      id
+    )
     return this.getProxy(id)
   }
 
@@ -98,7 +142,17 @@ export class ProxyRepository extends BaseRepository<Proxy> {
       for (const item of data) {
         const id = uuidv4()
         const createdAt = this.nowISO()
-        insert.run(id, item.protocol, item.host, item.port, item.username ?? null, item.password ?? null, item.status, this.toJson(item.labels), createdAt)
+        insert.run(
+          id,
+          item.protocol,
+          item.host,
+          item.port,
+          item.username ?? null,
+          item.password ?? null,
+          item.status,
+          this.toJson(item.labels),
+          createdAt
+        )
         count++
       }
       return count

@@ -1,6 +1,20 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Plus, Search, Trash2, Key, Copy, ChevronLeft, ChevronRight, Eye, EyeOff, Edit3, Download, CheckSquare, Square } from 'lucide-react'
+import {
+  Plus,
+  Search,
+  Trash2,
+  Key,
+  Copy,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  EyeOff,
+  Edit3,
+  Download,
+  CheckSquare,
+  Square
+} from 'lucide-react'
 import { walletApi } from '../api'
 import type { Wallet } from '../types'
 
@@ -10,13 +24,13 @@ type CreateTab = 'keypair' | 'mnemonic'
 const WALLET_TYPE_OPTIONS: { value: WalletType; label: string; color: string }[] = [
   { value: 'evm', label: 'EVM', color: 'bg-wallet-evm-bg text-wallet-evm-text' },
   { value: 'solana', label: 'Solana', color: 'bg-wallet-solana-bg text-wallet-solana-text' },
-  { value: 'sui', label: 'Sui', color: 'bg-wallet-sui-bg text-wallet-sui-text' },
+  { value: 'sui', label: 'Sui', color: 'bg-wallet-sui-bg text-wallet-sui-text' }
 ]
 
 const WALLET_TYPE_BADGE: Record<string, string> = {
   evm: 'bg-wallet-evm-bg text-wallet-evm-text',
   solana: 'bg-wallet-solana-bg text-wallet-solana-text',
-  sui: 'bg-wallet-sui-bg text-wallet-sui-text',
+  sui: 'bg-wallet-sui-bg text-wallet-sui-text'
 }
 
 const truncateAddress = (addr: string) =>
@@ -40,7 +54,9 @@ const Wallets: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [createTab, setCreateTab] = useState<CreateTab>('keypair')
   const [createType, setCreateType] = useState<WalletType>('evm')
-  const [generatedKey, setGeneratedKey] = useState<{ address: string; privateKey: string } | null>(null)
+  const [generatedKey, setGeneratedKey] = useState<{ address: string; privateKey: string } | null>(
+    null
+  )
   const [generating, setGenerating] = useState(false)
   const [saving, setSaving] = useState(false)
 
@@ -48,7 +64,9 @@ const Wallets: React.FC = () => {
   const [generatingMnemonic, setGeneratingMnemonic] = useState(false)
   const [mnemonicImportTypes, setMnemonicImportTypes] = useState<WalletType[]>(['evm'])
   const [mnemonicDeriveCount, setMnemonicDeriveCount] = useState(1)
-  const [mnemonicDerivedResults, setMnemonicDerivedResults] = useState<Array<{ index: number; walletType: string; address: string; privateKey: string }>>([])
+  const [mnemonicDerivedResults, setMnemonicDerivedResults] = useState<
+    Array<{ index: number; walletType: string; address: string; privateKey: string }>
+  >([])
   const [mnemonicDeriving, setMnemonicDeriving] = useState(false)
   const [mnemonicSaving, setMnemonicSaving] = useState(false)
 
@@ -56,7 +74,9 @@ const Wallets: React.FC = () => {
   const [mnemonic, setMnemonic] = useState('')
   const [importTypes, setImportTypes] = useState<WalletType[]>(['evm'])
   const [deriveCount, setDeriveCount] = useState(1)
-  const [derivedResults, setDerivedResults] = useState<Array<{ index: number; walletType: string; address: string; privateKey: string }>>([])
+  const [derivedResults, setDerivedResults] = useState<
+    Array<{ index: number; walletType: string; address: string; privateKey: string }>
+  >([])
   const [deriving, setDeriving] = useState(false)
   const [importSaving, setImportSaving] = useState(false)
 
@@ -88,7 +108,9 @@ const Wallets: React.FC = () => {
       setDebouncedSearch(search)
       setPage(1)
     }, 300)
-    return () => { if (debounceTimer.current) clearTimeout(debounceTimer.current) }
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current)
+    }
   }, [search])
 
   const showError = (msg: string) => {
@@ -136,18 +158,22 @@ const Wallets: React.FC = () => {
 
   const togglePrivateKey = async (wallet: Wallet) => {
     if (visiblePrivateKeys.has(wallet.id)) {
-      setVisiblePrivateKeys(prev => { const next = new Set(prev); next.delete(wallet.id); return next })
+      setVisiblePrivateKeys((prev) => {
+        const next = new Set(prev)
+        next.delete(wallet.id)
+        return next
+      })
       return
     }
     if (privateKeyMap[wallet.id]) {
-      setVisiblePrivateKeys(prev => new Set(prev).add(wallet.id))
+      setVisiblePrivateKeys((prev) => new Set(prev).add(wallet.id))
       return
     }
     try {
       const full = await walletApi.get(wallet.id)
       if (full?.privateKey) {
-        setPrivateKeyMap(prev => ({ ...prev, [wallet.id]: full.privateKey! }))
-        setVisiblePrivateKeys(prev => new Set(prev).add(wallet.id))
+        setPrivateKeyMap((prev) => ({ ...prev, [wallet.id]: full.privateKey! }))
+        setVisiblePrivateKeys((prev) => new Set(prev).add(wallet.id))
       } else {
         showError(t('wallets.operationFailed'))
       }
@@ -188,7 +214,11 @@ const Wallets: React.FC = () => {
     setMnemonicDeriving(true)
     setMnemonicDerivedResults([])
     try {
-      const results = await walletApi.deriveFromMnemonic(generatedMnemonic, mnemonicDeriveCount, mnemonicImportTypes)
+      const results = await walletApi.deriveFromMnemonic(
+        generatedMnemonic,
+        mnemonicDeriveCount,
+        mnemonicImportTypes
+      )
       setMnemonicDerivedResults(results)
     } catch {
       showError(t('wallets.operationFailed'))
@@ -206,7 +236,7 @@ const Wallets: React.FC = () => {
         privateKey: generatedKey.privateKey,
         mnemonic: null,
         walletType: createType,
-        labels: [],
+        labels: []
       })
       closeCreateModal()
       fetchWallets()
@@ -228,7 +258,7 @@ const Wallets: React.FC = () => {
           privateKey: item.privateKey,
           mnemonic: generatedMnemonic,
           walletType: item.walletType as Wallet['walletType'],
-          labels: [],
+          labels: []
         })
       }
       closeCreateModal()
@@ -265,7 +295,7 @@ const Wallets: React.FC = () => {
           privateKey: item.privateKey,
           mnemonic: mnemonic.trim(),
           walletType: item.walletType as Wallet['walletType'],
-          labels: [],
+          labels: []
         })
       }
       closeImportModal()
@@ -284,7 +314,11 @@ const Wallets: React.FC = () => {
     try {
       await walletApi.delete(deleteTarget.id)
       setDeleteTarget(null)
-      setSelectedIds(prev => { const next = new Set(prev); next.delete(deleteTarget.id); return next })
+      setSelectedIds((prev) => {
+        const next = new Set(prev)
+        next.delete(deleteTarget.id)
+        return next
+      })
       fetchWallets()
       showSuccess(t('wallets.operationSuccess'))
     } catch {
@@ -341,7 +375,7 @@ const Wallets: React.FC = () => {
   }
 
   const removeEditLabel = (label: string) => {
-    setEditLabels(editLabels.filter(l => l !== label))
+    setEditLabels(editLabels.filter((l) => l !== label))
   }
 
   const handleEditLabelKeyDown = (e: React.KeyboardEvent) => {
@@ -352,14 +386,14 @@ const Wallets: React.FC = () => {
   }
 
   const toggleImportType = (type: WalletType) => {
-    setImportTypes(prev =>
-      prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
+    setImportTypes((prev) =>
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
     )
   }
 
   const toggleMnemonicImportType = (type: WalletType) => {
-    setMnemonicImportTypes(prev =>
-      prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
+    setMnemonicImportTypes((prev) =>
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
     )
   }
 
@@ -368,13 +402,13 @@ const Wallets: React.FC = () => {
       setSelectedIds(new Set())
       setShowBatchBar(false)
     } else {
-      setSelectedIds(new Set(wallets.map(w => w.id)))
+      setSelectedIds(new Set(wallets.map((w) => w.id)))
       setShowBatchBar(true)
     }
   }
 
   const toggleSelect = (id: string) => {
-    setSelectedIds(prev => {
+    setSelectedIds((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
       else next.add(id)
@@ -423,9 +457,11 @@ const Wallets: React.FC = () => {
   return (
     <div className="space-y-4">
       {(errorMsg || successMsg) && (
-        <div className={`fixed top-4 right-4 z-[100] px-4 py-2.5 rounded-lg shadow-lg text-sm font-medium transition-all ${
-          errorMsg ? 'bg-danger text-white' : 'bg-success text-white'
-        }`}>
+        <div
+          className={`fixed top-4 right-4 z-[100] px-4 py-2.5 rounded-lg shadow-lg text-sm font-medium transition-all ${
+            errorMsg ? 'bg-danger text-white' : 'bg-success text-white'
+          }`}
+        >
           {errorMsg || successMsg}
         </div>
       )}
@@ -462,7 +498,7 @@ const Wallets: React.FC = () => {
         <input
           type="text"
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={(e) => setSearch(e.target.value)}
           placeholder={t('wallets.searchPlaceholder')}
           className="w-full max-w-md pl-9 pr-3 py-2 border border-border-light rounded-lg text-sm bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
         />
@@ -505,20 +541,35 @@ const Wallets: React.FC = () => {
               <thead>
                 <tr className="border-b border-border-light bg-bg-tertiary">
                   <th className="text-left px-4 py-3 w-10">
-                    <button onClick={toggleSelectAll} className="text-text-muted hover:text-text-primary transition-colors">
+                    <button
+                      onClick={toggleSelectAll}
+                      className="text-text-muted hover:text-text-primary transition-colors"
+                    >
                       {isAllSelected ? <CheckSquare size={16} /> : <Square size={16} />}
                     </button>
                   </th>
-                  <th className="text-left px-4 py-3 font-medium text-text-muted">{t('wallets.address')}</th>
-                  <th className="text-left px-4 py-3 font-medium text-text-muted">{t('wallets.walletType')}</th>
-                  <th className="text-left px-4 py-3 font-medium text-text-muted">{t('wallets.privateKey')}</th>
-                  <th className="text-left px-4 py-3 font-medium text-text-muted">{t('wallets.labels')}</th>
-                  <th className="text-left px-4 py-3 font-medium text-text-muted">{t('wallets.createdAt')}</th>
-                  <th className="text-right px-4 py-3 font-medium text-text-muted">{t('common.actions')}</th>
+                  <th className="text-left px-4 py-3 font-medium text-text-muted">
+                    {t('wallets.address')}
+                  </th>
+                  <th className="text-left px-4 py-3 font-medium text-text-muted">
+                    {t('wallets.walletType')}
+                  </th>
+                  <th className="text-left px-4 py-3 font-medium text-text-muted">
+                    {t('wallets.privateKey')}
+                  </th>
+                  <th className="text-left px-4 py-3 font-medium text-text-muted">
+                    {t('wallets.labels')}
+                  </th>
+                  <th className="text-left px-4 py-3 font-medium text-text-muted">
+                    {t('wallets.createdAt')}
+                  </th>
+                  <th className="text-right px-4 py-3 font-medium text-text-muted">
+                    {t('common.actions')}
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {wallets.map(wallet => {
+                {wallets.map((wallet) => {
                   const isSelected = selectedIds.has(wallet.id)
                   const isPkVisible = visiblePrivateKeys.has(wallet.id)
                   const pk = privateKeyMap[wallet.id]
@@ -528,8 +579,15 @@ const Wallets: React.FC = () => {
                       className={`border-b border-border-light/50 hover:bg-bg-card-hover transition-colors ${isSelected ? 'bg-primary/5' : ''}`}
                     >
                       <td className="px-4 py-3">
-                        <button onClick={() => toggleSelect(wallet.id)} className="text-text-muted hover:text-text-primary transition-colors">
-                          {isSelected ? <CheckSquare size={16} className="text-primary" /> : <Square size={16} />}
+                        <button
+                          onClick={() => toggleSelect(wallet.id)}
+                          className="text-text-muted hover:text-text-primary transition-colors"
+                        >
+                          {isSelected ? (
+                            <CheckSquare size={16} className="text-primary" />
+                          ) : (
+                            <Square size={16} />
+                          )}
                         </button>
                       </td>
                       <td className="px-4 py-3 font-mono text-xs text-text-primary">
@@ -549,7 +607,9 @@ const Wallets: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${WALLET_TYPE_BADGE[wallet.walletType] || 'bg-gray-100 text-gray-600'}`}>
+                        <span
+                          className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${WALLET_TYPE_BADGE[wallet.walletType] || 'bg-gray-100 text-gray-600'}`}
+                        >
                           {wallet.walletType.toUpperCase()}
                         </span>
                       </td>
@@ -561,7 +621,11 @@ const Wallets: React.FC = () => {
                           <button
                             onClick={() => togglePrivateKey(wallet)}
                             className="p-0.5 rounded hover:bg-bg-tertiary text-text-muted hover:text-primary transition-colors"
-                            title={isPkVisible ? t('wallets.hidePrivateKey') : t('wallets.showPrivateKey')}
+                            title={
+                              isPkVisible
+                                ? t('wallets.hidePrivateKey')
+                                : t('wallets.showPrivateKey')
+                            }
                           >
                             {isPkVisible ? <EyeOff size={12} /> : <Eye size={12} />}
                           </button>
@@ -582,14 +646,23 @@ const Wallets: React.FC = () => {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-1">
-                          {wallet.labels.length > 0
-                            ? wallet.labels.map((label, i) => (
-                                <span key={i} className="inline-block px-1.5 py-0.5 bg-bg-tertiary text-text-secondary rounded text-xs">{label}</span>
-                              ))
-                            : <span className="text-text-muted">—</span>}
+                          {wallet.labels.length > 0 ? (
+                            wallet.labels.map((label, i) => (
+                              <span
+                                key={i}
+                                className="inline-block px-1.5 py-0.5 bg-bg-tertiary text-text-secondary rounded text-xs"
+                              >
+                                {label}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="text-text-muted">—</span>
+                          )}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-text-muted text-xs">{new Date(wallet.createdAt).toLocaleString()}</td>
+                      <td className="px-4 py-3 text-text-muted text-xs">
+                        {new Date(wallet.createdAt).toLocaleString()}
+                      </td>
                       <td className="px-4 py-3 text-right">
                         <div className="inline-flex items-center gap-1">
                           <button
@@ -618,18 +691,19 @@ const Wallets: React.FC = () => {
           {totalPages > 1 && (
             <div className="flex items-center justify-between">
               <span className="text-sm text-text-muted">
-                {t('common.total', { count: total })} · {t('common.page', { current: page, total: totalPages })}
+                {t('common.total', { count: total })} ·{' '}
+                {t('common.page', { current: page, total: totalPages })}
               </span>
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page <= 1}
                   className="p-1.5 rounded hover:bg-bg-tertiary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   <ChevronLeft size={18} />
                 </button>
                 <button
-                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page >= totalPages}
                   className="p-1.5 rounded hover:bg-bg-tertiary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
@@ -642,23 +716,45 @@ const Wallets: React.FC = () => {
       )}
 
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={closeCreateModal}>
-          <div className="bg-bg-card rounded-xl shadow-xl w-full max-w-md mx-4 p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold text-text-primary mb-4">{t('wallets.createModal.title')}</h2>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={closeCreateModal}
+        >
+          <div
+            className="bg-bg-card rounded-xl shadow-xl w-full max-w-md mx-4 p-6 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-lg font-semibold text-text-primary mb-4">
+              {t('wallets.createModal.title')}
+            </h2>
 
             <div className="flex border-b border-border-light mb-4">
               <button
-                onClick={() => { setCreateTab('keypair'); setGeneratedKey(null); setGeneratedMnemonic(''); setMnemonicDerivedResults([]) }}
+                onClick={() => {
+                  setCreateTab('keypair')
+                  setGeneratedKey(null)
+                  setGeneratedMnemonic('')
+                  setMnemonicDerivedResults([])
+                }}
                 className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                  createTab === 'keypair' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text-secondary'
+                  createTab === 'keypair'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-text-muted hover:text-text-secondary'
                 }`}
               >
                 {t('wallets.tabKeypair')}
               </button>
               <button
-                onClick={() => { setCreateTab('mnemonic'); setGeneratedKey(null); setGeneratedMnemonic(''); setMnemonicDerivedResults([]) }}
+                onClick={() => {
+                  setCreateTab('mnemonic')
+                  setGeneratedKey(null)
+                  setGeneratedMnemonic('')
+                  setMnemonicDerivedResults([])
+                }}
                 className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                  createTab === 'mnemonic' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-text-secondary'
+                  createTab === 'mnemonic'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-text-muted hover:text-text-secondary'
                 }`}
               >
                 {t('wallets.tabMnemonic')}
@@ -668,12 +764,17 @@ const Wallets: React.FC = () => {
             {createTab === 'keypair' && (
               <>
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-text-secondary mb-1.5">{t('wallets.createModal.selectType')}</label>
+                  <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                    {t('wallets.createModal.selectType')}
+                  </label>
                   <div className="flex gap-2">
-                    {WALLET_TYPE_OPTIONS.map(opt => (
+                    {WALLET_TYPE_OPTIONS.map((opt) => (
                       <button
                         key={opt.value}
-                        onClick={() => { setCreateType(opt.value); setGeneratedKey(null) }}
+                        onClick={() => {
+                          setCreateType(opt.value)
+                          setGeneratedKey(null)
+                        }}
                         className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
                           createType === opt.value
                             ? `${opt.color} border-current`
@@ -692,17 +793,27 @@ const Wallets: React.FC = () => {
                     disabled={generating}
                     className="w-full py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-hover disabled:opacity-50 transition-colors"
                   >
-                    {generating ? t('wallets.createModal.generating') : t('wallets.createModal.generate')}
+                    {generating
+                      ? t('wallets.createModal.generating')
+                      : t('wallets.createModal.generate')}
                   </button>
                 ) : (
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-sm font-medium text-text-secondary mb-1">{t('wallets.createModal.address')}</label>
-                      <div className="p-2 bg-bg-tertiary rounded-lg text-xs font-mono break-all text-text-primary">{generatedKey.address}</div>
+                      <label className="block text-sm font-medium text-text-secondary mb-1">
+                        {t('wallets.createModal.address')}
+                      </label>
+                      <div className="p-2 bg-bg-tertiary rounded-lg text-xs font-mono break-all text-text-primary">
+                        {generatedKey.address}
+                      </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-text-secondary mb-1">{t('wallets.createModal.privateKey')}</label>
-                      <div className="p-2 bg-bg-tertiary rounded-lg text-xs font-mono break-all text-text-primary">{generatedKey.privateKey}</div>
+                      <label className="block text-sm font-medium text-text-secondary mb-1">
+                        {t('wallets.createModal.privateKey')}
+                      </label>
+                      <div className="p-2 bg-bg-tertiary rounded-lg text-xs font-mono break-all text-text-primary">
+                        {generatedKey.privateKey}
+                      </div>
                     </div>
                     <div className="flex gap-2 pt-2">
                       <button
@@ -732,19 +843,27 @@ const Wallets: React.FC = () => {
                     disabled={generatingMnemonic}
                     className="w-full py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-hover disabled:opacity-50 transition-colors"
                   >
-                    {generatingMnemonic ? t('wallets.createModal.generatingMnemonic') : t('wallets.createModal.generateMnemonicBtn')}
+                    {generatingMnemonic
+                      ? t('wallets.createModal.generatingMnemonic')
+                      : t('wallets.createModal.generateMnemonicBtn')}
                   </button>
                 ) : (
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-text-secondary mb-1">{t('wallets.createModal.mnemonic')}</label>
-                      <div className="p-2 bg-bg-tertiary rounded-lg text-xs font-mono break-all select-all text-text-primary">{generatedMnemonic}</div>
+                      <label className="block text-sm font-medium text-text-secondary mb-1">
+                        {t('wallets.createModal.mnemonic')}
+                      </label>
+                      <div className="p-2 bg-bg-tertiary rounded-lg text-xs font-mono break-all select-all text-text-primary">
+                        {generatedMnemonic}
+                      </div>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-text-secondary mb-1.5">{t('wallets.importModal.walletTypes')}</label>
+                      <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                        {t('wallets.importModal.walletTypes')}
+                      </label>
                       <div className="flex gap-2">
-                        {WALLET_TYPE_OPTIONS.map(opt => (
+                        {WALLET_TYPE_OPTIONS.map((opt) => (
                           <button
                             key={opt.value}
                             onClick={() => toggleMnemonicImportType(opt.value)}
@@ -761,13 +880,17 @@ const Wallets: React.FC = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-text-secondary mb-1.5">{t('wallets.importModal.deriveCount')}</label>
+                      <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                        {t('wallets.importModal.deriveCount')}
+                      </label>
                       <input
                         type="number"
                         min={1}
                         max={100}
                         value={mnemonicDeriveCount}
-                        onChange={e => setMnemonicDeriveCount(Math.max(1, Math.min(100, Number(e.target.value))))}
+                        onChange={(e) =>
+                          setMnemonicDeriveCount(Math.max(1, Math.min(100, Number(e.target.value))))
+                        }
                         className="w-24 px-3 py-2 border border-border-light rounded-lg text-sm bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
                       />
                     </div>
@@ -778,19 +901,29 @@ const Wallets: React.FC = () => {
                         disabled={mnemonicDeriving || mnemonicImportTypes.length === 0}
                         className="w-full py-2 bg-success text-white rounded-lg text-sm font-medium hover:bg-success-hover disabled:opacity-50 transition-colors"
                       >
-                        {mnemonicDeriving ? t('wallets.createModal.deriving') : t('wallets.createModal.deriveFromMnemonic')}
+                        {mnemonicDeriving
+                          ? t('wallets.createModal.deriving')
+                          : t('wallets.createModal.deriveFromMnemonic')}
                       </button>
                     ) : (
                       <>
                         <div>
-                          <label className="block text-sm font-medium text-text-secondary mb-1.5">{t('wallets.importModal.results')}</label>
+                          <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                            {t('wallets.importModal.results')}
+                          </label>
                           <div className="border border-border-light rounded-lg overflow-hidden max-h-60 overflow-y-auto">
                             <table className="w-full text-xs">
                               <thead>
                                 <tr className="bg-bg-tertiary border-b border-border-light">
-                                  <th className="text-left px-3 py-2 font-medium text-text-muted">#</th>
-                                  <th className="text-left px-3 py-2 font-medium text-text-muted">{t('wallets.walletType')}</th>
-                                  <th className="text-left px-3 py-2 font-medium text-text-muted">{t('wallets.address')}</th>
+                                  <th className="text-left px-3 py-2 font-medium text-text-muted">
+                                    #
+                                  </th>
+                                  <th className="text-left px-3 py-2 font-medium text-text-muted">
+                                    {t('wallets.walletType')}
+                                  </th>
+                                  <th className="text-left px-3 py-2 font-medium text-text-muted">
+                                    {t('wallets.address')}
+                                  </th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -798,11 +931,15 @@ const Wallets: React.FC = () => {
                                   <tr key={i} className="border-b border-border-light/50">
                                     <td className="px-3 py-1.5 text-text-muted">{r.index}</td>
                                     <td className="px-3 py-1.5">
-                                      <span className={`inline-block px-1.5 py-0.5 rounded text-xs font-medium ${WALLET_TYPE_BADGE[r.walletType] || 'bg-gray-100 text-gray-600'}`}>
+                                      <span
+                                        className={`inline-block px-1.5 py-0.5 rounded text-xs font-medium ${WALLET_TYPE_BADGE[r.walletType] || 'bg-gray-100 text-gray-600'}`}
+                                      >
                                         {r.walletType.toUpperCase()}
                                       </span>
                                     </td>
-                                    <td className="px-3 py-1.5 font-mono text-text-secondary">{truncateAddress(r.address)}</td>
+                                    <td className="px-3 py-1.5 font-mono text-text-secondary">
+                                      {truncateAddress(r.address)}
+                                    </td>
                                   </tr>
                                 ))}
                               </tbody>
@@ -821,7 +958,9 @@ const Wallets: React.FC = () => {
                             disabled={mnemonicSaving}
                             className="flex-1 py-2 bg-success text-white rounded-lg text-sm font-medium hover:bg-success-hover disabled:opacity-50 transition-colors"
                           >
-                            {mnemonicSaving ? t('wallets.createModal.saving') : t('wallets.importModal.saveAll')}
+                            {mnemonicSaving
+                              ? t('wallets.createModal.saving')
+                              : t('wallets.importModal.saveAll')}
                           </button>
                         </div>
                       </>
@@ -835,16 +974,26 @@ const Wallets: React.FC = () => {
       )}
 
       {showImportModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={closeImportModal}>
-          <div className="bg-bg-card rounded-xl shadow-xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold text-text-primary mb-4">{t('wallets.importModal.title')}</h2>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={closeImportModal}
+        >
+          <div
+            className="bg-bg-card rounded-xl shadow-xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-lg font-semibold text-text-primary mb-4">
+              {t('wallets.importModal.title')}
+            </h2>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1.5">{t('wallets.importModal.mnemonic')}</label>
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                  {t('wallets.importModal.mnemonic')}
+                </label>
                 <textarea
                   value={mnemonic}
-                  onChange={e => setMnemonic(e.target.value)}
+                  onChange={(e) => setMnemonic(e.target.value)}
                   placeholder={t('wallets.importModal.mnemonicPlaceholder')}
                   rows={3}
                   className="w-full px-3 py-2 border border-border-light rounded-lg text-sm bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary resize-none"
@@ -852,9 +1001,11 @@ const Wallets: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1.5">{t('wallets.importModal.walletTypes')}</label>
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                  {t('wallets.importModal.walletTypes')}
+                </label>
                 <div className="flex gap-2">
-                  {WALLET_TYPE_OPTIONS.map(opt => (
+                  {WALLET_TYPE_OPTIONS.map((opt) => (
                     <button
                       key={opt.value}
                       onClick={() => toggleImportType(opt.value)}
@@ -871,13 +1022,17 @@ const Wallets: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1.5">{t('wallets.importModal.deriveCount')}</label>
+                <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                  {t('wallets.importModal.deriveCount')}
+                </label>
                 <input
                   type="number"
                   min={1}
                   max={100}
                   value={deriveCount}
-                  onChange={e => setDeriveCount(Math.max(1, Math.min(100, Number(e.target.value))))}
+                  onChange={(e) =>
+                    setDeriveCount(Math.max(1, Math.min(100, Number(e.target.value))))
+                  }
                   className="w-24 px-3 py-2 border border-border-light rounded-lg text-sm bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
@@ -893,14 +1048,20 @@ const Wallets: React.FC = () => {
               ) : (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-text-secondary mb-1.5">{t('wallets.importModal.results')}</label>
+                    <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                      {t('wallets.importModal.results')}
+                    </label>
                     <div className="border border-border-light rounded-lg overflow-hidden max-h-60 overflow-y-auto">
                       <table className="w-full text-xs">
                         <thead>
                           <tr className="bg-bg-tertiary border-b border-border-light">
                             <th className="text-left px-3 py-2 font-medium text-text-muted">#</th>
-                            <th className="text-left px-3 py-2 font-medium text-text-muted">{t('wallets.walletType')}</th>
-                            <th className="text-left px-3 py-2 font-medium text-text-muted">{t('wallets.address')}</th>
+                            <th className="text-left px-3 py-2 font-medium text-text-muted">
+                              {t('wallets.walletType')}
+                            </th>
+                            <th className="text-left px-3 py-2 font-medium text-text-muted">
+                              {t('wallets.address')}
+                            </th>
                           </tr>
                         </thead>
                         <tbody>
@@ -908,11 +1069,15 @@ const Wallets: React.FC = () => {
                             <tr key={i} className="border-b border-border-light/50">
                               <td className="px-3 py-1.5 text-text-muted">{r.index}</td>
                               <td className="px-3 py-1.5">
-                                <span className={`inline-block px-1.5 py-0.5 rounded text-xs font-medium ${WALLET_TYPE_BADGE[r.walletType] || 'bg-gray-100 text-gray-600'}`}>
+                                <span
+                                  className={`inline-block px-1.5 py-0.5 rounded text-xs font-medium ${WALLET_TYPE_BADGE[r.walletType] || 'bg-gray-100 text-gray-600'}`}
+                                >
                                   {r.walletType.toUpperCase()}
                                 </span>
                               </td>
-                              <td className="px-3 py-1.5 font-mono text-text-secondary">{truncateAddress(r.address)}</td>
+                              <td className="px-3 py-1.5 font-mono text-text-secondary">
+                                {truncateAddress(r.address)}
+                              </td>
                             </tr>
                           ))}
                         </tbody>
@@ -931,7 +1096,9 @@ const Wallets: React.FC = () => {
                       disabled={importSaving}
                       className="flex-1 py-2 bg-success text-white rounded-lg text-sm font-medium hover:bg-success-hover disabled:opacity-50 transition-colors"
                     >
-                      {importSaving ? t('wallets.importModal.saving') : t('wallets.importModal.saveAll')}
+                      {importSaving
+                        ? t('wallets.importModal.saving')
+                        : t('wallets.importModal.saveAll')}
                     </button>
                   </div>
                 </>
@@ -942,20 +1109,37 @@ const Wallets: React.FC = () => {
       )}
 
       {editTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setEditTarget(null)}>
-          <div className="bg-bg-card rounded-xl shadow-xl w-full max-w-md mx-4 p-6" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold text-text-primary mb-4">{t('wallets.editModal.title')}</h2>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setEditTarget(null)}
+        >
+          <div
+            className="bg-bg-card rounded-xl shadow-xl w-full max-w-md mx-4 p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-lg font-semibold text-text-primary mb-4">
+              {t('wallets.editModal.title')}
+            </h2>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-text-secondary mb-1">{t('wallets.address')}</label>
-              <div className="p-2 bg-bg-tertiary rounded-lg text-xs font-mono break-all text-text-primary">{editTarget.address}</div>
+              <label className="block text-sm font-medium text-text-secondary mb-1">
+                {t('wallets.address')}
+              </label>
+              <div className="p-2 bg-bg-tertiary rounded-lg text-xs font-mono break-all text-text-primary">
+                {editTarget.address}
+              </div>
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-text-secondary mb-1.5">{t('wallets.editModal.labels')}</label>
+              <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                {t('wallets.editModal.labels')}
+              </label>
               <div className="flex flex-wrap gap-1.5 mb-2">
-                {editLabels.map(label => (
-                  <span key={label} className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 text-primary rounded text-xs">
+                {editLabels.map((label) => (
+                  <span
+                    key={label}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 text-primary rounded text-xs"
+                  >
                     {label}
                     <button
                       onClick={() => removeEditLabel(label)}
@@ -970,7 +1154,7 @@ const Wallets: React.FC = () => {
                 <input
                   type="text"
                   value={editLabelInput}
-                  onChange={e => setEditLabelInput(e.target.value)}
+                  onChange={(e) => setEditLabelInput(e.target.value)}
                   onKeyDown={handleEditLabelKeyDown}
                   placeholder={t('wallets.editModal.labelsPlaceholder')}
                   className="flex-1 px-3 py-1.5 border border-border-light rounded-lg text-sm bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
@@ -1005,11 +1189,21 @@ const Wallets: React.FC = () => {
       )}
 
       {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setDeleteTarget(null)}>
-          <div className="bg-bg-card rounded-xl shadow-xl w-full max-w-sm mx-4 p-6" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold text-text-primary mb-2">{t('wallets.deleteWallet')}</h2>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setDeleteTarget(null)}
+        >
+          <div
+            className="bg-bg-card rounded-xl shadow-xl w-full max-w-sm mx-4 p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-lg font-semibold text-text-primary mb-2">
+              {t('wallets.deleteWallet')}
+            </h2>
             <p className="text-sm text-text-secondary mb-4">{t('wallets.confirmDelete')}</p>
-            <p className="text-xs font-mono bg-bg-tertiary p-2 rounded-lg mb-4 break-all text-text-primary">{deleteTarget.address}</p>
+            <p className="text-xs font-mono bg-bg-tertiary p-2 rounded-lg mb-4 break-all text-text-primary">
+              {deleteTarget.address}
+            </p>
             <div className="flex gap-2">
               <button
                 onClick={() => setDeleteTarget(null)}
@@ -1030,10 +1224,20 @@ const Wallets: React.FC = () => {
       )}
 
       {showBatchConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowBatchConfirm(false)}>
-          <div className="bg-bg-card rounded-xl shadow-xl w-full max-w-sm mx-4 p-6" onClick={e => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold text-text-primary mb-2">{t('wallets.batchDelete')}</h2>
-            <p className="text-sm text-text-secondary mb-4">{t('wallets.confirmBatchDelete', { count: selectedIds.size })}</p>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setShowBatchConfirm(false)}
+        >
+          <div
+            className="bg-bg-card rounded-xl shadow-xl w-full max-w-sm mx-4 p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-lg font-semibold text-text-primary mb-2">
+              {t('wallets.batchDelete')}
+            </h2>
+            <p className="text-sm text-text-secondary mb-4">
+              {t('wallets.confirmBatchDelete', { count: selectedIds.size })}
+            </p>
             <div className="flex gap-2">
               <button
                 onClick={() => setShowBatchConfirm(false)}

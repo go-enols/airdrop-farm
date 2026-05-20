@@ -6,11 +6,11 @@ export default defineConfig({
     globals: true,
     include: ['tests/**/*.test.ts'],
     testTimeout: 15000,
-    hookTimeout: 15000,
+    hookTimeout: 15000
   },
   resolve: {
     alias: {
-      '@renderer': resolve(__dirname, 'src/renderer/src'),
-    },
-  },
+      '@renderer': resolve(__dirname, 'src/renderer/src')
+    }
+  }
 })

@@ -127,7 +127,9 @@ const Scheduler: React.FC = () => {
       </div>
 
       {error && (
-        <div className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-4 py-2">{error}</div>
+        <div className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-4 py-2">
+          {error}
+        </div>
       )}
 
       {loading ? (
@@ -144,19 +146,34 @@ const Scheduler: React.FC = () => {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-bg-tertiary">
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('scheduler.templateId')}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('scheduler.cronExpression')}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('scheduler.enabled')}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('scheduler.lastRun')}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t('scheduler.nextRun')}</th>
-                <th className="text-right px-4 py-3 font-medium text-gray-600">{t('scheduler.actions')}</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t('scheduler.templateId')}
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t('scheduler.cronExpression')}
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t('scheduler.enabled')}
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t('scheduler.lastRun')}
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t('scheduler.nextRun')}
+                </th>
+                <th className="text-right px-4 py-3 font-medium text-gray-600">
+                  {t('scheduler.actions')}
+                </th>
               </tr>
             </thead>
             <tbody>
               {items.map((item) => (
-                <tr key={item.id} className="border-b border-gray-50 hover:bg-bg-tertiary transition-colors">
+                <tr
+                  key={item.id}
+                  className="border-b border-gray-50 hover:bg-bg-tertiary transition-colors"
+                >
                   <td className="px-4 py-3 text-xs">
-                    {templates.find(t => t.id === item.templateId)?.name || item.templateId}
+                    {templates.find((t) => t.id === item.templateId)?.name || item.templateId}
                   </td>
                   <td className="px-4 py-3 font-mono text-xs">{item.cronExpression}</td>
                   <td className="px-4 py-3">
@@ -167,13 +184,23 @@ const Scheduler: React.FC = () => {
                     >
                       {item.enabled ? (
                         <>
-                          <ToggleRight size={20} className="text-green-500 group-hover:text-green-600 transition-colors" />
-                          <span className="text-xs font-medium text-green-600">{t('scheduler.enabled')}</span>
+                          <ToggleRight
+                            size={20}
+                            className="text-green-500 group-hover:text-green-600 transition-colors"
+                          />
+                          <span className="text-xs font-medium text-green-600">
+                            {t('scheduler.enabled')}
+                          </span>
                         </>
                       ) : (
                         <>
-                          <ToggleLeft size={20} className="text-gray-400 group-hover:text-text-muted transition-colors" />
-                          <span className="text-xs font-medium text-text-muted">{t('scheduler.disabled')}</span>
+                          <ToggleLeft
+                            size={20}
+                            className="text-gray-400 group-hover:text-text-muted transition-colors"
+                          />
+                          <span className="text-xs font-medium text-text-muted">
+                            {t('scheduler.disabled')}
+                          </span>
                         </>
                       )}
                     </button>
@@ -210,20 +237,26 @@ const Scheduler: React.FC = () => {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('scheduler.templateId')}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('scheduler.templateId')}
+            </label>
             <select
               value={form.templateId}
               onChange={(e) => setForm((f) => ({ ...f, templateId: e.target.value }))}
               className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="">{t('scheduler.selectTemplate')}</option>
-              {templates.map(t => (
-                <option key={t.id} value={t.id}>{t.name} ({t.type})</option>
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name} ({t.type})
+                </option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('scheduler.cronExpression')}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('scheduler.cronExpression')}
+            </label>
             <input
               type="text"
               value={form.cronExpression}
@@ -257,16 +290,23 @@ const Scheduler: React.FC = () => {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('scheduler.templateId')}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('scheduler.templateId')}
+            </label>
             <input
               type="text"
-              value={templates.find(t => t.id === editingItem?.templateId)?.name || editingItem?.templateId}
+              value={
+                templates.find((t) => t.id === editingItem?.templateId)?.name ||
+                editingItem?.templateId
+              }
               disabled
               className="w-full px-3 py-2 text-sm border border-border-light rounded-lg bg-bg-tertiary text-text-muted"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t('scheduler.cronExpression')}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('scheduler.cronExpression')}
+            </label>
             <input
               type="text"
               value={editForm.cronExpression}
@@ -276,9 +316,7 @@ const Scheduler: React.FC = () => {
             />
           </div>
         </div>
-        {editError && (
-          <div className="text-red-600 text-sm mt-3">{editError}</div>
-        )}
+        {editError && <div className="text-red-600 text-sm mt-3">{editError}</div>}
         <div className="flex justify-end gap-3 mt-6">
           <button
             onClick={() => setEditingItem(null)}

@@ -16,7 +16,9 @@ export class WalletService {
     return bip39.generateMnemonic()
   }
 
-  async generateKeypair(walletType: string): Promise<{ address: string; privateKey: string; walletType: string }> {
+  async generateKeypair(
+    walletType: string
+  ): Promise<{ address: string; privateKey: string; walletType: string }> {
     switch (walletType) {
       case 'evm': {
         const wallet = ethers.Wallet.createRandom()
@@ -27,7 +29,7 @@ export class WalletService {
         return {
           address: keypair.publicKey.toBase58(),
           privateKey: Buffer.from(keypair.secretKey).toString('hex'),
-          walletType,
+          walletType
         }
       }
       case 'sui': {
@@ -35,7 +37,7 @@ export class WalletService {
         return {
           address: keypair.getPublicKey().toSuiAddress(),
           privateKey: Buffer.from(keypair.getSecretKey()).toString('hex'),
-          walletType,
+          walletType
         }
       }
       default:
@@ -51,7 +53,12 @@ export class WalletService {
     if (!bip39.validateMnemonic(mnemonic)) {
       throw new Error('Invalid mnemonic')
     }
-    const results: Array<{ index: number; walletType: string; address: string; privateKey: string }> = []
+    const results: Array<{
+      index: number
+      walletType: string
+      address: string
+      privateKey: string
+    }> = []
     for (let i = 0; i < count; i++) {
       for (const walletType of walletTypes) {
         switch (walletType) {
@@ -61,7 +68,12 @@ export class WalletService {
               ethers.Mnemonic.fromPhrase(mnemonic),
               path
             )
-            results.push({ index: i, walletType, address: hdNode.address, privateKey: hdNode.privateKey })
+            results.push({
+              index: i,
+              walletType,
+              address: hdNode.address,
+              privateKey: hdNode.privateKey
+            })
             break
           }
           case 'solana': {
@@ -73,7 +85,7 @@ export class WalletService {
               index: i,
               walletType,
               address: keypair.publicKey.toBase58(),
-              privateKey: Buffer.from(keypair.secretKey).toString('hex'),
+              privateKey: Buffer.from(keypair.secretKey).toString('hex')
             })
             break
           }
@@ -86,7 +98,7 @@ export class WalletService {
               index: i,
               walletType,
               address: keypair.getPublicKey().toSuiAddress(),
-              privateKey: Buffer.from(keypair.getSecretKey()).toString('hex'),
+              privateKey: Buffer.from(keypair.getSecretKey()).toString('hex')
             })
             break
           }
@@ -103,7 +115,7 @@ export class WalletService {
       privateKey: keypair.privateKey,
       mnemonic: null,
       walletType: keypair.walletType as import('../../shared/types').Wallet['walletType'],
-      labels: [],
+      labels: []
     })
   }
 
@@ -120,7 +132,7 @@ export class WalletService {
         privateKey: item.privateKey,
         mnemonic,
         walletType: item.walletType as import('../../shared/types').Wallet['walletType'],
-        labels: [],
+        labels: []
       })
       wallets.push(wallet)
     }

@@ -20,7 +20,7 @@ import type {
   RecentTaskResult,
   TemplateUsage,
   TemplateRanking,
-  WeeklyTrend,
+  WeeklyTrend
 } from '../../shared/types'
 import { WalletRepository } from './repositories/wallet'
 import { ProxyRepository } from './repositories/proxy'
@@ -46,7 +46,7 @@ export type {
   RecentTaskResult,
   TemplateUsage,
   TemplateRanking,
-  WeeklyTrend,
+  WeeklyTrend
 }
 
 type JsonField = string | null
@@ -263,31 +263,84 @@ export class StoreService {
     const s = this.stmts
     const db = this.db
 
-    s.set('account.insert', db.prepare('INSERT INTO accounts (id, template_id, data, pool, labels, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'))
+    s.set(
+      'account.insert',
+      db.prepare(
+        'INSERT INTO accounts (id, template_id, data, pool, labels, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+      )
+    )
     s.set('account.getById', db.prepare('SELECT * FROM accounts WHERE id = ?'))
-    s.set('account.update', db.prepare('UPDATE accounts SET template_id=?, data=?, pool=?, labels=?, notes=?, updated_at=? WHERE id=?'))
+    s.set(
+      'account.update',
+      db.prepare(
+        'UPDATE accounts SET template_id=?, data=?, pool=?, labels=?, notes=?, updated_at=? WHERE id=?'
+      )
+    )
     s.set('account.delete', db.prepare('DELETE FROM accounts WHERE id = ?'))
     s.set('account.count', db.prepare('SELECT COUNT(*) as cnt FROM accounts'))
-    s.set('account.countByPool', db.prepare('SELECT pool, COUNT(*) as cnt FROM accounts GROUP BY pool'))
+    s.set(
+      'account.countByPool',
+      db.prepare('SELECT pool, COUNT(*) as cnt FROM accounts GROUP BY pool')
+    )
 
-    s.set('template.insert', db.prepare('INSERT INTO templates (id, type, name, schema, version, is_local, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'))
+    s.set(
+      'template.insert',
+      db.prepare(
+        'INSERT INTO templates (id, type, name, schema, version, is_local, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      )
+    )
     s.set('template.getById', db.prepare('SELECT * FROM templates WHERE id = ?'))
-    s.set('template.update', db.prepare('UPDATE templates SET type=?, name=?, schema=?, version=?, is_local=?, updated_at=? WHERE id=?'))
+    s.set(
+      'template.update',
+      db.prepare(
+        'UPDATE templates SET type=?, name=?, schema=?, version=?, is_local=?, updated_at=? WHERE id=?'
+      )
+    )
     s.set('template.delete', db.prepare('DELETE FROM templates WHERE id = ?'))
 
-    s.set('taskTemplate.insert', db.prepare('INSERT INTO task_templates (id, name, version, description, install_path, manifest, remote_url, is_installed, downloaded_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'))
+    s.set(
+      'taskTemplate.insert',
+      db.prepare(
+        'INSERT INTO task_templates (id, name, version, description, install_path, manifest, remote_url, is_installed, downloaded_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      )
+    )
     s.set('taskTemplate.getById', db.prepare('SELECT * FROM task_templates WHERE id = ?'))
-    s.set('taskTemplate.update', db.prepare('UPDATE task_templates SET name=?, version=?, description=?, install_path=?, manifest=?, remote_url=?, is_installed=?, downloaded_at=?, updated_at=? WHERE id=?'))
+    s.set(
+      'taskTemplate.update',
+      db.prepare(
+        'UPDATE task_templates SET name=?, version=?, description=?, install_path=?, manifest=?, remote_url=?, is_installed=?, downloaded_at=?, updated_at=? WHERE id=?'
+      )
+    )
     s.set('taskTemplate.delete', db.prepare('DELETE FROM task_templates WHERE id = ?'))
 
-    s.set('scheduledTask.insert', db.prepare('INSERT INTO scheduled_tasks (id, template_id, config, cron_expression, enabled, last_run, next_run, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'))
+    s.set(
+      'scheduledTask.insert',
+      db.prepare(
+        'INSERT INTO scheduled_tasks (id, template_id, config, cron_expression, enabled, last_run, next_run, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+      )
+    )
     s.set('scheduledTask.getById', db.prepare('SELECT * FROM scheduled_tasks WHERE id = ?'))
-    s.set('scheduledTask.update', db.prepare('UPDATE scheduled_tasks SET template_id=?, config=?, cron_expression=?, enabled=?, last_run=?, next_run=? WHERE id=?'))
+    s.set(
+      'scheduledTask.update',
+      db.prepare(
+        'UPDATE scheduled_tasks SET template_id=?, config=?, cron_expression=?, enabled=?, last_run=?, next_run=? WHERE id=?'
+      )
+    )
     s.set('scheduledTask.delete', db.prepare('DELETE FROM scheduled_tasks WHERE id = ?'))
 
-    s.set('airdrop.insert', db.prepare('INSERT INTO airdrop_projects (id, name, chain, status, project_type, description, links, eligibility_criteria, tasks, earnings, tags, labels, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'))
+    s.set(
+      'airdrop.insert',
+      db.prepare(
+        'INSERT INTO airdrop_projects (id, name, chain, status, project_type, description, links, eligibility_criteria, tasks, earnings, tags, labels, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      )
+    )
     s.set('airdrop.getById', db.prepare('SELECT * FROM airdrop_projects WHERE id = ?'))
-    s.set('airdrop.update', db.prepare('UPDATE airdrop_projects SET name=?, chain=?, status=?, project_type=?, description=?, links=?, eligibility_criteria=?, tasks=?, earnings=?, tags=?, labels=?, updated_at=? WHERE id=?'))
+    s.set(
+      'airdrop.update',
+      db.prepare(
+        'UPDATE airdrop_projects SET name=?, chain=?, status=?, project_type=?, description=?, links=?, eligibility_criteria=?, tasks=?, earnings=?, tags=?, labels=?, updated_at=? WHERE id=?'
+      )
+    )
     s.set('airdrop.delete', db.prepare('DELETE FROM airdrop_projects WHERE id = ?'))
 
     s.set('setting.get', db.prepare('SELECT value FROM settings WHERE key = ?'))
@@ -295,17 +348,40 @@ export class StoreService {
     s.set('setting.delete', db.prepare('DELETE FROM settings WHERE key = ?'))
     s.set('setting.getAll', db.prepare('SELECT key, value FROM settings'))
 
-    s.set('captchaKey.insert', db.prepare('INSERT INTO captcha_keys (id, provider, api_key, balance, created_at) VALUES (?, ?, ?, ?, ?)'))
+    s.set(
+      'captchaKey.insert',
+      db.prepare(
+        'INSERT INTO captcha_keys (id, provider, api_key, balance, created_at) VALUES (?, ?, ?, ?, ?)'
+      )
+    )
     s.set('captchaKey.getById', db.prepare('SELECT * FROM captcha_keys WHERE id = ?'))
-    s.set('captchaKey.update', db.prepare('UPDATE captcha_keys SET provider=?, api_key=?, balance=? WHERE id=?'))
+    s.set(
+      'captchaKey.update',
+      db.prepare('UPDATE captcha_keys SET provider=?, api_key=?, balance=? WHERE id=?')
+    )
     s.set('captchaKey.delete', db.prepare('DELETE FROM captcha_keys WHERE id = ?'))
 
-    s.set('proxyProvider.insert', db.prepare('INSERT INTO proxy_providers (id, name, api_url, api_key, protocol, refresh_interval, last_sync, labels, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'))
+    s.set(
+      'proxyProvider.insert',
+      db.prepare(
+        'INSERT INTO proxy_providers (id, name, api_url, api_key, protocol, refresh_interval, last_sync, labels, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      )
+    )
     s.set('proxyProvider.getById', db.prepare('SELECT * FROM proxy_providers WHERE id = ?'))
-    s.set('proxyProvider.update', db.prepare('UPDATE proxy_providers SET name=?, api_url=?, api_key=?, protocol=?, refresh_interval=?, last_sync=?, labels=? WHERE id=?'))
+    s.set(
+      'proxyProvider.update',
+      db.prepare(
+        'UPDATE proxy_providers SET name=?, api_url=?, api_key=?, protocol=?, refresh_interval=?, last_sync=?, labels=? WHERE id=?'
+      )
+    )
     s.set('proxyProvider.delete', db.prepare('DELETE FROM proxy_providers WHERE id = ?'))
 
-    s.set('appLog.insert', db.prepare('INSERT INTO app_logs (timestamp, level, category, message, fields) VALUES (?, ?, ?, ?, ?)'))
+    s.set(
+      'appLog.insert',
+      db.prepare(
+        'INSERT INTO app_logs (timestamp, level, category, message, fields) VALUES (?, ?, ?, ?, ?)'
+      )
+    )
   }
 
   private stmt(name: string): Database.Statement {
@@ -429,12 +505,14 @@ export class StoreService {
     mapper: (row: Record<string, unknown>) => T,
     searchParams?: unknown[]
   ): ListResponse<T> {
-    const total = ((searchParams ? countStmt.get(...searchParams) : countStmt.get()) as Record<string, number>).cnt
+    const total = (
+      (searchParams ? countStmt.get(...searchParams) : countStmt.get()) as Record<string, number>
+    ).cnt
     const totalPages = Math.max(1, Math.ceil(total / pageSize))
     const offset = (page - 1) * pageSize
     const rows = searchParams
-      ? listStmt.all(...searchParams, pageSize, offset) as Record<string, unknown>[]
-      : listStmt.all(pageSize, offset) as Record<string, unknown>[]
+      ? (listStmt.all(...searchParams, pageSize, offset) as Record<string, unknown>[])
+      : (listStmt.all(pageSize, offset) as Record<string, unknown>[])
     return {
       items: rows.map(mapper),
       total,
@@ -447,7 +525,16 @@ export class StoreService {
   createAccount(data: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>): Account {
     const id = uuidv4()
     const now = nowISO()
-    this.stmt('account.insert').run(id, data.templateId, toJson(data.data), data.pool, toJson(data.labels), data.notes, now, now)
+    this.stmt('account.insert').run(
+      id,
+      data.templateId,
+      toJson(data.data),
+      data.pool,
+      toJson(data.labels),
+      data.notes,
+      now,
+      now
+    )
     return this.getAccount(id)!
   }
 
@@ -458,20 +545,40 @@ export class StoreService {
 
   listAccounts(page = 1, pageSize = 20, search?: string): ListResponse<Account> {
     if (search) {
-      const countStmt = this.db.prepare("SELECT COUNT(*) as cnt FROM accounts WHERE pool LIKE ? OR notes LIKE ?")
-      const listStmt = this.db.prepare("SELECT * FROM accounts WHERE pool LIKE ? OR notes LIKE ? ORDER BY created_at DESC LIMIT ? OFFSET ?")
-      return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToAccount(r), [`%${search}%`, `%${search}%`])
+      const countStmt = this.db.prepare(
+        'SELECT COUNT(*) as cnt FROM accounts WHERE pool LIKE ? OR notes LIKE ?'
+      )
+      const listStmt = this.db.prepare(
+        'SELECT * FROM accounts WHERE pool LIKE ? OR notes LIKE ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
+      )
+      return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToAccount(r), [
+        `%${search}%`,
+        `%${search}%`
+      ])
     }
     const countStmt = this.stmt('account.count')
-    const listStmt = this.db.prepare("SELECT * FROM accounts ORDER BY created_at DESC LIMIT ? OFFSET ?")
+    const listStmt = this.db.prepare(
+      'SELECT * FROM accounts ORDER BY created_at DESC LIMIT ? OFFSET ?'
+    )
     return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToAccount(r))
   }
 
-  updateAccount(id: string, data: Partial<Omit<Account, 'id' | 'createdAt' | 'updatedAt'>>): Account | null {
+  updateAccount(
+    id: string,
+    data: Partial<Omit<Account, 'id' | 'createdAt' | 'updatedAt'>>
+  ): Account | null {
     const existing = this.getAccount(id)
     if (!existing) return null
     const updated = { ...existing, ...data, updatedAt: nowISO() }
-    this.stmt('account.update').run(updated.templateId, toJson(updated.data), updated.pool, toJson(updated.labels), updated.notes, updated.updatedAt, id)
+    this.stmt('account.update').run(
+      updated.templateId,
+      toJson(updated.data),
+      updated.pool,
+      toJson(updated.labels),
+      updated.notes,
+      updated.updatedAt,
+      id
+    )
     return this.getAccount(id)
   }
 
@@ -483,7 +590,15 @@ export class StoreService {
   createTemplate(data: Omit<Template, 'id' | 'updatedAt'>): Template {
     const id = uuidv4()
     const updatedAt = nowISO()
-    this.stmt('template.insert').run(id, data.type, data.name, toJson(data.schema), data.version, data.isLocal ? 1 : 0, updatedAt)
+    this.stmt('template.insert').run(
+      id,
+      data.type,
+      data.name,
+      toJson(data.schema),
+      data.version,
+      data.isLocal ? 1 : 0,
+      updatedAt
+    )
     return this.getTemplate(id)!
   }
 
@@ -494,12 +609,21 @@ export class StoreService {
 
   listTemplates(page = 1, pageSize = 20, search?: string): ListResponse<Template> {
     if (search) {
-      const countStmt = this.db.prepare("SELECT COUNT(*) as cnt FROM templates WHERE name LIKE ? OR type LIKE ?")
-      const listStmt = this.db.prepare("SELECT * FROM templates WHERE name LIKE ? OR type LIKE ? ORDER BY updated_at DESC LIMIT ? OFFSET ?")
-      return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToTemplate(r), [`%${search}%`, `%${search}%`])
+      const countStmt = this.db.prepare(
+        'SELECT COUNT(*) as cnt FROM templates WHERE name LIKE ? OR type LIKE ?'
+      )
+      const listStmt = this.db.prepare(
+        'SELECT * FROM templates WHERE name LIKE ? OR type LIKE ? ORDER BY updated_at DESC LIMIT ? OFFSET ?'
+      )
+      return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToTemplate(r), [
+        `%${search}%`,
+        `%${search}%`
+      ])
     }
-    const countStmt = this.db.prepare("SELECT COUNT(*) as cnt FROM templates")
-    const listStmt = this.db.prepare("SELECT * FROM templates ORDER BY updated_at DESC LIMIT ? OFFSET ?")
+    const countStmt = this.db.prepare('SELECT COUNT(*) as cnt FROM templates')
+    const listStmt = this.db.prepare(
+      'SELECT * FROM templates ORDER BY updated_at DESC LIMIT ? OFFSET ?'
+    )
     return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToTemplate(r))
   }
 
@@ -507,7 +631,15 @@ export class StoreService {
     const existing = this.getTemplate(id)
     if (!existing) return null
     const updated = { ...existing, ...data, updatedAt: nowISO() }
-    this.stmt('template.update').run(updated.type, updated.name, toJson(updated.schema), updated.version, updated.isLocal ? 1 : 0, updated.updatedAt, id)
+    this.stmt('template.update').run(
+      updated.type,
+      updated.name,
+      toJson(updated.schema),
+      updated.version,
+      updated.isLocal ? 1 : 0,
+      updated.updatedAt,
+      id
+    )
     return this.getTemplate(id)
   }
 
@@ -519,7 +651,18 @@ export class StoreService {
   createTaskTemplate(data: Omit<TaskTemplate, 'id' | 'downloadedAt' | 'updatedAt'>): TaskTemplate {
     const id = uuidv4()
     const now = nowISO()
-    this.stmt('taskTemplate.insert').run(id, data.name, data.version, data.description, data.installPath, toJson(data.manifest), data.remoteUrl ?? null, data.isInstalled ? 1 : 0, now, now)
+    this.stmt('taskTemplate.insert').run(
+      id,
+      data.name,
+      data.version,
+      data.description,
+      data.installPath,
+      toJson(data.manifest),
+      data.remoteUrl ?? null,
+      data.isInstalled ? 1 : 0,
+      now,
+      now
+    )
     return this.getTaskTemplate(id)!
   }
 
@@ -530,20 +673,43 @@ export class StoreService {
 
   listTaskTemplates(page = 1, pageSize = 20, search?: string): ListResponse<TaskTemplate> {
     if (search) {
-      const countStmt = this.db.prepare("SELECT COUNT(*) as cnt FROM task_templates WHERE name LIKE ? OR description LIKE ?")
-      const listStmt = this.db.prepare("SELECT * FROM task_templates WHERE name LIKE ? OR description LIKE ? ORDER BY updated_at DESC LIMIT ? OFFSET ?")
-      return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToTaskTemplate(r), [`%${search}%`, `%${search}%`])
+      const countStmt = this.db.prepare(
+        'SELECT COUNT(*) as cnt FROM task_templates WHERE name LIKE ? OR description LIKE ?'
+      )
+      const listStmt = this.db.prepare(
+        'SELECT * FROM task_templates WHERE name LIKE ? OR description LIKE ? ORDER BY updated_at DESC LIMIT ? OFFSET ?'
+      )
+      return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToTaskTemplate(r), [
+        `%${search}%`,
+        `%${search}%`
+      ])
     }
-    const countStmt = this.db.prepare("SELECT COUNT(*) as cnt FROM task_templates")
-    const listStmt = this.db.prepare("SELECT * FROM task_templates ORDER BY updated_at DESC LIMIT ? OFFSET ?")
+    const countStmt = this.db.prepare('SELECT COUNT(*) as cnt FROM task_templates')
+    const listStmt = this.db.prepare(
+      'SELECT * FROM task_templates ORDER BY updated_at DESC LIMIT ? OFFSET ?'
+    )
     return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToTaskTemplate(r))
   }
 
-  updateTaskTemplate(id: string, data: Partial<Omit<TaskTemplate, 'id' | 'downloadedAt' | 'updatedAt'>>): TaskTemplate | null {
+  updateTaskTemplate(
+    id: string,
+    data: Partial<Omit<TaskTemplate, 'id' | 'downloadedAt' | 'updatedAt'>>
+  ): TaskTemplate | null {
     const existing = this.getTaskTemplate(id)
     if (!existing) return null
     const updated = { ...existing, ...data, updatedAt: nowISO() }
-    this.stmt('taskTemplate.update').run(updated.name, updated.version, updated.description, updated.installPath, toJson(updated.manifest), updated.remoteUrl ?? null, updated.isInstalled ? 1 : 0, updated.downloadedAt, updated.updatedAt, id)
+    this.stmt('taskTemplate.update').run(
+      updated.name,
+      updated.version,
+      updated.description,
+      updated.installPath,
+      toJson(updated.manifest),
+      updated.remoteUrl ?? null,
+      updated.isInstalled ? 1 : 0,
+      updated.downloadedAt,
+      updated.updatedAt,
+      id
+    )
     return this.getTaskTemplate(id)
   }
 
@@ -555,7 +721,16 @@ export class StoreService {
   createScheduledTask(data: Omit<ScheduledTask, 'id' | 'createdAt'>): ScheduledTask {
     const id = uuidv4()
     const createdAt = nowISO()
-    this.stmt('scheduledTask.insert').run(id, data.templateId, toJson(data.config), data.cronExpression, data.enabled ? 1 : 0, data.lastRun ?? null, data.nextRun ?? null, createdAt)
+    this.stmt('scheduledTask.insert').run(
+      id,
+      data.templateId,
+      toJson(data.config),
+      data.cronExpression,
+      data.enabled ? 1 : 0,
+      data.lastRun ?? null,
+      data.nextRun ?? null,
+      createdAt
+    )
     return this.getScheduledTask(id)!
   }
 
@@ -566,20 +741,39 @@ export class StoreService {
 
   listScheduledTasks(page = 1, pageSize = 20, search?: string): ListResponse<ScheduledTask> {
     if (search) {
-      const countStmt = this.db.prepare("SELECT COUNT(*) as cnt FROM scheduled_tasks WHERE cron_expression LIKE ?")
-      const listStmt = this.db.prepare("SELECT * FROM scheduled_tasks WHERE cron_expression LIKE ? ORDER BY created_at DESC LIMIT ? OFFSET ?")
-      return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToScheduledTask(r), [`%${search}%`])
+      const countStmt = this.db.prepare(
+        'SELECT COUNT(*) as cnt FROM scheduled_tasks WHERE cron_expression LIKE ?'
+      )
+      const listStmt = this.db.prepare(
+        'SELECT * FROM scheduled_tasks WHERE cron_expression LIKE ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
+      )
+      return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToScheduledTask(r), [
+        `%${search}%`
+      ])
     }
-    const countStmt = this.db.prepare("SELECT COUNT(*) as cnt FROM scheduled_tasks")
-    const listStmt = this.db.prepare("SELECT * FROM scheduled_tasks ORDER BY created_at DESC LIMIT ? OFFSET ?")
+    const countStmt = this.db.prepare('SELECT COUNT(*) as cnt FROM scheduled_tasks')
+    const listStmt = this.db.prepare(
+      'SELECT * FROM scheduled_tasks ORDER BY created_at DESC LIMIT ? OFFSET ?'
+    )
     return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToScheduledTask(r))
   }
 
-  updateScheduledTask(id: string, data: Partial<Omit<ScheduledTask, 'id' | 'createdAt'>>): ScheduledTask | null {
+  updateScheduledTask(
+    id: string,
+    data: Partial<Omit<ScheduledTask, 'id' | 'createdAt'>>
+  ): ScheduledTask | null {
     const existing = this.getScheduledTask(id)
     if (!existing) return null
     const updated = { ...existing, ...data }
-    this.stmt('scheduledTask.update').run(updated.templateId, toJson(updated.config), updated.cronExpression, updated.enabled ? 1 : 0, updated.lastRun ?? null, updated.nextRun ?? null, id)
+    this.stmt('scheduledTask.update').run(
+      updated.templateId,
+      toJson(updated.config),
+      updated.cronExpression,
+      updated.enabled ? 1 : 0,
+      updated.lastRun ?? null,
+      updated.nextRun ?? null,
+      id
+    )
     return this.getScheduledTask(id)
   }
 
@@ -591,7 +785,22 @@ export class StoreService {
   createAirdrop(data: Omit<AirdropProject, 'id' | 'createdAt' | 'updatedAt'>): AirdropProject {
     const id = uuidv4()
     const now = nowISO()
-    this.stmt('airdrop.insert').run(id, data.name, data.chain, data.status, data.projectType, data.description, toJson(data.links), toJson(data.eligibilityCriteria), toJson(data.tasks), toJson(data.earnings), toJson(data.tags), toJson(data.labels), now, now)
+    this.stmt('airdrop.insert').run(
+      id,
+      data.name,
+      data.chain,
+      data.status,
+      data.projectType,
+      data.description,
+      toJson(data.links),
+      toJson(data.eligibilityCriteria),
+      toJson(data.tasks),
+      toJson(data.earnings),
+      toJson(data.tags),
+      toJson(data.labels),
+      now,
+      now
+    )
     return this.getAirdrop(id)!
   }
 
@@ -602,20 +811,50 @@ export class StoreService {
 
   listAirdrops(page = 1, pageSize = 20, search?: string): ListResponse<AirdropProject> {
     if (search) {
-      const countStmt = this.db.prepare("SELECT COUNT(*) as cnt FROM airdrop_projects WHERE name LIKE ? OR chain LIKE ? OR description LIKE ?")
-      const listStmt = this.db.prepare("SELECT * FROM airdrop_projects WHERE name LIKE ? OR chain LIKE ? OR description LIKE ? ORDER BY updated_at DESC LIMIT ? OFFSET ?")
-      return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToAirdropProject(r), [`%${search}%`, `%${search}%`, `%${search}%`])
+      const countStmt = this.db.prepare(
+        'SELECT COUNT(*) as cnt FROM airdrop_projects WHERE name LIKE ? OR chain LIKE ? OR description LIKE ?'
+      )
+      const listStmt = this.db.prepare(
+        'SELECT * FROM airdrop_projects WHERE name LIKE ? OR chain LIKE ? OR description LIKE ? ORDER BY updated_at DESC LIMIT ? OFFSET ?'
+      )
+      return this.paginate(
+        countStmt,
+        listStmt,
+        page,
+        pageSize,
+        (r) => this.rowToAirdropProject(r),
+        [`%${search}%`, `%${search}%`, `%${search}%`]
+      )
     }
-    const countStmt = this.db.prepare("SELECT COUNT(*) as cnt FROM airdrop_projects")
-    const listStmt = this.db.prepare("SELECT * FROM airdrop_projects ORDER BY updated_at DESC LIMIT ? OFFSET ?")
+    const countStmt = this.db.prepare('SELECT COUNT(*) as cnt FROM airdrop_projects')
+    const listStmt = this.db.prepare(
+      'SELECT * FROM airdrop_projects ORDER BY updated_at DESC LIMIT ? OFFSET ?'
+    )
     return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToAirdropProject(r))
   }
 
-  updateAirdrop(id: string, data: Partial<Omit<AirdropProject, 'id' | 'createdAt' | 'updatedAt'>>): AirdropProject | null {
+  updateAirdrop(
+    id: string,
+    data: Partial<Omit<AirdropProject, 'id' | 'createdAt' | 'updatedAt'>>
+  ): AirdropProject | null {
     const existing = this.getAirdrop(id)
     if (!existing) return null
     const updated = { ...existing, ...data, updatedAt: nowISO() }
-    this.stmt('airdrop.update').run(updated.name, updated.chain, updated.status, updated.projectType, updated.description, toJson(updated.links), toJson(updated.eligibilityCriteria), toJson(updated.tasks), toJson(updated.earnings), toJson(updated.tags), toJson(updated.labels), updated.updatedAt, id)
+    this.stmt('airdrop.update').run(
+      updated.name,
+      updated.chain,
+      updated.status,
+      updated.projectType,
+      updated.description,
+      toJson(updated.links),
+      toJson(updated.eligibilityCriteria),
+      toJson(updated.tasks),
+      toJson(updated.earnings),
+      toJson(updated.tags),
+      toJson(updated.labels),
+      updated.updatedAt,
+      id
+    )
     return this.getAirdrop(id)
   }
 
@@ -638,16 +877,27 @@ export class StoreService {
 
   listCaptchaKeys(page = 1, pageSize = 20, search?: string): ListResponse<CaptchaKey> {
     if (search) {
-      const countStmt = this.db.prepare("SELECT COUNT(*) as cnt FROM captcha_keys WHERE provider LIKE ?")
-      const listStmt = this.db.prepare("SELECT * FROM captcha_keys WHERE provider LIKE ? ORDER BY created_at DESC LIMIT ? OFFSET ?")
-      return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToCaptchaKey(r), [`%${search}%`])
+      const countStmt = this.db.prepare(
+        'SELECT COUNT(*) as cnt FROM captcha_keys WHERE provider LIKE ?'
+      )
+      const listStmt = this.db.prepare(
+        'SELECT * FROM captcha_keys WHERE provider LIKE ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
+      )
+      return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToCaptchaKey(r), [
+        `%${search}%`
+      ])
     }
-    const countStmt = this.db.prepare("SELECT COUNT(*) as cnt FROM captcha_keys")
-    const listStmt = this.db.prepare("SELECT * FROM captcha_keys ORDER BY created_at DESC LIMIT ? OFFSET ?")
+    const countStmt = this.db.prepare('SELECT COUNT(*) as cnt FROM captcha_keys')
+    const listStmt = this.db.prepare(
+      'SELECT * FROM captcha_keys ORDER BY created_at DESC LIMIT ? OFFSET ?'
+    )
     return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToCaptchaKey(r))
   }
 
-  updateCaptchaKey(id: string, data: Partial<Omit<CaptchaKey, 'id' | 'createdAt'>>): CaptchaKey | null {
+  updateCaptchaKey(
+    id: string,
+    data: Partial<Omit<CaptchaKey, 'id' | 'createdAt'>>
+  ): CaptchaKey | null {
     const existing = this.getCaptchaKey(id)
     if (!existing) return null
     const updated = { ...existing, ...data }
@@ -663,7 +913,17 @@ export class StoreService {
   createProxyProvider(data: Omit<ProxyProvider, 'id' | 'createdAt'>): ProxyProvider {
     const id = uuidv4()
     const createdAt = nowISO()
-    this.stmt('proxyProvider.insert').run(id, data.name, data.apiUrl, data.apiKey, data.protocol, data.refreshInterval, data.lastSync ?? null, toJson(data.labels), createdAt)
+    this.stmt('proxyProvider.insert').run(
+      id,
+      data.name,
+      data.apiUrl,
+      data.apiKey,
+      data.protocol,
+      data.refreshInterval,
+      data.lastSync ?? null,
+      toJson(data.labels),
+      createdAt
+    )
     return this.getProxyProvider(id)!
   }
 
@@ -674,20 +934,41 @@ export class StoreService {
 
   listProxyProviders(page = 1, pageSize = 20, search?: string): ListResponse<ProxyProvider> {
     if (search) {
-      const countStmt = this.db.prepare("SELECT COUNT(*) as cnt FROM proxy_providers WHERE name LIKE ? OR api_url LIKE ?")
-      const listStmt = this.db.prepare("SELECT * FROM proxy_providers WHERE name LIKE ? OR api_url LIKE ? ORDER BY created_at DESC LIMIT ? OFFSET ?")
-      return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToProxyProvider(r), [`%${search}%`, `%${search}%`])
+      const countStmt = this.db.prepare(
+        'SELECT COUNT(*) as cnt FROM proxy_providers WHERE name LIKE ? OR api_url LIKE ?'
+      )
+      const listStmt = this.db.prepare(
+        'SELECT * FROM proxy_providers WHERE name LIKE ? OR api_url LIKE ? ORDER BY created_at DESC LIMIT ? OFFSET ?'
+      )
+      return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToProxyProvider(r), [
+        `%${search}%`,
+        `%${search}%`
+      ])
     }
-    const countStmt = this.db.prepare("SELECT COUNT(*) as cnt FROM proxy_providers")
-    const listStmt = this.db.prepare("SELECT * FROM proxy_providers ORDER BY created_at DESC LIMIT ? OFFSET ?")
+    const countStmt = this.db.prepare('SELECT COUNT(*) as cnt FROM proxy_providers')
+    const listStmt = this.db.prepare(
+      'SELECT * FROM proxy_providers ORDER BY created_at DESC LIMIT ? OFFSET ?'
+    )
     return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToProxyProvider(r))
   }
 
-  updateProxyProvider(id: string, data: Partial<Omit<ProxyProvider, 'id' | 'createdAt'>>): ProxyProvider | null {
+  updateProxyProvider(
+    id: string,
+    data: Partial<Omit<ProxyProvider, 'id' | 'createdAt'>>
+  ): ProxyProvider | null {
     const existing = this.getProxyProvider(id)
     if (!existing) return null
     const updated = { ...existing, ...data }
-    this.stmt('proxyProvider.update').run(updated.name, updated.apiUrl, updated.apiKey, updated.protocol, updated.refreshInterval, updated.lastSync ?? null, toJson(updated.labels), id)
+    this.stmt('proxyProvider.update').run(
+      updated.name,
+      updated.apiUrl,
+      updated.apiKey,
+      updated.protocol,
+      updated.refreshInterval,
+      updated.lastSync ?? null,
+      toJson(updated.labels),
+      id
+    )
     return this.getProxyProvider(id)
   }
 
@@ -702,12 +983,19 @@ export class StoreService {
 
   listAppLogs(page = 1, pageSize = 20, search?: string): ListResponse<AppLog> {
     if (search) {
-      const countStmt = this.db.prepare("SELECT COUNT(*) as cnt FROM app_logs WHERE category LIKE ? OR message LIKE ?")
-      const listStmt = this.db.prepare("SELECT * FROM app_logs WHERE category LIKE ? OR message LIKE ? ORDER BY id DESC LIMIT ? OFFSET ?")
-      return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToAppLog(r), [`%${search}%`, `%${search}%`])
+      const countStmt = this.db.prepare(
+        'SELECT COUNT(*) as cnt FROM app_logs WHERE category LIKE ? OR message LIKE ?'
+      )
+      const listStmt = this.db.prepare(
+        'SELECT * FROM app_logs WHERE category LIKE ? OR message LIKE ? ORDER BY id DESC LIMIT ? OFFSET ?'
+      )
+      return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToAppLog(r), [
+        `%${search}%`,
+        `%${search}%`
+      ])
     }
-    const countStmt = this.db.prepare("SELECT COUNT(*) as cnt FROM app_logs")
-    const listStmt = this.db.prepare("SELECT * FROM app_logs ORDER BY id DESC LIMIT ? OFFSET ?")
+    const countStmt = this.db.prepare('SELECT COUNT(*) as cnt FROM app_logs')
+    const listStmt = this.db.prepare('SELECT * FROM app_logs ORDER BY id DESC LIMIT ? OFFSET ?')
     return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToAppLog(r))
   }
 
@@ -742,7 +1030,7 @@ export class StoreService {
     const proxyProtocolDistribution = this._proxyRepo.countByProtocol()
     const proxyStatusDistribution = this._proxyRepo.countByStatus()
 
-    const accountTotal = ((this.stmt('account.count').get()) as Record<string, number>).cnt
+    const accountTotal = (this.stmt('account.count').get() as Record<string, number>).cnt
     const accountPoolRows = this.stmt('account.countByPool').all() as Record<string, unknown>[]
     const accountPoolDistribution: Record<string, number> = {}
     for (const row of accountPoolRows) {
@@ -757,10 +1045,19 @@ export class StoreService {
     const totalFinishedTasks = taskCompletedCount + taskErrorCount
     const taskSuccessRate = totalFinishedTasks > 0 ? taskCompletedCount / totalFinishedTasks : null
 
-    const durationRow = this.db.prepare("SELECT AVG((julianday(ended_at) - julianday(started_at)) * 86400) as avg_dur FROM tasks WHERE status IN ('complete','error','stopped') AND started_at IS NOT NULL AND ended_at IS NOT NULL").get() as Record<string, number | null>
-    const averageTaskDurationSecs = durationRow.avg_dur !== null ? Math.round(durationRow.avg_dur * 100) / 100 : null
+    const durationRow = this.db
+      .prepare(
+        "SELECT AVG((julianday(ended_at) - julianday(started_at)) * 86400) as avg_dur FROM tasks WHERE status IN ('complete','error','stopped') AND started_at IS NOT NULL AND ended_at IS NOT NULL"
+      )
+      .get() as Record<string, number | null>
+    const averageTaskDurationSecs =
+      durationRow.avg_dur !== null ? Math.round(durationRow.avg_dur * 100) / 100 : null
 
-    const durDistRows = this.db.prepare("SELECT CASE WHEN (julianday(ended_at) - julianday(started_at)) * 86400 < 60 THEN '<1min' WHEN (julianday(ended_at) - julianday(started_at)) * 86400 < 300 THEN '1-5min' WHEN (julianday(ended_at) - julianday(started_at)) * 86400 < 600 THEN '5-10min' WHEN (julianday(ended_at) - julianday(started_at)) * 86400 < 1800 THEN '10-30min' ELSE '>30min' END as bucket, COUNT(*) as cnt FROM tasks WHERE status IN ('complete','error','stopped') AND started_at IS NOT NULL AND ended_at IS NOT NULL GROUP BY bucket").all() as Record<string, unknown>[]
+    const durDistRows = this.db
+      .prepare(
+        "SELECT CASE WHEN (julianday(ended_at) - julianday(started_at)) * 86400 < 60 THEN '<1min' WHEN (julianday(ended_at) - julianday(started_at)) * 86400 < 300 THEN '1-5min' WHEN (julianday(ended_at) - julianday(started_at)) * 86400 < 600 THEN '5-10min' WHEN (julianday(ended_at) - julianday(started_at)) * 86400 < 1800 THEN '10-30min' ELSE '>30min' END as bucket, COUNT(*) as cnt FROM tasks WHERE status IN ('complete','error','stopped') AND started_at IS NOT NULL AND ended_at IS NOT NULL GROUP BY bucket"
+      )
+      .all() as Record<string, unknown>[]
     const taskDurationDistribution: Record<string, number> = {}
     for (const row of durDistRows) {
       taskDurationDistribution[row.bucket as string] = row.cnt as number
@@ -771,13 +1068,21 @@ export class StoreService {
 
     const recentTaskResults = this._taskRepo.getRecentFinished(10)
 
-    const templateUsageRows = this.db.prepare("SELECT t.name as template_name, COUNT(tk.id) as task_count FROM templates t LEFT JOIN tasks tk ON tk.script_folder = t.id GROUP BY t.id ORDER BY task_count DESC").all() as Record<string, unknown>[]
+    const templateUsageRows = this.db
+      .prepare(
+        'SELECT t.name as template_name, COUNT(tk.id) as task_count FROM templates t LEFT JOIN tasks tk ON tk.script_folder = t.id GROUP BY t.id ORDER BY task_count DESC'
+      )
+      .all() as Record<string, unknown>[]
     const templateUsage: TemplateUsage[] = templateUsageRows.map((row) => ({
       templateName: row.template_name as string,
       taskCount: row.task_count as number
     }))
 
-    const templateRankingRows = this.db.prepare("SELECT t.name as template_name, COUNT(tk.id) as task_count, SUM(CASE WHEN tk.status='complete' THEN 1 ELSE 0 END) as success_count, SUM(CASE WHEN tk.status='error' THEN 1 ELSE 0 END) as error_count FROM templates t LEFT JOIN tasks tk ON tk.script_folder = t.id GROUP BY t.id ORDER BY task_count DESC").all() as Record<string, unknown>[]
+    const templateRankingRows = this.db
+      .prepare(
+        "SELECT t.name as template_name, COUNT(tk.id) as task_count, SUM(CASE WHEN tk.status='complete' THEN 1 ELSE 0 END) as success_count, SUM(CASE WHEN tk.status='error' THEN 1 ELSE 0 END) as error_count FROM templates t LEFT JOIN tasks tk ON tk.script_folder = t.id GROUP BY t.id ORDER BY task_count DESC"
+      )
+      .all() as Record<string, unknown>[]
     const templateRanking: TemplateRanking[] = templateRankingRows.map((row) => {
       const tc = row.task_count as number
       const sc = (row.success_count as number) ?? 0
@@ -832,11 +1137,13 @@ export class StoreService {
     }
 
     const walletCount = this._walletRepo.count()
-    const accountCount = ((this.stmt('account.count').get()) as Record<string, number>).cnt
+    const accountCount = (this.stmt('account.count').get() as Record<string, number>).cnt
     const proxyCount = this._proxyRepo.count()
     const taskCount = this._taskRepo.count()
 
-    const runningRow = this.db.prepare("SELECT COUNT(*) as cnt FROM tasks WHERE status = 'running'").get() as Record<string, number>
+    const runningRow = this.db
+      .prepare("SELECT COUNT(*) as cnt FROM tasks WHERE status = 'running'")
+      .get() as Record<string, number>
     const runningTaskCount = runningRow.cnt
 
     return {
@@ -854,20 +1161,38 @@ export class StoreService {
 
   batchCreateAccounts(items: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>[]): number {
     const insert = this.stmt('account.insert')
-    const transaction = this.db.transaction((data: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>[]) => {
-      let count = 0
-      for (const item of data) {
-        const id = uuidv4()
-        const now = nowISO()
-        insert.run(id, item.templateId, toJson(item.data), item.pool, toJson(item.labels), item.notes, now, now)
-        count++
+    const transaction = this.db.transaction(
+      (data: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>[]) => {
+        let count = 0
+        for (const item of data) {
+          const id = uuidv4()
+          const now = nowISO()
+          insert.run(
+            id,
+            item.templateId,
+            toJson(item.data),
+            item.pool,
+            toJson(item.labels),
+            item.notes,
+            now,
+            now
+          )
+          count++
+        }
+        return count
       }
-      return count
-    })
+    )
     return transaction(items)
   }
 
-  queryLogs(level?: string, category?: string, search?: string, since?: string, until?: string, limit = 100): ListResponse<AppLog> {
+  queryLogs(
+    level?: string,
+    category?: string,
+    search?: string,
+    since?: string,
+    until?: string,
+    limit = 100
+  ): ListResponse<AppLog> {
     const conditions: string[] = []
     const params: unknown[] = []
 
@@ -893,9 +1218,13 @@ export class StoreService {
     }
 
     const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
-    const countRow = this.db.prepare(`SELECT COUNT(*) as cnt FROM app_logs ${where}`).get(...params) as Record<string, number>
+    const countRow = this.db
+      .prepare(`SELECT COUNT(*) as cnt FROM app_logs ${where}`)
+      .get(...params) as Record<string, number>
     const total = countRow.cnt
-    const rows = this.db.prepare(`SELECT * FROM app_logs ${where} ORDER BY id DESC LIMIT ?`).all(...params, limit) as Record<string, unknown>[]
+    const rows = this.db
+      .prepare(`SELECT * FROM app_logs ${where} ORDER BY id DESC LIMIT ?`)
+      .all(...params, limit) as Record<string, unknown>[]
     return {
       items: rows.map((r) => this.rowToAppLog(r)),
       total,
@@ -906,7 +1235,9 @@ export class StoreService {
   }
 
   getLogCategories(): string[] {
-    const rows = this.db.prepare('SELECT DISTINCT category FROM app_logs ORDER BY category').all() as Record<string, string>[]
+    const rows = this.db
+      .prepare('SELECT DISTINCT category FROM app_logs ORDER BY category')
+      .all() as Record<string, string>[]
     return rows.map((r) => r.category)
   }
 

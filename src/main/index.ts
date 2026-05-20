@@ -58,7 +58,10 @@ autoUpdater.on('update-downloaded', () => {
 
 app.commandLine.appendSwitch('disable-gpu-sandbox')
 app.commandLine.appendSwitch('disable-software-rasterizer')
-app.commandLine.appendSwitch('disable-features', 'VaapiVideoDecoder,VaapiVideoEncoder,VaapiVideoDecodeLinuxGL')
+app.commandLine.appendSwitch(
+  'disable-features',
+  'VaapiVideoDecoder,VaapiVideoEncoder,VaapiVideoDecodeLinuxGL'
+)
 
 function createWindow(httpPort: number): void {
   const mainWindow = new BrowserWindow({
@@ -104,7 +107,14 @@ app.whenReady().then(async () => {
     }
   })
 
-  registerIpcHandlers({ store, walletService, taskService, walletRepo: store.walletRepo, proxyRepo: store.proxyRepo, taskRepo: store.taskRepo })
+  registerIpcHandlers({
+    store,
+    walletService,
+    taskService,
+    walletRepo: store.walletRepo,
+    proxyRepo: store.proxyRepo,
+    taskRepo: store.taskRepo
+  })
 
   httpServer = new HttpApiServer(34116)
   await httpServer.start()
@@ -130,11 +140,14 @@ app.on('window-all-closed', () => {
 app.on('before-quit', (e) => {
   e.preventDefault()
   taskService.cleanup()
-  httpServer.stop().then(() => {
-    store.close()
-    app.quit()
-  }).catch(() => {
-    store.close()
-    app.quit()
-  })
+  httpServer
+    .stop()
+    .then(() => {
+      store.close()
+      app.quit()
+    })
+    .catch(() => {
+      store.close()
+      app.quit()
+    })
 })

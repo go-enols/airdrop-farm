@@ -160,9 +160,27 @@ describe('Wallet CRUD', () => {
   })
 
   it('batchDeleteWallets deletes correct count', () => {
-    const w1 = store.createWallet({ address: '0xbd1', privateKey: null, mnemonic: null, walletType: 'evm', labels: [] })
-    const w2 = store.createWallet({ address: '0xbd2', privateKey: null, mnemonic: null, walletType: 'evm', labels: [] })
-    const w3 = store.createWallet({ address: '0xbd3', privateKey: null, mnemonic: null, walletType: 'evm', labels: [] })
+    const w1 = store.createWallet({
+      address: '0xbd1',
+      privateKey: null,
+      mnemonic: null,
+      walletType: 'evm',
+      labels: []
+    })
+    const w2 = store.createWallet({
+      address: '0xbd2',
+      privateKey: null,
+      mnemonic: null,
+      walletType: 'evm',
+      labels: []
+    })
+    const w3 = store.createWallet({
+      address: '0xbd3',
+      privateKey: null,
+      mnemonic: null,
+      walletType: 'evm',
+      labels: []
+    })
     const deleted = store.batchDeleteWallets([w1.id, w2.id, 'non-existent'])
     expect(deleted).toBe(2)
     expect(store.listWallets().total).toBe(1)
@@ -242,7 +260,11 @@ describe('Account CRUD', () => {
 
   it('deleteAccount returns true on success', () => {
     const created = store.createAccount({
-      templateId: 't1', data: {}, pool: 'p', labels: [], notes: ''
+      templateId: 't1',
+      data: {},
+      pool: 'p',
+      labels: [],
+      notes: ''
     })
     expect(store.deleteAccount(created.id)).toBe(true)
     expect(store.getAccount(created.id)).toBeNull()
@@ -301,8 +323,24 @@ describe('Proxy CRUD', () => {
   })
 
   it('listProxies search works', () => {
-    store.createProxy({ protocol: 'socks5', host: 'target', port: 1080, username: null, password: null, status: 'active', labels: [] })
-    store.createProxy({ protocol: 'http', host: 'other', port: 8080, username: null, password: null, status: 'active', labels: [] })
+    store.createProxy({
+      protocol: 'socks5',
+      host: 'target',
+      port: 1080,
+      username: null,
+      password: null,
+      status: 'active',
+      labels: []
+    })
+    store.createProxy({
+      protocol: 'http',
+      host: 'other',
+      port: 8080,
+      username: null,
+      password: null,
+      status: 'active',
+      labels: []
+    })
     const result = store.listProxies(1, 20, 'target')
     expect(result.items.length).toBe(1)
   })
@@ -334,7 +372,13 @@ describe('Proxy CRUD', () => {
 
   it('deleteProxy returns true on success', () => {
     const created = store.createProxy({
-      protocol: 'http', host: 'del', port: 8080, username: null, password: null, status: 'active', labels: []
+      protocol: 'http',
+      host: 'del',
+      port: 8080,
+      username: null,
+      password: null,
+      status: 'active',
+      labels: []
     })
     expect(store.deleteProxy(created.id)).toBe(true)
     expect(store.getProxy(created.id)).toBeNull()
@@ -392,8 +436,24 @@ describe('Task CRUD', () => {
   })
 
   it('listTasks search works', () => {
-    store.createTask({ scriptFolder: '/scripts/special', config: {}, status: 'running', workerId: null, startedAt: null, endedAt: null, isSandbox: false })
-    store.createTask({ scriptFolder: '/scripts/other', config: {}, status: 'idle', workerId: null, startedAt: null, endedAt: null, isSandbox: false })
+    store.createTask({
+      scriptFolder: '/scripts/special',
+      config: {},
+      status: 'running',
+      workerId: null,
+      startedAt: null,
+      endedAt: null,
+      isSandbox: false
+    })
+    store.createTask({
+      scriptFolder: '/scripts/other',
+      config: {},
+      status: 'idle',
+      workerId: null,
+      startedAt: null,
+      endedAt: null,
+      isSandbox: false
+    })
     const result = store.listTasks(1, 20, 'special')
     expect(result.items.length).toBe(1)
   })
@@ -425,7 +485,13 @@ describe('Task CRUD', () => {
 
   it('deleteTask returns true on success', () => {
     const created = store.createTask({
-      scriptFolder: '/scripts/del', config: {}, status: 'idle', workerId: null, startedAt: null, endedAt: null, isSandbox: false
+      scriptFolder: '/scripts/del',
+      config: {},
+      status: 'idle',
+      workerId: null,
+      startedAt: null,
+      endedAt: null,
+      isSandbox: false
     })
     expect(store.deleteTask(created.id)).toBe(true)
     expect(store.getTask(created.id)).toBeNull()
@@ -437,7 +503,13 @@ describe('Task CRUD', () => {
 
   it('addTaskLog and getTaskLogs work correctly', () => {
     const task = store.createTask({
-      scriptFolder: '/scripts/log', config: {}, status: 'idle', workerId: null, startedAt: null, endedAt: null, isSandbox: false
+      scriptFolder: '/scripts/log',
+      config: {},
+      status: 'idle',
+      workerId: null,
+      startedAt: null,
+      endedAt: null,
+      isSandbox: false
     })
     store.addTaskLog(task.id, 'info', 'started')
     store.addTaskLog(task.id, 'error', 'failed')
@@ -453,7 +525,13 @@ describe('Task CRUD', () => {
 
   it('getTaskLogs respects limit', () => {
     const task = store.createTask({
-      scriptFolder: '/scripts/log2', config: {}, status: 'idle', workerId: null, startedAt: null, endedAt: null, isSandbox: false
+      scriptFolder: '/scripts/log2',
+      config: {},
+      status: 'idle',
+      workerId: null,
+      startedAt: null,
+      endedAt: null,
+      isSandbox: false
     })
     for (let i = 0; i < 5; i++) {
       store.addTaskLog(task.id, 'info', `msg-${i}`)
@@ -464,7 +542,13 @@ describe('Task CRUD', () => {
 
   it('clearTaskLogs clears all logs and returns count', () => {
     const task = store.createTask({
-      scriptFolder: '/scripts/clear', config: {}, status: 'idle', workerId: null, startedAt: null, endedAt: null, isSandbox: false
+      scriptFolder: '/scripts/clear',
+      config: {},
+      status: 'idle',
+      workerId: null,
+      startedAt: null,
+      endedAt: null,
+      isSandbox: false
     })
     store.addTaskLog(task.id, 'info', 'msg1')
     store.addTaskLog(task.id, 'info', 'msg2')
@@ -549,10 +633,32 @@ describe('Stats', () => {
   })
 
   it('getAppInfo counts entities correctly', () => {
-    store.createWallet({ address: '0x1', privateKey: null, mnemonic: null, walletType: 'evm', labels: [] })
+    store.createWallet({
+      address: '0x1',
+      privateKey: null,
+      mnemonic: null,
+      walletType: 'evm',
+      labels: []
+    })
     store.createAccount({ templateId: 't1', data: {}, pool: 'p', labels: [], notes: '' })
-    store.createProxy({ protocol: 'http', host: 'h', port: 8080, username: null, password: null, status: 'active', labels: [] })
-    store.createTask({ scriptFolder: '/s', config: {}, status: 'running', workerId: null, startedAt: null, endedAt: null, isSandbox: false })
+    store.createProxy({
+      protocol: 'http',
+      host: 'h',
+      port: 8080,
+      username: null,
+      password: null,
+      status: 'active',
+      labels: []
+    })
+    store.createTask({
+      scriptFolder: '/s',
+      config: {},
+      status: 'running',
+      workerId: null,
+      startedAt: null,
+      endedAt: null,
+      isSandbox: false
+    })
 
     const info = store.getAppInfo()
     expect(info.walletCount).toBe(1)

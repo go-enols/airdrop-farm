@@ -2,14 +2,24 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { proxyApi } from '../api'
 import type { Proxy, ListResponse } from '../types'
-import { Plus, Search, Trash2, ChevronLeft, ChevronRight, Edit3, Copy, CheckSquare, Square } from 'lucide-react'
+import {
+  Plus,
+  Search,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  Edit3,
+  Copy,
+  CheckSquare,
+  Square
+} from 'lucide-react'
 
 const PAGE_SIZE = 20
 
 const statusColor: Record<string, string> = {
   active: 'bg-status-active-bg text-status-active-text',
   inactive: 'bg-status-inactive-bg text-status-inactive-text',
-  expired: 'bg-status-expired-bg text-status-expired-text',
+  expired: 'bg-status-expired-bg text-status-expired-text'
 }
 
 const emptyForm = {
@@ -19,7 +29,7 @@ const emptyForm = {
   username: '' as string | null,
   password: '' as string | null,
   status: 'active' as 'active' | 'inactive' | 'expired',
-  labels: [] as string[],
+  labels: [] as string[]
 }
 
 const Proxies: React.FC = () => {
@@ -77,7 +87,7 @@ const Proxies: React.FC = () => {
         username: form.username || null,
         password: form.password || null,
         status: form.status,
-        labels: form.labels,
+        labels: form.labels
       })
       setShowAdd(false)
       setForm({ ...emptyForm })
@@ -99,7 +109,7 @@ const Proxies: React.FC = () => {
         username: form.username || null,
         password: form.password || null,
         status: form.status,
-        labels: form.labels,
+        labels: form.labels
       })
       setEditingProxy(null)
       setForm({ ...emptyForm })
@@ -157,7 +167,7 @@ const Proxies: React.FC = () => {
       username: proxy.username || '',
       password: proxy.password || '',
       status: proxy.status,
-      labels: [...proxy.labels],
+      labels: [...proxy.labels]
     })
     setLabelInput('')
     setErrorMsg('')
@@ -208,7 +218,9 @@ const Proxies: React.FC = () => {
         <label className="block text-sm font-medium mb-1">{t('proxies.protocol')}</label>
         <select
           value={form.protocol}
-          onChange={(e) => setForm((f) => ({ ...f, protocol: e.target.value as 'http' | 'https' | 'socks5' }))}
+          onChange={(e) =>
+            setForm((f) => ({ ...f, protocol: e.target.value as 'http' | 'https' | 'socks5' }))
+          }
           className="w-full px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
         >
           <option value="http">HTTP</option>
@@ -239,26 +251,28 @@ const Proxies: React.FC = () => {
       <div>
         <label className="block text-sm font-medium mb-1">{t('proxies.username')}</label>
         <input
-            type="text"
-            value={form.username || ''}
-            onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
-            className="w-full px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
-          />
+          type="text"
+          value={form.username || ''}
+          onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))}
+          className="w-full px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+        />
       </div>
       <div>
         <label className="block text-sm font-medium mb-1">{t('proxies.password')}</label>
         <input
-            type="password"
-            value={form.password || ''}
-            onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-            className="w-full px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
-          />
+          type="password"
+          value={form.password || ''}
+          onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+          className="w-full px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+        />
       </div>
       <div>
         <label className="block text-sm font-medium mb-1">{t('proxies.status')}</label>
         <select
           value={form.status}
-          onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as 'active' | 'inactive' | 'expired' }))}
+          onChange={(e) =>
+            setForm((f) => ({ ...f, status: e.target.value as 'active' | 'inactive' | 'expired' }))
+          }
           className="w-full px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
         >
           <option value="active">Active</option>
@@ -270,9 +284,14 @@ const Proxies: React.FC = () => {
         <label className="block text-sm font-medium mb-1">{t('proxies.labels')}</label>
         <div className="flex flex-wrap gap-1 mb-2">
           {form.labels.map((l) => (
-            <span key={l} className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 text-primary text-xs rounded">
+            <span
+              key={l}
+              className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 text-primary text-xs rounded"
+            >
               {l}
-              <button onClick={() => removeLabel(l)} className="hover:text-danger">&times;</button>
+              <button onClick={() => removeLabel(l)} className="hover:text-danger">
+                &times;
+              </button>
             </span>
           ))}
         </div>
@@ -281,11 +300,19 @@ const Proxies: React.FC = () => {
             type="text"
             value={labelInput}
             onChange={(e) => setLabelInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addLabel() } }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                addLabel()
+              }
+            }}
             placeholder={t('common.addLabel') + '...'}
             className="flex-1 px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
           />
-          <button onClick={addLabel} className="px-3 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover transition-colors">
+          <button
+            onClick={addLabel}
+            className="px-3 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover transition-colors"
+          >
             <Plus size={14} />
           </button>
         </div>
@@ -298,7 +325,9 @@ const Proxies: React.FC = () => {
       {errorMsg && (
         <div className="px-4 py-2 text-sm text-danger bg-danger-light rounded-lg flex items-center justify-between">
           <span>{errorMsg}</span>
-          <button onClick={() => setErrorMsg('')} className="text-danger/70 hover:text-danger">&times;</button>
+          <button onClick={() => setErrorMsg('')} className="text-danger/70 hover:text-danger">
+            &times;
+          </button>
         </div>
       )}
 
@@ -306,7 +335,10 @@ const Proxies: React.FC = () => {
         <h1 className="text-2xl font-bold">{t('proxies.title')}</h1>
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted"
+            />
             <input
               type="text"
               placeholder={t('proxies.searchPlaceholder')}
@@ -317,12 +349,12 @@ const Proxies: React.FC = () => {
           </div>
           {selectedIds.size > 0 && (
             <button
-            onClick={() => setShowBatchDelete(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-danger text-white rounded-lg hover:bg-danger-hover transition-colors"
-          >
-            <Trash2 size={16} />
-            {t('common.batchDelete')} ({selectedIds.size})
-          </button>
+              onClick={() => setShowBatchDelete(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-danger text-white rounded-lg hover:bg-danger-hover transition-colors"
+            >
+              <Trash2 size={16} />
+              {t('common.batchDelete')} ({selectedIds.size})
+            </button>
           )}
           <button
             onClick={openAddModal}
@@ -345,50 +377,97 @@ const Proxies: React.FC = () => {
               <thead className="bg-bg-tertiary">
                 <tr>
                   <th className="px-4 py-2.5 text-left w-10">
-                    <button onClick={toggleSelectAll} className="text-text-muted hover:text-text-primary transition-colors">
+                    <button
+                      onClick={toggleSelectAll}
+                      className="text-text-muted hover:text-text-primary transition-colors"
+                    >
                       {allSelected ? <CheckSquare size={16} /> : <Square size={16} />}
                     </button>
                   </th>
-                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">{t('proxies.protocol')}</th>
-                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">{t('proxies.host')}:{t('proxies.port')}</th>
-                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">{t('proxies.username')}</th>
-                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">{t('proxies.status')}</th>
-                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">{t('proxies.labels')}</th>
-                  <th className="px-4 py-2.5 text-right font-medium text-text-muted">{t('common.actions')}</th>
+                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                    {t('proxies.protocol')}
+                  </th>
+                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                    {t('proxies.host')}:{t('proxies.port')}
+                  </th>
+                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                    {t('proxies.username')}
+                  </th>
+                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                    {t('proxies.status')}
+                  </th>
+                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                    {t('proxies.labels')}
+                  </th>
+                  <th className="px-4 py-2.5 text-right font-medium text-text-muted">
+                    {t('common.actions')}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-light/50">
                 {data.items.map((proxy) => (
                   <tr key={proxy.id} className="hover:bg-bg-card-hover transition-colors">
                     <td className="px-4 py-2.5">
-                      <button onClick={() => toggleSelect(proxy.id)} className="text-text-muted hover:text-text-primary transition-colors">
-                        {selectedIds.has(proxy.id) ? <CheckSquare size={16} className="text-primary" /> : <Square size={16} />}
+                      <button
+                        onClick={() => toggleSelect(proxy.id)}
+                        className="text-text-muted hover:text-text-primary transition-colors"
+                      >
+                        {selectedIds.has(proxy.id) ? (
+                          <CheckSquare size={16} className="text-primary" />
+                        ) : (
+                          <Square size={16} />
+                        )}
                       </button>
                     </td>
                     <td className="px-4 py-2.5 font-mono text-xs uppercase">{proxy.protocol}</td>
-                    <td className="px-4 py-2.5 font-mono">{proxy.host}:{proxy.port}</td>
+                    <td className="px-4 py-2.5 font-mono">
+                      {proxy.host}:{proxy.port}
+                    </td>
                     <td className="px-4 py-2.5">{proxy.username || '-'}</td>
                     <td className="px-4 py-2.5">
-                      <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColor[proxy.status] || statusColor.inactive}`}>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColor[proxy.status] || statusColor.inactive}`}
+                      >
                         {proxy.status}
                       </span>
                     </td>
                     <td className="px-4 py-2.5">
                       <div className="flex flex-wrap gap-1">
                         {proxy.labels.map((l) => (
-                          <span key={l} className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded">{l}</span>
+                          <span
+                            key={l}
+                            className="px-1.5 py-0.5 bg-primary/10 text-primary text-xs rounded"
+                          >
+                            {l}
+                          </span>
                         ))}
                       </div>
                     </td>
                     <td className="px-4 py-2.5 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => copyProxyAddress(proxy)} className="p-1 text-text-muted hover:text-primary hover:bg-primary-light rounded transition-colors" title={t('proxies.copyAddress')}>
-                          {copiedId === proxy.id ? <CheckSquare size={16} className="text-success" /> : <Copy size={16} />}
+                        <button
+                          onClick={() => copyProxyAddress(proxy)}
+                          className="p-1 text-text-muted hover:text-primary hover:bg-primary-light rounded transition-colors"
+                          title={t('proxies.copyAddress')}
+                        >
+                          {copiedId === proxy.id ? (
+                            <CheckSquare size={16} className="text-success" />
+                          ) : (
+                            <Copy size={16} />
+                          )}
                         </button>
-                        <button onClick={() => openEditModal(proxy)} className="p-1 text-text-muted hover:text-primary hover:bg-primary-light rounded transition-colors" title={t('common.edit')}>
+                        <button
+                          onClick={() => openEditModal(proxy)}
+                          className="p-1 text-text-muted hover:text-primary hover:bg-primary-light rounded transition-colors"
+                          title={t('common.edit')}
+                        >
                           <Edit3 size={16} />
                         </button>
-                        <button onClick={() => setDeleteId(proxy.id)} className="p-1 text-danger hover:bg-danger-light rounded transition-colors" title={t('common.delete')}>
+                        <button
+                          onClick={() => setDeleteId(proxy.id)}
+                          className="p-1 text-danger hover:bg-danger-light rounded transition-colors"
+                          title={t('common.delete')}
+                        >
                           <Trash2 size={16} />
                         </button>
                       </div>
@@ -424,16 +503,31 @@ const Proxies: React.FC = () => {
       )}
 
       {showAdd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowAdd(false)}>
-          <div className="bg-bg-card rounded-xl shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setShowAdd(false)}
+        >
+          <div
+            className="bg-bg-card rounded-xl shadow-xl w-full max-w-md p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 className="text-lg font-semibold mb-4">{t('proxies.createProxy')}</h2>
             {renderForm()}
             {errorMsg && <p className="mt-2 text-sm text-danger">{errorMsg}</p>}
             <div className="flex justify-end gap-2 mt-6">
-              <button onClick={() => { setShowAdd(false); setErrorMsg('') }} className="px-4 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover transition-colors">
+              <button
+                onClick={() => {
+                  setShowAdd(false)
+                  setErrorMsg('')
+                }}
+                className="px-4 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover transition-colors"
+              >
                 {t('common.cancel')}
               </button>
-              <button onClick={handleAdd} className="px-4 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors">
+              <button
+                onClick={handleAdd}
+                className="px-4 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
+              >
                 {t('common.create')}
               </button>
             </div>
@@ -442,16 +536,36 @@ const Proxies: React.FC = () => {
       )}
 
       {editingProxy && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => { setEditingProxy(null); setErrorMsg('') }}>
-          <div className="bg-bg-card rounded-xl shadow-xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold text-text-primary mb-4">{t('proxies.editProxy')}</h2>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => {
+            setEditingProxy(null)
+            setErrorMsg('')
+          }}
+        >
+          <div
+            className="bg-bg-card rounded-xl shadow-xl w-full max-w-md p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-lg font-semibold text-text-primary mb-4">
+              {t('proxies.editProxy')}
+            </h2>
             {renderForm()}
             {errorMsg && <p className="mt-2 text-sm text-danger">{errorMsg}</p>}
             <div className="flex justify-end gap-2 mt-6">
-              <button onClick={() => { setEditingProxy(null); setErrorMsg('') }} className="px-4 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover transition-colors">
+              <button
+                onClick={() => {
+                  setEditingProxy(null)
+                  setErrorMsg('')
+                }}
+                className="px-4 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover transition-colors"
+              >
                 {t('common.cancel')}
               </button>
-              <button onClick={handleEdit} className="px-4 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors">
+              <button
+                onClick={handleEdit}
+                className="px-4 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
+              >
                 {t('common.save')}
               </button>
             </div>
@@ -460,15 +574,27 @@ const Proxies: React.FC = () => {
       )}
 
       {deleteId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setDeleteId(null)}>
-          <div className="bg-bg-card rounded-xl shadow-xl w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setDeleteId(null)}
+        >
+          <div
+            className="bg-bg-card rounded-xl shadow-xl w-full max-w-sm p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 className="text-lg font-semibold text-text-primary mb-2">{t('common.delete')}</h2>
             <p className="text-sm text-text-secondary mb-6">{t('proxies.confirmDelete')}</p>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setDeleteId(null)} className="px-4 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover transition-colors">
+              <button
+                onClick={() => setDeleteId(null)}
+                className="px-4 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover transition-colors"
+              >
                 {t('common.cancel')}
               </button>
-              <button onClick={handleDelete} className="px-4 py-1.5 text-sm bg-danger text-white rounded-lg hover:bg-danger-hover transition-colors">
+              <button
+                onClick={handleDelete}
+                className="px-4 py-1.5 text-sm bg-danger text-white rounded-lg hover:bg-danger-hover transition-colors"
+              >
                 {t('common.delete')}
               </button>
             </div>
@@ -477,15 +603,31 @@ const Proxies: React.FC = () => {
       )}
 
       {showBatchDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setShowBatchDelete(false)}>
-          <div className="bg-bg-card rounded-xl shadow-xl w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-lg font-semibold text-text-primary mb-2">{t('common.batchDelete')}</h2>
-            <p className="text-sm text-text-secondary mb-6">{t('proxies.confirmBatchDelete', { count: selectedIds.size })}</p>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          onClick={() => setShowBatchDelete(false)}
+        >
+          <div
+            className="bg-bg-card rounded-xl shadow-xl w-full max-w-sm p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-lg font-semibold text-text-primary mb-2">
+              {t('common.batchDelete')}
+            </h2>
+            <p className="text-sm text-text-secondary mb-6">
+              {t('proxies.confirmBatchDelete', { count: selectedIds.size })}
+            </p>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setShowBatchDelete(false)} className="px-4 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover transition-colors">
+              <button
+                onClick={() => setShowBatchDelete(false)}
+                className="px-4 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover transition-colors"
+              >
                 {t('common.cancel')}
               </button>
-              <button onClick={handleBatchDelete} className="px-4 py-1.5 text-sm bg-danger text-white rounded-lg hover:bg-danger-hover transition-colors">
+              <button
+                onClick={handleBatchDelete}
+                className="px-4 py-1.5 text-sm bg-danger text-white rounded-lg hover:bg-danger-hover transition-colors"
+              >
                 {t('common.delete')}
               </button>
             </div>

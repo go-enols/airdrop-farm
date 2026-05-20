@@ -30,7 +30,9 @@ export function getActiveTransport(): TransportType | null {
 
 export function setActiveTransport(t: TransportType): void {
   activeTransport = t
-  try { localStorage.setItem(TRANSPORT_KEY, t) } catch {}
+  try {
+    localStorage.setItem(TRANSPORT_KEY, t)
+  } catch {}
 }
 
 function getForcedTransport(): TransportType | null {
@@ -53,7 +55,7 @@ async function callIPC<T>(channel: string, args: unknown[]): Promise<T> {
   if (result.error) {
     throw Object.assign(new Error(result.error.message), {
       code: result.error.code,
-      category: result.error.category,
+      category: result.error.category
     })
   }
   return result.data as T
@@ -68,21 +70,21 @@ async function tryHttpPort<T>(port: number, channel: string, args: unknown[]): P
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ channel, args }),
-      signal: controller.signal,
+      signal: controller.signal
     })
     if (!response.ok) {
       const errBody = await response.json().catch(() => null)
       const errMsg = errBody?.error?.message || `HTTP ${response.status}`
       throw Object.assign(new Error(errMsg), {
         code: errBody?.error?.code,
-        category: errBody?.error?.category,
+        category: errBody?.error?.category
       })
     }
     const result: ApiResult<T> = await response.json()
     if (result.error) {
       throw Object.assign(new Error(result.error.message), {
         code: result.error.code,
-        category: result.error.category,
+        category: result.error.category
       })
     }
     return result.data as T
@@ -117,7 +119,9 @@ async function callHTTP<T>(channel: string, args: unknown[]): Promise<T> {
     }
   }
 
-  throw new Error(`HTTP API unreachable (tried ports ${HTTP_PORT_RANGE.from}-${HTTP_PORT_RANGE.to})`)
+  throw new Error(
+    `HTTP API unreachable (tried ports ${HTTP_PORT_RANGE.from}-${HTTP_PORT_RANGE.to})`
+  )
 }
 
 export async function call<T>(channel: string, args: unknown[] = []): Promise<T> {
@@ -144,10 +148,14 @@ export async function call<T>(channel: string, args: unknown[] = []): Promise<T>
     try {
       const result = await callHTTP<T>(channel, args)
       activeTransport = 'http'
-      console.warn(`[transport] IPC failed (${(ipcErr as Error).message}), switched to HTTP: ${channel}`)
+      console.warn(
+        `[transport] IPC failed (${(ipcErr as Error).message}), switched to HTTP: ${channel}`
+      )
       return result
     } catch (httpErr) {
-      console.error(`[transport] Both failed for "${channel}": IPC=${(ipcErr as Error).message}, HTTP=${(httpErr as Error).message}`)
+      console.error(
+        `[transport] Both failed for "${channel}": IPC=${(ipcErr as Error).message}, HTTP=${(httpErr as Error).message}`
+      )
       throw httpErr
     }
   }
@@ -155,13 +163,21 @@ export async function call<T>(channel: string, args: unknown[] = []): Promise<T>
 
 export async function checkHTTPHealth(): Promise<boolean> {
   const electronPort = getElectronHttpPort()
-  const ports = electronPort ? [electronPort] : Array.from({ length: HTTP_PORT_RANGE.to - HTTP_PORT_RANGE.from + 1 }, (_, i) => HTTP_PORT_RANGE.from + i)
+  const ports = electronPort
+    ? [electronPort]
+    : Array.from(
+        { length: HTTP_PORT_RANGE.to - HTTP_PORT_RANGE.from + 1 },
+        (_, i) => HTTP_PORT_RANGE.from + i
+      )
 
   for (const port of ports) {
     try {
       const controller = new AbortController()
       const timer = setTimeout(() => controller.abort(), HEALTH_TIMEOUT)
-      const resp = await fetch(`http://127.0.0.1:${port}/api/health`, { method: 'GET', signal: controller.signal })
+      const resp = await fetch(`http://127.0.0.1:${port}/api/health`, {
+        method: 'GET',
+        signal: controller.signal
+      })
       clearTimeout(timer)
       if (resp.ok) return true
     } catch {}

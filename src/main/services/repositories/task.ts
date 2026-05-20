@@ -10,9 +10,12 @@ import type {
 } from '../../../shared/types'
 import { BaseRepository } from './base'
 
-const TASK_RECENT_FINISHED_SQL = "SELECT * FROM tasks WHERE status IN ('complete','error','stopped') ORDER BY ended_at DESC LIMIT ?"
-const TASK_TIMELINE_SQL = "SELECT DATE(started_at) as date, COUNT(CASE WHEN status='running' OR started_at IS NOT NULL THEN 1 END) as started, COUNT(CASE WHEN status='complete' THEN 1 END) as completed, COUNT(CASE WHEN status='error' THEN 1 END) as failed FROM tasks WHERE started_at IS NOT NULL AND started_at >= ? GROUP BY DATE(started_at) ORDER BY date"
-const TASK_WEEKLY_TREND_SQL = "SELECT strftime('%Y-%W', started_at) as week_start, COUNT(CASE WHEN started_at IS NOT NULL THEN 1 END) as started, COUNT(CASE WHEN status='complete' THEN 1 END) as completed, COUNT(CASE WHEN status='error' THEN 1 END) as failed FROM tasks WHERE started_at IS NOT NULL AND started_at >= ? GROUP BY strftime('%Y-%W', started_at) ORDER BY week_start"
+const TASK_RECENT_FINISHED_SQL =
+  "SELECT * FROM tasks WHERE status IN ('complete','error','stopped') ORDER BY ended_at DESC LIMIT ?"
+const TASK_TIMELINE_SQL =
+  "SELECT DATE(started_at) as date, COUNT(CASE WHEN status='running' OR started_at IS NOT NULL THEN 1 END) as started, COUNT(CASE WHEN status='complete' THEN 1 END) as completed, COUNT(CASE WHEN status='error' THEN 1 END) as failed FROM tasks WHERE started_at IS NOT NULL AND started_at >= ? GROUP BY DATE(started_at) ORDER BY date"
+const TASK_WEEKLY_TREND_SQL =
+  "SELECT strftime('%Y-%W', started_at) as week_start, COUNT(CASE WHEN started_at IS NOT NULL THEN 1 END) as started, COUNT(CASE WHEN status='complete' THEN 1 END) as completed, COUNT(CASE WHEN status='error' THEN 1 END) as failed FROM tasks WHERE started_at IS NOT NULL AND started_at >= ? GROUP BY strftime('%Y-%W', started_at) ORDER BY week_start"
 
 export class TaskRepository extends BaseRepository<Task> {
   constructor(db: Database.Database) {
@@ -21,18 +24,39 @@ export class TaskRepository extends BaseRepository<Task> {
   }
 
   prepareStatements(): void {
-    this.setStmt('task.insert', this.db.prepare('INSERT INTO tasks (id, script_folder, config, status, worker_id, started_at, ended_at, is_sandbox) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'))
+    this.setStmt(
+      'task.insert',
+      this.db.prepare(
+        'INSERT INTO tasks (id, script_folder, config, status, worker_id, started_at, ended_at, is_sandbox) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+      )
+    )
     this.setStmt('task.getById', this.db.prepare('SELECT * FROM tasks WHERE id = ?'))
-    this.setStmt('task.update', this.db.prepare('UPDATE tasks SET script_folder=?, config=?, status=?, worker_id=?, started_at=?, ended_at=?, is_sandbox=? WHERE id=?'))
+    this.setStmt(
+      'task.update',
+      this.db.prepare(
+        'UPDATE tasks SET script_folder=?, config=?, status=?, worker_id=?, started_at=?, ended_at=?, is_sandbox=? WHERE id=?'
+      )
+    )
     this.setStmt('task.delete', this.db.prepare('DELETE FROM tasks WHERE id = ?'))
     this.setStmt('task.count', this.db.prepare('SELECT COUNT(*) as cnt FROM tasks'))
-    this.setStmt('task.countByStatus', this.db.prepare('SELECT status, COUNT(*) as cnt FROM tasks GROUP BY status'))
+    this.setStmt(
+      'task.countByStatus',
+      this.db.prepare('SELECT status, COUNT(*) as cnt FROM tasks GROUP BY status')
+    )
     this.setStmt('task.recentFinished', this.db.prepare(TASK_RECENT_FINISHED_SQL))
     this.setStmt('task.timeline', this.db.prepare(TASK_TIMELINE_SQL))
     this.setStmt('task.weeklyTrend', this.db.prepare(TASK_WEEKLY_TREND_SQL))
 
-    this.setStmt('taskLog.insert', this.db.prepare('INSERT INTO task_logs (task_id, timestamp, level, message) VALUES (?, ?, ?, ?)'))
-    this.setStmt('taskLog.getByTaskId', this.db.prepare('SELECT * FROM task_logs WHERE task_id = ? ORDER BY id DESC LIMIT ?'))
+    this.setStmt(
+      'taskLog.insert',
+      this.db.prepare(
+        'INSERT INTO task_logs (task_id, timestamp, level, message) VALUES (?, ?, ?, ?)'
+      )
+    )
+    this.setStmt(
+      'taskLog.getByTaskId',
+      this.db.prepare('SELECT * FROM task_logs WHERE task_id = ? ORDER BY id DESC LIMIT ?')
+    )
     this.setStmt('taskLog.clearAll', this.db.prepare('DELETE FROM task_logs'))
     this.setStmt('taskLog.count', this.db.prepare('SELECT COUNT(*) as cnt FROM task_logs'))
   }
@@ -61,7 +85,7 @@ export class TaskRepository extends BaseRepository<Task> {
   }
 
   count(): number {
-    return ((this.stmt('task.count').get()) as Record<string, number>).cnt
+    return (this.stmt('task.count').get() as Record<string, number>).cnt
   }
 
   countByStatus(): Record<string, number> {
@@ -74,7 +98,7 @@ export class TaskRepository extends BaseRepository<Task> {
   }
 
   countTaskLogs(): number {
-    return ((this.stmt('taskLog.count').get()) as Record<string, number>).cnt
+    return (this.stmt('taskLog.count').get() as Record<string, number>).cnt
   }
 
   getRecentFinished(limit: number): RecentTaskResult[] {
@@ -84,7 +108,9 @@ export class TaskRepository extends BaseRepository<Task> {
       const endedAt = row.ended_at as string | null
       let durationSecs: number | null = null
       if (startedAt && endedAt) {
-        durationSecs = Math.round(((new Date(endedAt).getTime() - new Date(startedAt).getTime()) / 1000) * 100) / 100
+        durationSecs =
+          Math.round(((new Date(endedAt).getTime() - new Date(startedAt).getTime()) / 1000) * 100) /
+          100
       }
       return {
         id: row.id as string,
@@ -119,7 +145,16 @@ export class TaskRepository extends BaseRepository<Task> {
 
   createTask(data: Omit<Task, 'id'>): Task {
     const id = uuidv4()
-    this.stmt('task.insert').run(id, data.scriptFolder, this.toJson(data.config), data.status, data.workerId ?? null, data.startedAt ?? null, data.endedAt ?? null, data.isSandbox ? 1 : 0)
+    this.stmt('task.insert').run(
+      id,
+      data.scriptFolder,
+      this.toJson(data.config),
+      data.status,
+      data.workerId ?? null,
+      data.startedAt ?? null,
+      data.endedAt ?? null,
+      data.isSandbox ? 1 : 0
+    )
     return this.getTask(id)!
   }
 
@@ -130,12 +165,19 @@ export class TaskRepository extends BaseRepository<Task> {
 
   listTasks(page = 1, pageSize = 20, search?: string): ListResponse<Task> {
     if (search) {
-      const countStmt = this.db.prepare("SELECT COUNT(*) as cnt FROM tasks WHERE script_folder LIKE ? OR status LIKE ?")
-      const listStmt = this.db.prepare("SELECT * FROM tasks WHERE script_folder LIKE ? OR status LIKE ? ORDER BY id DESC LIMIT ? OFFSET ?")
-      return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToTask(r), [`%${search}%`, `%${search}%`])
+      const countStmt = this.db.prepare(
+        'SELECT COUNT(*) as cnt FROM tasks WHERE script_folder LIKE ? OR status LIKE ?'
+      )
+      const listStmt = this.db.prepare(
+        'SELECT * FROM tasks WHERE script_folder LIKE ? OR status LIKE ? ORDER BY id DESC LIMIT ? OFFSET ?'
+      )
+      return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToTask(r), [
+        `%${search}%`,
+        `%${search}%`
+      ])
     }
     const countStmt = this.stmt('task.count')
-    const listStmt = this.db.prepare("SELECT * FROM tasks ORDER BY id DESC LIMIT ? OFFSET ?")
+    const listStmt = this.db.prepare('SELECT * FROM tasks ORDER BY id DESC LIMIT ? OFFSET ?')
     return this.paginate(countStmt, listStmt, page, pageSize, (r) => this.rowToTask(r))
   }
 
@@ -143,7 +185,16 @@ export class TaskRepository extends BaseRepository<Task> {
     const existing = this.getTask(id)
     if (!existing) return null
     const updated = { ...existing, ...data }
-    this.stmt('task.update').run(updated.scriptFolder, this.toJson(updated.config), updated.status, updated.workerId ?? null, updated.startedAt ?? null, updated.endedAt ?? null, updated.isSandbox ? 1 : 0, id)
+    this.stmt('task.update').run(
+      updated.scriptFolder,
+      this.toJson(updated.config),
+      updated.status,
+      updated.workerId ?? null,
+      updated.startedAt ?? null,
+      updated.endedAt ?? null,
+      updated.isSandbox ? 1 : 0,
+      id
+    )
     return this.getTask(id)
   }
 
@@ -162,7 +213,7 @@ export class TaskRepository extends BaseRepository<Task> {
   }
 
   clearTaskLogs(): number {
-    const count = ((this.stmt('taskLog.count').get()) as Record<string, number>).cnt
+    const count = (this.stmt('taskLog.count').get() as Record<string, number>).cnt
     this.stmt('taskLog.clearAll').run()
     return count
   }
