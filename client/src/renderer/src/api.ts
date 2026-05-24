@@ -246,15 +246,14 @@ export const marketplaceApi = {
   getApiKey: getMarketplaceApiKey,
   setApiKey: setMarketplaceApiKey,
 
-  listScripts: async (serverUrl?: string) => {
+listScripts: async (serverUrl?: string) => {
     const base = serverUrl || (await getMarketplaceUrl())
     const headers = await getMarketplaceHeaders()
     const resp = await fetch(`${base}/api/scripts`, { headers })
     if (!resp.ok) throw new Error(`Failed to fetch scripts: ${resp.status}`)
     const json = await resp.json()
-    // Server returns { data: { items, total } }; unwrap if data envelope present
     const data = json.data ?? json
-    return { items: data.items ?? [], total: data.total ?? 0, page: 1, pageSize: data.total ?? 0, totalPages: 1 } as ListResponse<RemoteScript>
+    return { items: data.items ?? [], total: data.total ?? 0, page: data.page ?? 1, pageSize: data.items?.length ?? data.total ?? 0, totalPages: data.totalPages ?? 1 } as ListResponse<RemoteScript>
   },
 
   listTemplates: async (serverUrl?: string) => {
@@ -264,7 +263,7 @@ export const marketplaceApi = {
     if (!resp.ok) throw new Error(`Failed to fetch templates: ${resp.status}`)
     const json = await resp.json()
     const data = json.data ?? json
-    return { items: data.items ?? [], total: data.total ?? 0, page: 1, pageSize: data.total ?? 0, totalPages: 1 } as ListResponse<RemoteTemplate>
+    return { items: data.items ?? [], total: data.total ?? 0, page: data.page ?? 1, pageSize: data.items?.length ?? data.total ?? 0, totalPages: data.totalPages ?? 1 } as ListResponse<RemoteTemplate>
   },
 
   installTemplate: async (_serverUrl: string, template: RemoteTemplate) => {
@@ -279,6 +278,7 @@ export const marketplaceApi = {
       })
     } else {
       await templateApi.create({
+        id: template.id,
         name: template.name,
         type: template.type,
         version: template.version,

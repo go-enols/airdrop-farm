@@ -17,6 +17,7 @@ interface SeedScript {
   fileName: string
   tags: string[]
   changelog: string
+  requiredAccountTemplateIds?: string[]
 }
 
 function buildZip(script: SeedScript, destPath: string): string {
@@ -32,6 +33,9 @@ function buildZip(script: SeedScript, destPath: string): string {
       schema: script.schema,
       tags: script.tags,
       changelog: script.changelog,
+      ...(script.requiredAccountTemplateIds?.length
+        ? { requiredAccountTemplateIds: script.requiredAccountTemplateIds }
+        : {}),
     }
     writeFileSync(join(tmp, 'manifest.json'), JSON.stringify(manifest, null, 2))
     for (const [relPath, contents] of Object.entries(script.files)) {
@@ -111,6 +115,7 @@ function seed(): void {
       fileName: 'wallet-check-1.0.0.zip',
       tags: ['钱包', '余额'],
       changelog: '初始版本',
+      requiredAccountTemplateIds: ['template-evm-wallet'],
       schema: {
         type: 'object',
         properties: {
@@ -161,12 +166,12 @@ function seed(): void {
 'check-balance.js': [
           '#!/usr/bin/env node',
           '// Wallet balance checker - uses ethers.js for RPC calls',
+          '(async () => {',
           'try {',
           "  const cfg = JSON.parse(process.env.TASK_CONFIG || '{}')",
           '  console.log("[wallet-check] rpc:", cfg.rpcUrl)',
           '  console.log("[wallet-check] chain:", cfg.chainName)',
           '  console.log("[wallet-check] proxy:", cfg.proxyEnabled ? "on" : "off")',
-          '  // Example: load ethers if installed as dependency',
           '  try {',
           "    const { ethers } = require('ethers')",
           "    const provider = new ethers.JsonRpcProvider(cfg.rpcUrl || 'https://eth.llamarpc.com')",
@@ -179,6 +184,7 @@ function seed(): void {
           "  console.error('[wallet-check] error:', err)",
           '  process.exit(1)',
           '}',
+          '})()',
           '',
         ].join('\n'),
         'README.md': '# 钱包余额检查\n\n占位实现，真实的余额查询逻辑请自行扩展。\n',
@@ -227,23 +233,23 @@ function seed(): void {
       '1.0.0',
       'EVM 兼容链钱包账户',
       JSON.stringify({
-        fields: [
-          { name: 'address', type: 'string', label: '钱包地址', required: true },
-          { name: 'privateKey', type: 'string', label: '私钥', required: true },
-          { name: 'mnemonic', type: 'string', label: '助记词', required: false },
-          {
-            name: 'chain',
-            type: 'select',
-            label: '链',
-            required: true,
-            options: [
-              { label: 'Ethereum', value: 'ethereum' },
-              { label: 'BSC', value: 'bsc' },
-              { label: 'Polygon', value: 'polygon' },
-              { label: 'Arbitrum', value: 'arbitrum' },
+        type: 'object',
+        properties: {
+          address: { type: 'string', title: '钱包地址' },
+          privateKey: { type: 'string', title: '私钥' },
+          mnemonic: { type: 'string', title: '助记词' },
+          chain: {
+            type: 'string',
+            title: '链',
+            oneOf: [
+              { const: 'ethereum', title: 'Ethereum' },
+              { const: 'bsc', title: 'BSC' },
+              { const: 'polygon', title: 'Polygon' },
+              { const: 'arbitrum', title: 'Arbitrum' },
             ],
           },
-        ],
+        },
+        required: ['address', 'privateKey', 'chain'],
       }),
       '',
       0,
@@ -258,11 +264,13 @@ function seed(): void {
       '1.0.0',
       'Solana 链钱包账户',
       JSON.stringify({
-        fields: [
-          { name: 'address', type: 'string', label: '钱包地址', required: true },
-          { name: 'privateKey', type: 'string', label: '私钥', required: true },
-          { name: 'mnemonic', type: 'string', label: '助记词', required: false },
-        ],
+        type: 'object',
+        properties: {
+          address: { type: 'string', title: '钱包地址' },
+          privateKey: { type: 'string', title: '私钥' },
+          mnemonic: { type: 'string', title: '助记词' },
+        },
+        required: ['address', 'privateKey'],
       }),
       '',
       0,

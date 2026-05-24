@@ -3,7 +3,7 @@ import multer from 'multer'
 import { createHash } from 'crypto'
 import { v4 as uuidv4 } from 'uuid'
 import { existsSync, rmSync } from 'fs'
-import { join } from 'path'
+import { join, resolve } from 'path'
 import { db, stmts, getScriptsDir } from '../db'
 
 const router = Router()
@@ -54,14 +54,24 @@ router.get('/:id/download', (req: Request, res: Response) => {
     return
   }
 
-  const filePath = join(getScriptsDir(), row.file_path as string)
-  if (!existsSync(filePath)) {
+  const resolved = resolve(getScriptsDir(), row.file_path as string)
+  if (!resolved.startsWith(getScriptsDir())) {
+    res.status(403).json({ error: { message: 'Invalid file path', code: 'FORBIDDEN' } })
+    return
+  }
+  if (!existsSync(resolved)) {
     res.status(404).json({ error: { message: 'Script file not found', code: 'FILE_NOT_FOUND' } })
     return
   }
 
   stmts.scriptIncrementDownloads.run(req.params.id)
-  res.download(filePath, `${row.name}-${row.version}.zip`)
+  res.download(resolved, `${row.name}-${row.version}.zip`, (err) => {
+    if (err) {
+      if (!res.headersSent) {
+        res.status(500).json({ error: { message: 'Download failed', code: 'DOWNLOAD_ERROR' } })
+      }
+    }
+  })
 })
 
 router.post('/', upload.single('file'), (req: Request, res: Response) => {

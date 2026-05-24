@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useRef, useCallback } from 'react'
 import type { FieldMeta } from '../../../shared/schemas/task-params'
 
 interface DynamicFormProps {
@@ -12,9 +12,14 @@ const inputBase =
   'w-full px-3 py-2 rounded-lg border border-border-light bg-bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary'
 
 const DynamicForm: React.FC<DynamicFormProps> = ({ fields, values, onChange, errors }) => {
-  const handleChange = (name: string, value: unknown): void => {
-    onChange({ ...values, [name]: value })
-  }
+  const valuesRef = useRef(values)
+  valuesRef.current = values
+  const handleChange = useCallback(
+    (name: string, value: unknown): void => {
+      onChange({ ...valuesRef.current, [name]: value })
+    },
+    [onChange]
+  )
 
   return (
     <div className="space-y-4">

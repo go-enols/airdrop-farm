@@ -103,8 +103,13 @@ function parseZodField(name: string, schema: z.ZodTypeAny): FieldMeta {
     case 'number': {
       meta.type = 'number'
       const numSchema = unwrapped as any
-      if (numSchema.minValue != null) meta.min = numSchema.minValue
-      if (numSchema.maxValue != null) meta.max = numSchema.maxValue
+      const checks = numSchema._def?.checks as Array<{ kind: string; value: number }> | undefined
+      if (checks?.length) {
+        for (const check of checks) {
+          if (check.kind === 'min' && meta.min == null) meta.min = check.value
+          if (check.kind === 'max' && meta.max == null) meta.max = check.value
+        }
+      }
       break
     }
     case 'boolean':
@@ -112,9 +117,9 @@ function parseZodField(name: string, schema: z.ZodTypeAny): FieldMeta {
       break
     case 'enum': {
       meta.type = 'select'
-      const entries = (unwrapped._def as any).entries as Record<string, string> | undefined
-      if (entries) {
-        meta.options = Object.values(entries).map((v) => ({ label: String(v), value: String(v) }))
+      const values = (unwrapped._def as any).values as string[] | undefined
+      if (values?.length) {
+        meta.options = values.map((v) => ({ label: v, value: v }))
       }
       break
     }

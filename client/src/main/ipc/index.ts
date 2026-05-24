@@ -143,6 +143,7 @@ export function registerIpcHandlers(services: Services): void {
     proxyRepo.updateProxy(id as string, data as Parameters<typeof proxyRepo.updateProxy>[1])
   )
   register('proxy:delete', (id) => proxyRepo.deleteProxy(id as string))
+  register('proxy:batchDelete', (ids) => proxyRepo.batchDeleteProxies(ids as string[]))
 
   register('task:list', (_page?, _pageSize?, _search?) =>
     taskRepo.listTasks(
@@ -175,7 +176,7 @@ export function registerIpcHandlers(services: Services): void {
   register('task:getLogs', (taskId, limit?) =>
     taskRepo.getTaskLogs(taskId as string, limit as number | undefined)
   )
-  register('task:clearLogs', () => taskRepo.clearTaskLogs())
+  register('task:clearLogs', (taskId?) => taskRepo.clearTaskLogs(taskId as string | undefined))
   register('task:getProgress', (taskId) => taskService.getTaskProgress(taskId as string))
   register('task:getOutput', (taskId) => taskService.getTaskOutput(taskId as string))
 
@@ -301,6 +302,7 @@ export function registerIpcHandlers(services: Services): void {
   register('log:getCategories', () => store.getLogCategories())
   register('log:setLevel', (level) => store.setLogLevel(level as string))
   register('log:getLevel', () => store.getLogLevel())
+  register('log:deleteLogs', () => store.deleteAllLogs())
 
   // Auto-updater handlers
   register('update:check', () => {

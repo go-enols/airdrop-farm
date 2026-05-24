@@ -138,6 +138,18 @@ export class ProxyRepository extends BaseRepository<Proxy> {
     return result.changes > 0
   }
 
+  batchDeleteProxies(ids: string[]): number {
+    const deleteStmt = this.db.prepare('DELETE FROM proxies WHERE id = ?')
+    const transaction = this.db.transaction((items: string[]) => {
+      let count = 0
+      for (const id of items) {
+        count += deleteStmt.run(id).changes
+      }
+      return count
+    })
+    return transaction(ids)
+  }
+
   batchCreateProxies(items: Omit<Proxy, 'id' | 'createdAt'>[]): number {
     const insert = this.stmt('proxy.insert')
     const transaction = this.db.transaction((data: Omit<Proxy, 'id' | 'createdAt'>[]) => {

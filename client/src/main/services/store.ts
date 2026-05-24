@@ -1299,6 +1299,11 @@ export class StoreService {
     return this.getSetting('logLevel') ?? 'info'
   }
 
+  deleteAllLogs(): number {
+    const result = this.db.prepare('DELETE FROM app_logs').run()
+    return result.changes
+  }
+
   close(): void {
     this.db.close()
   }

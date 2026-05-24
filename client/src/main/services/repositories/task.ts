@@ -212,7 +212,12 @@ export class TaskRepository extends BaseRepository<Task> {
     return rows.map((r) => this.rowToTaskLog(r))
   }
 
-  clearTaskLogs(): number {
+  clearTaskLogs(taskId?: string): number {
+    if (taskId) {
+      const stmt = this.db.prepare('DELETE FROM task_logs WHERE task_id = ?')
+      const result = stmt.run(taskId)
+      return result.changes
+    }
     const count = (this.stmt('taskLog.count').get() as Record<string, number>).cnt
     this.stmt('taskLog.clearAll').run()
     return count
