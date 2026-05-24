@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { settingApi, appApi, captchaKeyApi, proxyProviderApi, updateApi } from '../api'
+import { settingApi, appApi, captchaKeyApi, proxyProviderApi, updateApi, getMarketplaceUrl, setMarketplaceUrl } from '../api'
 import { logApi } from '../api'
 import type { AppInfo, CaptchaKey, ProxyProvider, ListResponse, UpdateInfo } from '../types'
-import { Save, Info, Plus, Trash2, Edit3, Key, Globe, Download, RefreshCw } from 'lucide-react'
+import { Save, Info, Plus, Trash2, Edit3, Key, Globe, Download, RefreshCw, Server } from 'lucide-react'
 
 const LOG_LEVELS = ['debug', 'info', 'warn', 'error'] as const
 
@@ -25,7 +25,7 @@ const Settings: React.FC = () => {
 
   const [proxyProviders, setProxyProviders] = useState<ListResponse<ProxyProvider> | null>(null)
   const [showProxyProviderForm, setShowProxyProviderForm] = useState(false)
-  const [editingProxyProvider, setEditingProxyProvider] = useState<ProxyProvider | null>(null)
+  const [editingProxyProvider, _setEditingProxyProvider] = useState<ProxyProvider | null>(null)
   const [proxyProviderForm, setProxyProviderForm] = useState({
     name: '',
     apiUrl: '',
@@ -38,6 +38,9 @@ const Settings: React.FC = () => {
   const [newSettingKey, setNewSettingKey] = useState('')
   const [deleteSettingKey, setDeleteSettingKey] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState('')
+  const [marketplaceUrl, setMarketplaceUrlLocal] = useState('')
+  const [marketplaceSaving, setMarketplaceSaving] = useState(false)
+  const [marketplaceMsg, setMarketplaceMsg] = useState('')
 
   // Auto-update state
   const [updateStatus, setUpdateStatus] = useState<
@@ -160,7 +163,30 @@ const Settings: React.FC = () => {
     fetchSettings()
     fetchCaptchaKeys()
     fetchProxyProviders()
+    loadMarketplaceUrl()
   }, [fetchAppInfo, fetchLogLevel, fetchSettings, fetchCaptchaKeys, fetchProxyProviders])
+
+  const loadMarketplaceUrl = async (): Promise<void> => {
+    try {
+      const url = await getMarketplaceUrl()
+      setMarketplaceUrlLocal(url)
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const handleSaveMarketplaceUrl = async (): Promise<void> => {
+    setMarketplaceSaving(true)
+    try {
+      await setMarketplaceUrl(marketplaceUrl)
+      setMarketplaceMsg(t('common.saveSuccess'))
+      setTimeout(() => setMarketplaceMsg(''), 3000)
+    } catch {
+      setErrorMsg(t('common.operationFailed'))
+    } finally {
+      setMarketplaceSaving(false)
+    }
+  }
 
   const handleSaveLogLevel = async (): Promise<void> => {
     setLogLevelSaving(true)
@@ -174,6 +200,8 @@ const Settings: React.FC = () => {
       setLogLevelSaving(false)
     }
   }
+
+  
 
   const handleSaveSettings = async (): Promise<void> => {
     setSaving(true)
@@ -263,30 +291,6 @@ const Settings: React.FC = () => {
     } catch {
       setErrorMsg(t('common.operationFailed'))
     }
-  }
-
-  const openProxyProviderAdd = (): void => {
-    setEditingProxyProvider(null)
-    setProxyProviderForm({
-      name: '',
-      apiUrl: '',
-      apiKey: '',
-      protocol: 'http',
-      refreshInterval: 300
-    })
-    setShowProxyProviderForm(true)
-  }
-
-  const openProxyProviderEdit = (item: ProxyProvider): void => {
-    setEditingProxyProvider(item)
-    setProxyProviderForm({
-      name: item.name,
-      apiUrl: item.apiUrl,
-      apiKey: item.apiKey,
-      protocol: item.protocol,
-      refreshInterval: item.refreshInterval
-    })
-    setShowProxyProviderForm(true)
   }
 
   const handleSaveProxyProvider = async (): Promise<void> => {
@@ -500,7 +504,7 @@ const Settings: React.FC = () => {
             {logLevelSaving ? t('common.loading') : t('common.save')}
           </button>
           {logLevelMsg && <span className="text-sm text-success">{logLevelMsg}</span>}
-        </div>
+</div>
       </section>
 
       <section className="border border-border-light rounded-lg p-5 space-y-3 bg-bg-card">
@@ -574,14 +578,10 @@ const Settings: React.FC = () => {
             <Globe size={20} />
             {t('settings.proxyProviders')}
           </div>
-          <button
-            onClick={openProxyProviderAdd}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
-          >
-            <Plus size={16} />
-            {t('settings.addProxyProvider')}
-          </button>
         </div>
+        <p className="text-xs text-text-muted">
+          代理提供商已移至「代理管理」页面统一管理。此处仅作只读展示。
+        </p>
         {!(proxyProviders?.items || []).length ? (
           <div className="text-sm text-text-muted">{t('settings.noProxyProviders')}</div>
         ) : (
@@ -614,20 +614,7 @@ const Settings: React.FC = () => {
                     <td className="px-4 py-2.5 text-xs uppercase">{item.protocol}</td>
                     <td className="px-4 py-2.5">{item.refreshInterval}s</td>
                     <td className="px-4 py-2.5 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => openProxyProviderEdit(item)}
-                          className="p-1 text-text-muted hover:text-primary hover:bg-primary-light rounded transition-colors"
-                        >
-                          <Edit3 size={16} />
-                        </button>
-                        <button
-                          onClick={() => setDeleteProxyProviderId(item.id)}
-                          className="p-1 text-danger hover:bg-danger-light rounded transition-colors"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
+                      <span className="text-xs text-text-muted">只读</span>
                     </td>
                   </tr>
                 ))}
@@ -635,6 +622,34 @@ const Settings: React.FC = () => {
             </table>
           </div>
         )}
+      </section>
+
+      <section className="border border-border-light rounded-lg p-5 space-y-3 bg-bg-card">
+        <div className="flex items-center gap-2 text-lg font-semibold text-text-primary">
+          <Server size={20} />
+          脚本/模板市场
+        </div>
+        <div className="flex items-center gap-3">
+          <input
+            type="text"
+            value={marketplaceUrl}
+            onChange={(e) => setMarketplaceUrlLocal(e.target.value)}
+            placeholder="http://localhost:3400"
+            className="flex-1 px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+          <button
+            onClick={handleSaveMarketplaceUrl}
+            disabled={marketplaceSaving}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors"
+          >
+            <Save size={16} />
+            {marketplaceSaving ? t('common.loading') : t('common.save')}
+          </button>
+          {marketplaceMsg && <span className="text-sm text-success">{marketplaceMsg}</span>}
+        </div>
+        <div className="text-xs text-text-muted">
+          设置脚本和模板市场的服务器地址。修改后将在下次打开市场浏览器时生效。
+        </div>
       </section>
 
       <section className="border border-border-light rounded-lg p-5 space-y-3 bg-bg-card">

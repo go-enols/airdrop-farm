@@ -1,5 +1,6 @@
 import { app, shell, BrowserWindow } from 'electron'
 import { join } from 'path'
+import { spawn, type ChildProcess } from 'child_process'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { autoUpdater } from 'electron-updater'
 import icon from '../../resources/icon.png?asset'
@@ -7,12 +8,15 @@ import { registerIpcHandlers } from './ipc'
 import { StoreService } from './services/store'
 import { WalletService } from './services/wallet'
 import { TaskService } from './services/task'
+import { ScriptFetcher } from './services/script-fetcher'
 import { HttpApiServer } from './httpapi/server'
-import { Logger } from './utils/logger'
+import { Logger, createLogger } from './utils/logger'
 
 let store: StoreService
 let httpServer: HttpApiServer
 let taskService: TaskService
+let scriptFetcher: ScriptFetcher
+let marketplaceServerProcess: ChildProcess | null = null
 
 // Auto-updater configuration
 autoUpdater.autoDownload = true
@@ -88,6 +92,43 @@ function createWindow(httpPort: number): void {
   }
 }
 
+function startMarketplaceServer(): void {
+  const logger = createLogger('marketplace-server')
+  const serverDir = join(app.getAppPath(), 'server')
+
+  // In dev mode, use tsx to run TypeScript directly
+  // In production, use the compiled JS
+  const cmd = is.dev ? 'npx' : process.execPath
+  const args = is.dev
+    ? ['tsx', 'src/index.ts']
+    : ['dist/index.js']
+
+  try {
+    marketplaceServerProcess = spawn(cmd, args, {
+      cwd: serverDir,
+      env: { ...process.env, MARKETPLACE_API_KEY: 'airdrop-farm-dev-key', PORT: '3400' },
+      stdio: 'pipe',
+      shell: true
+    })
+
+    marketplaceServerProcess.stdout?.on('data', (data: Buffer) => {
+      logger.info(data.toString().trim())
+    })
+    marketplaceServerProcess.stderr?.on('data', (data: Buffer) => {
+      logger.warn(data.toString().trim())
+    })
+    marketplaceServerProcess.on('error', (err: Error) => {
+      logger.warn(`Marketplace server failed to start: ${err.message}`)
+    })
+    marketplaceServerProcess.on('exit', (code: number | null) => {
+      logger.info(`Marketplace server exited with code ${code}`)
+      marketplaceServerProcess = null
+    })
+  } catch (err) {
+    logger.warn(`Could not start marketplace server: ${err}`)
+  }
+}
+
 app.whenReady().then(async () => {
   electronApp.setAppUserModelId('com.airdrop-farm')
 
@@ -103,15 +144,20 @@ app.whenReady().then(async () => {
       }
     }
   })
+  scriptFetcher = new ScriptFetcher(store)
 
   registerIpcHandlers({
     store,
     walletService,
     taskService,
+    scriptFetcher,
     walletRepo: store.walletRepo,
     proxyRepo: store.proxyRepo,
     taskRepo: store.taskRepo
   })
+
+  // Start marketplace server (scripts / templates backend)
+  startMarketplaceServer()
 
   httpServer = new HttpApiServer(34116)
   await httpServer.start()
@@ -147,6 +193,11 @@ app.on('before-quit', (e) => {
   Logger.shutdown()
   e.preventDefault()
   taskService.cleanup()
+  // Kill marketplace server if running
+  if (marketplaceServerProcess) {
+    marketplaceServerProcess.kill('SIGTERM')
+    marketplaceServerProcess = null
+  }
   httpServer
     .stop()
     .then(() => {

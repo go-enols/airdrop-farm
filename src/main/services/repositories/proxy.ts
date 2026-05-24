@@ -13,14 +13,14 @@ export class ProxyRepository extends BaseRepository<Proxy> {
     this.setStmt(
       'proxy.insert',
       this.db.prepare(
-        'INSERT INTO proxies (id, protocol, host, port, username, password, status, labels, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        'INSERT INTO proxies (id, protocol, host, port, username, password, status, format, labels, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
       )
     )
     this.setStmt('proxy.getById', this.db.prepare('SELECT * FROM proxies WHERE id = ?'))
     this.setStmt(
       'proxy.update',
       this.db.prepare(
-        'UPDATE proxies SET protocol=?, host=?, port=?, username=?, password=?, status=?, labels=? WHERE id=?'
+        'UPDATE proxies SET protocol=?, host=?, port=?, username=?, password=?, status=?, format=?, labels=? WHERE id=?'
       )
     )
     this.setStmt('proxy.delete', this.db.prepare('DELETE FROM proxies WHERE id = ?'))
@@ -44,6 +44,7 @@ export class ProxyRepository extends BaseRepository<Proxy> {
       username: row.username as string | null,
       password: row.password as string | null,
       status: row.status as Proxy['status'],
+      format: row.format as Proxy['format'],
       labels: this.fromJsonArray<string>(row.labels as string | null),
       createdAt: row.created_at as string
     }
@@ -82,6 +83,7 @@ export class ProxyRepository extends BaseRepository<Proxy> {
       data.username ?? null,
       data.password ?? null,
       data.status,
+      data.format ?? 'manual',
       this.toJson(data.labels),
       createdAt
     )
@@ -124,6 +126,7 @@ export class ProxyRepository extends BaseRepository<Proxy> {
       updated.username ?? null,
       updated.password ?? null,
       updated.status,
+      updated.format ?? 'manual',
       this.toJson(updated.labels),
       id
     )
@@ -150,6 +153,7 @@ export class ProxyRepository extends BaseRepository<Proxy> {
           item.username ?? null,
           item.password ?? null,
           item.status,
+          item.format ?? 'manual',
           this.toJson(item.labels),
           createdAt
         )

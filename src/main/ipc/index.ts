@@ -3,9 +3,11 @@ import { autoUpdater } from 'electron-updater'
 import { StoreService } from '../services/store'
 import { WalletService } from '../services/wallet'
 import { TaskService } from '../services/task'
+import { ScriptFetcher } from '../services/script-fetcher'
 import { WalletRepository } from '../services/repositories/wallet'
 import { ProxyRepository } from '../services/repositories/proxy'
 import { TaskRepository } from '../services/repositories/task'
+import { Task } from '../../shared/types'
 import { createLogger } from '../utils/logger'
 
 const logger = createLogger('ipc')
@@ -14,6 +16,7 @@ interface Services {
   store: StoreService
   walletService: WalletService
   taskService: TaskService
+  scriptFetcher: ScriptFetcher
   walletRepo: WalletRepository
   proxyRepo: ProxyRepository
   taskRepo: TaskRepository
@@ -76,7 +79,7 @@ function register(channel: string, handler: ApiHandler): void {
 }
 
 export function registerIpcHandlers(services: Services): void {
-  const { store, walletService, taskService, walletRepo, proxyRepo, taskRepo } = services
+  const { store, walletService, taskService, scriptFetcher, walletRepo, proxyRepo, taskRepo } = services
 
   register('app:getInfo', () => store.getAppInfo(app.getVersion(), app.getPath('userData')))
   register('app:getStats', () => store.getStats())
@@ -120,6 +123,10 @@ export function registerIpcHandlers(services: Services): void {
     store.updateAccount(id as string, data as Parameters<typeof store.updateAccount>[1])
   )
   register('account:delete', (id) => store.deleteAccount(id as string))
+  register('account:listPools', () => store.listAccountPools())
+  register('account:batchCreate', (items) =>
+    store.batchCreateAccounts(items as Parameters<typeof store.batchCreateAccounts>[0])
+  )
 
   register('proxy:list', (_page?, _pageSize?, _search?) =>
     proxyRepo.listProxies(
@@ -145,9 +152,18 @@ export function registerIpcHandlers(services: Services): void {
     )
   )
   register('task:get', (id) => taskRepo.getTask(id as string))
-  register('task:create', (data) =>
-    taskRepo.createTask(data as Parameters<typeof taskRepo.createTask>[0])
-  )
+  register('task:create', (data) => {
+    const input = data as Partial<Omit<Task, 'id'>>
+    return taskRepo.createTask({
+      scriptFolder: input.scriptFolder ?? '',
+      config: input.config ?? {},
+      status: input.status ?? 'idle',
+      workerId: input.workerId ?? null,
+      startedAt: input.startedAt ?? null,
+      endedAt: input.endedAt ?? null,
+      isSandbox: input.isSandbox ?? false,
+    })
+  })
   register('task:update', (id, data) =>
     taskRepo.updateTask(id as string, data as Parameters<typeof taskRepo.updateTask>[1])
   )
@@ -161,6 +177,15 @@ export function registerIpcHandlers(services: Services): void {
   )
   register('task:clearLogs', () => taskRepo.clearTaskLogs())
   register('task:getProgress', (taskId) => taskService.getTaskProgress(taskId as string))
+  register('task:getOutput', (taskId) => taskService.getTaskOutput(taskId as string))
+
+  register('script:listRemote', () => scriptFetcher.fetchScriptList())
+  register('script:download', (scriptId) =>
+    scriptFetcher.downloadScript(scriptId as string)
+  )
+  register('script:checkUpdate', () => scriptFetcher.checkUpdates())
+  register('script:listInstalled', () => scriptFetcher.getInstalledScripts())
+  register('script:remove', (scriptId) => scriptFetcher.removeScript(scriptId as string))
 
   register('template:list', (_page?, _pageSize?, _search?) =>
     store.listTemplates(
@@ -261,6 +286,7 @@ export function registerIpcHandlers(services: Services): void {
   register('setting:get', (key) => store.getSetting(key as string))
   register('setting:set', (key, value) => store.setSetting(key as string, value as string))
   register('setting:getAll', () => store.getAllSettings())
+  register('setting:delete', (key) => store.deleteSetting(key as string))
 
   register('log:query', (level?, category?, search?, since?, until?, limit?) =>
     store.queryLogs(

@@ -12,7 +12,12 @@ import type {
   ListResponse,
   AppLog,
   CaptchaKey,
-  ProxyProvider
+  ProxyProvider,
+  RemoteScript,
+  InstalledScript,
+  RemoteTemplate,
+  TaskTemplate,
+  TaskOutput
 } from './types'
 import { call } from './transport'
 
@@ -49,7 +54,10 @@ export const accountApi = {
   create: (data: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>) =>
     call<Account>('account:create', [data]),
   update: (id: string, data: Partial<Account>) => call<Account>('account:update', [id, data]),
-  delete: (id: string) => call<void>('account:delete', [id])
+  delete: (id: string) => call<void>('account:delete', [id]),
+  listPools: () => call<string[]>('account:listPools'),
+  batchCreate: (items: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>[]) =>
+    call<number>('account:batchCreate', [items])
 }
 
 export const proxyApi = {
@@ -78,7 +86,17 @@ export const taskApi = {
   clearLogs: (taskId: string) => call<void>('task:clearLogs', [taskId]),
   getLogs: (taskId: string, limit = 100) => call<TaskLog[]>('task:getLogs', [taskId, limit]),
   getProgress: (taskId: string) =>
-    call<{ percent: number; message: string } | null>('task:getProgress', [taskId])
+    call<{ percent: number; message: string } | null>('task:getProgress', [taskId]),
+  getOutput: (taskId: string) => call<TaskOutput | null>('task:getOutput', [taskId])
+}
+
+export const scriptApi = {
+  listRemote: () => call<RemoteScript[]>('script:listRemote'),
+  download: (scriptId: string) =>
+    call<InstalledScript>('script:download', [scriptId]),
+  checkUpdate: () => call<RemoteScript[]>('script:checkUpdate'),
+  listInstalled: () => call<InstalledScript[]>('script:listInstalled'),
+  remove: (scriptId: string) => call<void>('script:remove', [scriptId])
 }
 
 export const templateApi = {
@@ -88,6 +106,10 @@ export const templateApi = {
   create: (data: Omit<Template, 'id' | 'updatedAt'>) => call<Template>('template:create', [data]),
   update: (id: string, data: Partial<Template>) => call<Template>('template:update', [id, data]),
   delete: (id: string) => call<void>('template:delete', [id])
+}
+
+export const taskTemplateApi = {
+  get: (id: string) => call<TaskTemplate | null>('taskTemplate:get', [id])
 }
 
 export const schedulerApi = {
@@ -155,4 +177,66 @@ export const updateApi = {
   check: () => call<void>('update:check'),
   download: () => call<void>('update:download'),
   install: () => call<void>('update:install')
+}
+
+const MARKETPLACE_URL_KEY = 'marketplace_server_url'
+const DEFAULT_MARKETPLACE_URL = 'http://localhost:3400'
+
+export async function getMarketplaceUrl(): Promise<string> {
+  try {
+    const saved = await settingApi.get(MARKETPLACE_URL_KEY)
+    if (saved) return saved
+  } catch {
+    /* ignore */
+  }
+  return DEFAULT_MARKETPLACE_URL
+}
+
+export async function setMarketplaceUrl(url: string): Promise<void> {
+  await settingApi.set(MARKETPLACE_URL_KEY, url)
+}
+
+export const marketplaceApi = {
+  getUrl: getMarketplaceUrl,
+  setUrl: setMarketplaceUrl,
+
+  listScripts: async (serverUrl?: string) => {
+    const base = serverUrl || (await getMarketplaceUrl())
+    const resp = await fetch(`${base}/api/scripts`)
+    if (!resp.ok) throw new Error(`Failed to fetch scripts: ${resp.status}`)
+    const json = await resp.json()
+    // Server returns { data: { items, total } }; unwrap if data envelope present
+    const data = json.data ?? json
+    return { items: data.items ?? [], total: data.total ?? 0, page: 1, pageSize: data.total ?? 0, totalPages: 1 } as ListResponse<RemoteScript>
+  },
+
+  listTemplates: async (serverUrl?: string) => {
+    const base = serverUrl || (await getMarketplaceUrl())
+    const resp = await fetch(`${base}/api/templates`)
+    if (!resp.ok) throw new Error(`Failed to fetch templates: ${resp.status}`)
+    const json = await resp.json()
+    const data = json.data ?? json
+    return { items: data.items ?? [], total: data.total ?? 0, page: 1, pageSize: data.total ?? 0, totalPages: 1 } as ListResponse<RemoteTemplate>
+  },
+
+  installTemplate: async (_serverUrl: string, template: RemoteTemplate) => {
+    const existing = await templateApi.list(1, 9999)
+    const dup = existing.items.find((t) => t.id === template.id)
+    if (dup) {
+      await templateApi.update(dup.id, {
+        name: template.name,
+        type: template.type,
+        version: template.version,
+        schema: template.schema
+      })
+    } else {
+      await templateApi.create({
+        name: template.name,
+        type: template.type,
+        version: template.version,
+        schema: template.schema,
+        isLocal: false
+      })
+    }
+  }
 }

@@ -11,12 +11,15 @@ import {
   CheckSquare as CheckSquareIcon,
   Square as SquareIcon,
   Trash,
-  RefreshCw
+  RefreshCw,
+  Download,
+  Globe
 } from 'lucide-react'
-import { taskApi } from '../api'
-import type { Task, TaskLog } from '../types'
-import { usePaginatedList, useTemplateList } from '../hooks'
-import { SearchInput, Pagination, Modal } from '../components/common'
+import { taskApi, scriptApi, taskTemplateApi, templateApi } from '../api'
+import type { Task, TaskLog, InstalledScript, RemoteScript } from '../types'
+import type { FieldMeta } from '../../../shared/schemas/task-params'
+import { usePaginatedList } from '../hooks'
+import { SearchInput, Pagination, Modal, DynamicForm } from '../components/common'
 
 const PAGE_SIZE = 20
 
@@ -36,7 +39,6 @@ const Tasks: React.FC = () => {
   const [logsLoading, setLogsLoading] = useState(false)
   const [showCreate, setShowCreate] = useState(false)
   const [newScriptFolder, setNewScriptFolder] = useState('')
-  const [newConfig, setNewConfig] = useState('{}')
   const [creating, setCreating] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
   const [editTask, setEditTask] = useState<Task | null>(null)
@@ -49,8 +51,16 @@ const Tasks: React.FC = () => {
   >({})
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const { templates } = useTemplateList()
-  const [selectedTemplateId, setSelectedTemplateId] = useState('')
+  const [installedScripts, setInstalledScripts] = useState<InstalledScript[]>([])
+  const [selectedScript, setSelectedScript] = useState<InstalledScript | null>(null)
+  const [formFields, setFormFields] = useState<FieldMeta[]>([])
+  const [formValues, setFormValues] = useState<Record<string, unknown>>({})
+  const [showScriptBrowser, setShowScriptBrowser] = useState(false)
+  const [remoteScripts, setRemoteScripts] = useState<RemoteScript[]>([])
+  const [loadingScripts, setLoadingScripts] = useState(false)
+  const [downloadingScriptId, setDownloadingScriptId] = useState<string | null>(null)
+  const [logFilter, setLogFilter] = useState<string>('all')
+  const logEndRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     const runningTasks = items.filter((t) => t.status === 'running')
@@ -100,6 +110,64 @@ const Tasks: React.FC = () => {
     return () => clearTimeout(timer)
   }, [errorMsg])
 
+  useEffect(() => {
+    loadInstalledScripts()
+  }, [])
+
+  useEffect(() => {
+    if (showScriptBrowser) {
+      loadRemoteScripts()
+    }
+  }, [showScriptBrowser])
+
+  useEffect(() => {
+    const unsubscribe = (window as any).electronAPI?.on?.('task:statusChanged', () => {
+      refresh()
+    })
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe()
+    }
+  }, [refresh])
+
+  useEffect(() => {
+    if (!expandedId) return
+    const unsubscribe = (window as any).electronAPI?.on?.(
+      'task:log',
+      (data: { taskId: string; logs: Array<{ level: string; message: string; timestamp: string }> }) => {
+        if (data.taskId === expandedId) {
+          setLogs((prev) => {
+            const newLogs = data.logs.map((l, i) => ({
+              id: -(prev.length + i),
+              taskId: data.taskId,
+              timestamp: l.timestamp,
+              level: l.level as TaskLog['level'],
+              message: l.message,
+            }))
+            return [...prev, ...newLogs]
+          })
+        }
+      }
+    )
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe()
+    }
+  }, [expandedId])
+
+  useEffect(() => {
+    const unsubscribe = (window as any).electronAPI?.on?.('task:output', () => {
+      refresh()
+    })
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe()
+    }
+  }, [refresh])
+
+  useEffect(() => {
+    if (expandedId && logs.length > 0) {
+      logEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [logs, expandedId])
+
   const showError = (msg: string): void => setErrorMsg(msg)
 
   const handleAction = async (
@@ -142,32 +210,103 @@ const Tasks: React.FC = () => {
     }
   }
 
-  const handleTemplateSelect = (templateId: string): void => {
-    setSelectedTemplateId(templateId)
-    if (templateId) {
-      const tpl = templates.find((t) => t.id === templateId)
-      if (tpl) {
-        setNewScriptFolder(tpl.type || '')
-        setNewConfig(JSON.stringify(tpl.schema || {}, null, 2))
-      }
+  const loadInstalledScripts = async (): Promise<void> => {
+    try {
+      const scripts = await scriptApi.listInstalled()
+      setInstalledScripts(scripts)
+    } catch {
+      /* ignore */
     }
   }
 
-  const handleCreate = async (): Promise<void> => {
-    let config: Record<string, unknown>
+  const loadRemoteScripts = async (): Promise<void> => {
+    setLoadingScripts(true)
     try {
-      config = JSON.parse(newConfig)
-    } catch {
-      showError(t('tasks.config', '配置') + ' JSON ' + t('common.error', '错误'))
+      const response = await fetch('http://127.0.0.1:3400/api/scripts')
+      if (!response.ok) throw new Error('Failed to fetch scripts')
+      const data = await response.json()
+      setRemoteScripts(data.data?.items || [])
+    } catch (e: unknown) {
+      showError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setLoadingScripts(false)
+    }
+  }
+
+  const handleInstallScript = async (scriptId: string): Promise<void> => {
+    setDownloadingScriptId(scriptId)
+    try {
+      await scriptApi.download(scriptId)
+      await loadInstalledScripts()
+    } catch (e: unknown) {
+      showError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setDownloadingScriptId(null)
+    }
+  }
+
+  const handleScriptSelect = (scriptId: string): void => {
+    const script = installedScripts.find((s) => s.id === scriptId)
+    if (script) {
+      setSelectedScript(script)
+      setNewScriptFolder(script.installPath)
+      try {
+        const schema = script.schema as Record<string, unknown>
+        if (schema.fields && Array.isArray(schema.fields)) {
+          setFormFields(schema.fields as FieldMeta[])
+        } else {
+          setFormFields([])
+        }
+      } catch {
+        setFormFields([])
+      }
+      setFormValues({})
+    } else {
+      setSelectedScript(null)
+      setFormFields([])
+      setFormValues({})
+      setNewScriptFolder('')
+    }
+  }
+
+  const openScriptBrowser = async (): Promise<void> => {
+    await loadInstalledScripts()
+    setShowScriptBrowser(true)
+  }
+
+  const handleCreate = async (): Promise<void> => {
+    if (!selectedScript) {
+      showError('请选择脚本')
       return
     }
+    // 校验 requiredAccountTemplateIds
+    try {
+      const tmpl = await taskTemplateApi.get(selectedScript.id)
+      if (tmpl?.manifest) {
+        const manifest = tmpl.manifest as Record<string, unknown>
+        const requiredIds = manifest.requiredAccountTemplateIds as string[] | undefined
+        if (requiredIds && requiredIds.length > 0) {
+          const installed = await templateApi.list(1, 9999)
+          const installedIds = new Set(installed.items.map((t) => t.id))
+          const missing = requiredIds.filter((id) => !installedIds.has(id))
+          if (missing.length > 0) {
+            showError(`缺少必需的账户模板 (${missing.join(', ')})，请先在「模板市场」下载对应模板`)
+            return
+          }
+        }
+      }
+    } catch {
+      // 校验失败时允许继续
+    }
+    const config = formFields.length > 0 ? formValues : {}
     setCreating(true)
     try {
       await taskApi.create({ scriptFolder: newScriptFolder, config })
       setShowCreate(false)
       setNewScriptFolder('')
-      setNewConfig('{}')
-      setSelectedTemplateId('')
+      setSelectedScript(null)
+      setFormFields([])
+      setFormValues({})
       refresh()
     } catch (e: unknown) {
       showError(e instanceof Error ? e.message : String(e))
@@ -513,13 +652,26 @@ const Tasks: React.FC = () => {
                               {t('tasks.logs')}
                             </span>
                           </div>
-                          <button
-                            onClick={() => handleClearLogs(task.id)}
-                            className="flex items-center gap-1 px-2 py-1 rounded text-xs text-danger hover:bg-danger-light transition-colors"
-                          >
-                            <Trash2 size={12} />
-                            {t('tasks.clearLogs')}
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <select
+                              value={logFilter}
+                              onChange={(e) => setLogFilter(e.target.value)}
+                              className="px-1.5 py-0.5 rounded text-xs border border-border-light bg-bg-card"
+                            >
+                              <option value="all">全部</option>
+                              <option value="info">Info</option>
+                              <option value="warn">Warn</option>
+                              <option value="error">Error</option>
+                              <option value="debug">Debug</option>
+                            </select>
+                            <button
+                              onClick={() => handleClearLogs(task.id)}
+                              className="flex items-center gap-1 px-2 py-1 rounded text-xs text-danger hover:bg-danger-light transition-colors"
+                            >
+                              <Trash2 size={12} />
+                              {t('tasks.clearLogs')}
+                            </button>
+                          </div>
                         </div>
                         <div className="max-h-64 overflow-y-auto px-4 py-2">
                           {logsLoading ? (
@@ -530,8 +682,10 @@ const Tasks: React.FC = () => {
                             <div className="text-xs text-text-muted py-2">{t('tasks.noLogs')}</div>
                           ) : (
                             <div className="space-y-0.5 font-mono text-xs">
-                              {logs.map((log) => (
-                                <div key={log.id} className="flex gap-3">
+                              {logs
+                                .filter((log) => logFilter === 'all' || log.level === logFilter)
+                                .map((log, idx) => (
+                                <div key={log.id ?? idx} className="flex gap-3">
                                   <span className="text-text-muted shrink-0">
                                     {new Date(log.timestamp).toLocaleTimeString()}
                                   </span>
@@ -543,6 +697,7 @@ const Tasks: React.FC = () => {
                                   </span>
                                 </div>
                               ))}
+                              <div ref={logEndRef} />
                             </div>
                           )}
                         </div>
@@ -566,44 +721,38 @@ const Tasks: React.FC = () => {
         />
       )}
 
-      <Modal open={showCreate} onClose={() => setShowCreate(false)} title={t('tasks.createTask')}>
+      <Modal open={showCreate} onClose={() => setShowCreate(false)} title={t('tasks.createTask')} maxWidth="max-w-lg">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">
-              {t('tasks.selectTemplate', '从模板创建')}
-            </label>
-            <select
-              value={selectedTemplateId}
-              onChange={(e) => handleTemplateSelect(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-border-light bg-bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="">{t('tasks.noTemplate', '不使用模板')}</option>
-              {templates.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name} ({t.type})
-                </option>
-              ))}
-            </select>
+            <label className="block text-sm font-medium mb-1">选择脚本</label>
+            <div className="flex gap-2">
+              <select
+                value={selectedScript?.id ?? ''}
+                onChange={(e) => handleScriptSelect(e.target.value)}
+                className="flex-1 px-3 py-2 rounded-lg border border-border-light bg-bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="">请选择已安装的脚本...</option>
+                {installedScripts.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name} (v{s.version})</option>
+                ))}
+              </select>
+              <button
+                onClick={openScriptBrowser}
+                className="flex items-center gap-1 px-3 py-2 rounded-lg border border-border-light text-sm hover:bg-bg-card-hover transition-colors"
+              >
+                <Globe size={14} />
+                浏览
+              </button>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t('tasks.scriptFolder')}</label>
-            <input
-              type="text"
-              value={newScriptFolder}
-              onChange={(e) => setNewScriptFolder(e.target.value)}
-              placeholder="/path/to/script"
-              className="w-full px-3 py-2 rounded-lg border border-border-light bg-bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t('tasks.config')} (JSON)</label>
-            <textarea
-              value={newConfig}
-              onChange={(e) => setNewConfig(e.target.value)}
-              rows={6}
-              className="w-full px-3 py-2 rounded-lg border border-border-light bg-bg-card text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary resize-y"
-            />
-          </div>
+          {!selectedScript && (
+            <div className="text-sm text-text-muted py-2">
+              请从上方下拉列表选择已安装的脚本，或点击"浏览"从脚本市场安装新脚本
+            </div>
+          )}
+          {formFields.length > 0 && (
+            <DynamicForm fields={formFields} values={formValues} onChange={setFormValues} />
+          )}
         </div>
         <div className="flex justify-end gap-2 mt-6">
           <button
@@ -614,7 +763,7 @@ const Tasks: React.FC = () => {
           </button>
           <button
             onClick={handleCreate}
-            disabled={creating || !newScriptFolder.trim()}
+            disabled={creating || !selectedScript}
             className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-hover disabled:opacity-50 transition-colors"
           >
             {creating ? t('common.loading') : t('common.create')}
@@ -661,6 +810,68 @@ const Tasks: React.FC = () => {
           >
             {editing ? t('common.loading') : t('common.save')}
           </button>
+        </div>
+      </Modal>
+
+      <Modal
+        open={showScriptBrowser}
+        onClose={() => setShowScriptBrowser(false)}
+        title="浏览远程脚本"
+        maxWidth="max-w-2xl"
+      >
+        <div className="space-y-4">
+          {remoteScripts.length === 0 ? (
+            <div className="text-center py-8 text-text-muted text-sm">
+              {loadingScripts ? '加载中...' : '暂无可用脚本'}
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {remoteScripts.map((script) => {
+                const isInstalled = installedScripts.some((i) => i.id === script.id)
+                const needsUpdate = installedScripts.some(
+                  (i) => i.id === script.id && i.version !== script.version
+                )
+                return (
+                  <div
+                    key={script.id}
+                    className="flex items-center justify-between p-3 rounded-lg border border-border-light hover:bg-bg-card-hover transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-text-primary">{script.name}</span>
+                        <span className="text-xs font-mono text-text-muted">v{script.version}</span>
+                        {isInstalled && !needsUpdate && (
+                          <span className="text-xs px-1.5 py-0.5 rounded bg-success-light text-success">
+                            已安装
+                          </span>
+                        )}
+                        {needsUpdate && (
+                          <span className="text-xs px-1.5 py-0.5 rounded bg-warning-light text-warning">
+                            可更新
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-text-muted mt-0.5 truncate">{script.description}</p>
+                    </div>
+                    <button
+                      onClick={() => handleInstallScript(script.id)}
+                      disabled={downloadingScriptId === script.id}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 disabled:opacity-50 transition-colors shrink-0"
+                    >
+                      <Download size={13} />
+                      {downloadingScriptId === script.id
+                        ? '安装中...'
+                        : needsUpdate
+                          ? '更新'
+                          : isInstalled
+                            ? '重装'
+                            : '安装'}
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       </Modal>
     </div>

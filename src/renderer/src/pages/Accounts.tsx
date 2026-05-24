@@ -2,11 +2,40 @@ import { useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { accountApi } from '../api'
 import type { Account } from '../types'
-import { Plus, Trash2, Edit3, Search } from 'lucide-react'
+import { Plus, Trash2, Edit3, Search, Upload } from 'lucide-react'
 import { usePaginatedList, useTemplateList } from '../hooks'
 import { Pagination, SearchInput, Modal } from '../components/common'
+import DynamicForm from '../components/DynamicForm'
+import type { FieldMeta } from '../../../shared/schemas/task-params'
 
 const PAGE_SIZE = 10
+
+function jsonSchemaToFieldMeta(schema: Record<string, unknown>): FieldMeta[] {
+  const properties = (schema.properties as Record<string, Record<string, unknown>>) || {}
+  const required: string[] = (schema.required as string[]) || []
+  const fields: FieldMeta[] = []
+
+  for (const [name, prop] of Object.entries(properties)) {
+    const jsonType = prop.type as string
+    let type: FieldMeta['type'] = 'string'
+    if (jsonType === 'number' || jsonType === 'integer') type = 'number'
+    else if (jsonType === 'boolean') type = 'boolean'
+
+    const label = (prop.title as string) || name
+    const isRequired = required.includes(name)
+
+    fields.push({
+      name,
+      type,
+      label,
+      required: isRequired,
+      defaultValue: prop.default,
+      description: prop.description as string
+    })
+  }
+
+  return fields
+}
 
 const Accounts: React.FC = () => {
   const { t } = useTranslation()
@@ -24,22 +53,81 @@ const Accounts: React.FC = () => {
     refresh: fetchData
   } = usePaginatedList<Account>((p, ps, s) => accountApi.list(p, ps, s), PAGE_SIZE)
   const [showCreate, setShowCreate] = useState(false)
-  const [form, setForm] = useState({ templateId: '', pool: '', notes: '', labels: '', data: '{}' })
+  const [form, setForm] = useState({
+    templateId: '',
+    pool: '',
+    notes: '',
+    labels: '',
+    data: '{}',
+    dynamicFormValues: {} as Record<string, unknown>
+  })
   const [creating, setCreating] = useState(false)
   const [editingItem, setEditingItem] = useState<Account | null>(null)
   const [editForm, setEditForm] = useState({ pool: '', notes: '', labels: '', data: '{}' })
   const [saving, setSaving] = useState(false)
   const [editError, setEditError] = useState<string | null>(null)
   const [createError, setCreateError] = useState<string | null>(null)
+  const [showBatchImport, setShowBatchImport] = useState(false)
+  const [batchJson, setBatchJson] = useState('')
+  const [batchError, setBatchError] = useState<string | null>(null)
+
+  const handleBatchImport = useCallback(async () => {
+    setBatchError(null)
+    let parsed: Array<{ templateId?: string; data?: Record<string, unknown>; pool?: string; labels?: string[]; notes?: string }>
+    try {
+      parsed = JSON.parse(batchJson)
+      if (!Array.isArray(parsed)) {
+        setBatchError('请输入 JSON 数组')
+        return
+      }
+    } catch {
+      setBatchError('JSON 格式无效')
+      return
+    }
+    const items = parsed.map((item) => ({
+      templateId: item.templateId || '',
+      data: item.data || {},
+      pool: item.pool || '',
+      labels: item.labels || [],
+      notes: item.notes || ''
+    }))
+    try {
+      const count = await accountApi.batchCreate(items)
+      setShowBatchImport(false)
+      setBatchJson('')
+      window.alert(`成功导入 ${count} 个账户`)
+      fetchData()
+    } catch {
+      setBatchError(t('common.operationFailed'))
+    }
+  }, [batchJson, t, fetchData])
 
   const handleCreate = useCallback(async () => {
     if (!form.templateId.trim() || !form.pool.trim()) return
+    // 使用 DynamicForm 的值或手写 JSON
+    const selectedTemplate = templates.find((t) => t.id === form.templateId)
     let parsedData: Record<string, unknown> = {}
+    if (selectedTemplate?.schema && Object.keys(selectedTemplate.schema).length > 0) {
+      parsedData = { ...form.dynamicFormValues }
+    } else {
+      try {
+        parsedData = JSON.parse(form.data || '{}')
+      } catch {
+        setCreateError(t('common.invalidJson'))
+        return
+      }
+    }
+    // 检查账号池是否存在
     try {
-      parsedData = JSON.parse(form.data || '{}')
+      const pools = await accountApi.listPools()
+      const poolName = form.pool.trim()
+      if (!pools.includes(poolName)) {
+        if (!window.confirm(`账号池「${poolName}」尚不存在，是否创建？`)) {
+          return
+        }
+      }
     } catch {
-      setCreateError(t('common.invalidJson'))
-      return
+      // 忽略池检查错误
     }
     setCreating(true)
     setCreateError(null)
@@ -57,7 +145,7 @@ const Accounts: React.FC = () => {
         notes: form.notes.trim()
       })
       setShowCreate(false)
-      setForm({ templateId: '', pool: '', notes: '', labels: '', data: '{}' })
+      setForm({ templateId: '', pool: '', notes: '', labels: '', data: '{}', dynamicFormValues: {} })
       fetchData()
     } catch {
       setCreateError(t('common.error'))
@@ -132,6 +220,13 @@ const Accounts: React.FC = () => {
             onChange={setSearch}
             placeholder={t('accounts.searchPlaceholder')}
           />
+          <button
+            onClick={() => setShowBatchImport(true)}
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+          >
+            <Upload size={16} />
+            批量导入
+          </button>
           <button
             onClick={() => setShowCreate(true)}
             className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
@@ -305,17 +400,38 @@ const Accounts: React.FC = () => {
               className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('accounts.data')} (JSON)
-            </label>
-            <textarea
-              value={form.data}
-              onChange={(e) => setForm((f) => ({ ...f, data: e.target.value }))}
-              rows={4}
-              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-mono resize-none"
-            />
-          </div>
+          {(() => {
+            const selectedTpl = templates.find((t) => t.id === form.templateId)
+            const hasSchema = selectedTpl?.schema && selectedTpl.schema.properties
+            if (hasSchema) {
+              const fields = jsonSchemaToFieldMeta(selectedTpl!.schema)
+              return (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {t('accounts.data')}
+                  </label>
+                  <DynamicForm
+                    fields={fields}
+                    values={form.dynamicFormValues}
+                    onChange={(values) => setForm((f) => ({ ...f, dynamicFormValues: values }))}
+                  />
+                </div>
+              )
+            }
+            return (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t('accounts.data')} (JSON)
+                </label>
+                <textarea
+                  value={form.data}
+                  onChange={(e) => setForm((f) => ({ ...f, data: e.target.value }))}
+                  rows={4}
+                  className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-mono resize-none"
+                />
+              </div>
+            )
+          })()}
         </div>
         {createError && <div className="text-red-600 text-sm mt-3">{createError}</div>}
         <div className="flex justify-end gap-3 mt-6">
@@ -405,6 +521,53 @@ const Accounts: React.FC = () => {
             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {t('common.save')}
+          </button>
+        </div>
+      </Modal>
+
+      <Modal
+        open={showBatchImport}
+        onClose={() => {
+          setShowBatchImport(false)
+          setBatchError(null)
+        }}
+        title="批量导入账户"
+        scrollable
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              JSON 数组（每个对象包含 templateId、pool、labels、notes、data 字段）
+            </label>
+            <textarea
+              value={batchJson}
+              onChange={(e) => setBatchJson(e.target.value)}
+              rows={12}
+              placeholder={`[
+  { "templateId": "template-evm-wallet", "pool": "my-pool", "data": { "address": "...", "privateKey": "..." } },
+  { "templateId": "template-evm-wallet", "pool": "my-pool", "data": { "address": "...", "privateKey": "..." } }
+]`}
+              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-mono resize-none"
+            />
+          </div>
+        </div>
+        {batchError && <div className="text-red-600 text-sm mt-3">{batchError}</div>}
+        <div className="flex justify-end gap-3 mt-6">
+          <button
+            onClick={() => {
+              setShowBatchImport(false)
+              setBatchError(null)
+            }}
+            className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            {t('common.cancel')}
+          </button>
+          <button
+            onClick={handleBatchImport}
+            disabled={!batchJson.trim()}
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            导入
           </button>
         </div>
       </Modal>

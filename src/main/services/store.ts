@@ -140,6 +140,7 @@ export class StoreService {
         username TEXT,
         password TEXT,
         status TEXT NOT NULL DEFAULT 'active',
+        format TEXT NOT NULL DEFAULT 'manual',
         labels TEXT NOT NULL DEFAULT '[]',
         created_at TEXT NOT NULL
       );
@@ -204,6 +205,9 @@ export class StoreService {
         status TEXT NOT NULL DEFAULT 'ongoing',
         project_type TEXT NOT NULL DEFAULT 'other',
         description TEXT NOT NULL DEFAULT '',
+        website TEXT NOT NULL DEFAULT '',
+        script_template_id TEXT,
+        account_pool TEXT NOT NULL DEFAULT '',
         links TEXT NOT NULL DEFAULT '[]',
         eligibility_criteria TEXT NOT NULL DEFAULT '[]',
         tasks TEXT NOT NULL DEFAULT '[]',
@@ -257,6 +261,36 @@ export class StoreService {
       CREATE INDEX IF NOT EXISTS idx_airdrop_projects_status ON airdrop_projects(status);
       CREATE INDEX IF NOT EXISTS idx_app_logs_category ON app_logs(category);
     `)
+    // Migrations: add columns that may be missing from existing tables
+    this.migrateAirdropProjects()
+    this.migrateProxies()
+  }
+
+  private migrateAirdropProjects(): void {
+    const cols = this.db
+      .prepare("PRAGMA table_info('airdrop_projects')")
+      .all() as Array<{ name: string }>
+    const names = new Set(cols.map((c) => c.name))
+    const migrations: Record<string, string> = {
+      website: "ALTER TABLE airdrop_projects ADD COLUMN website TEXT NOT NULL DEFAULT ''",
+      script_template_id: 'ALTER TABLE airdrop_projects ADD COLUMN script_template_id TEXT',
+      account_pool: "ALTER TABLE airdrop_projects ADD COLUMN account_pool TEXT NOT NULL DEFAULT ''"
+    }
+    for (const [col, sql] of Object.entries(migrations)) {
+      if (!names.has(col)) {
+        this.db.exec(sql)
+      }
+    }
+  }
+
+  private migrateProxies(): void {
+    const cols = this.db
+      .prepare("PRAGMA table_info('proxies')")
+      .all() as Array<{ name: string }>
+    const names = new Set(cols.map((c) => c.name))
+    if (!names.has('format')) {
+      this.db.exec("ALTER TABLE proxies ADD COLUMN format TEXT NOT NULL DEFAULT 'manual'")
+    }
   }
 
   private prepareStatements(): void {
@@ -331,14 +365,14 @@ export class StoreService {
     s.set(
       'airdrop.insert',
       db.prepare(
-        'INSERT INTO airdrop_projects (id, name, chain, status, project_type, description, links, eligibility_criteria, tasks, earnings, tags, labels, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        'INSERT INTO airdrop_projects (id, name, chain, status, project_type, description, website, script_template_id, account_pool, links, eligibility_criteria, tasks, earnings, tags, labels, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
       )
     )
     s.set('airdrop.getById', db.prepare('SELECT * FROM airdrop_projects WHERE id = ?'))
     s.set(
       'airdrop.update',
       db.prepare(
-        'UPDATE airdrop_projects SET name=?, chain=?, status=?, project_type=?, description=?, links=?, eligibility_criteria=?, tasks=?, earnings=?, tags=?, labels=?, updated_at=? WHERE id=?'
+        'UPDATE airdrop_projects SET name=?, chain=?, status=?, project_type=?, description=?, website=?, script_template_id=?, account_pool=?, links=?, eligibility_criteria=?, tasks=?, earnings=?, tags=?, labels=?, updated_at=? WHERE id=?'
       )
     )
     s.set('airdrop.delete', db.prepare('DELETE FROM airdrop_projects WHERE id = ?'))
@@ -451,6 +485,9 @@ export class StoreService {
       status: row.status as AirdropProject['status'],
       projectType: row.project_type as AirdropProject['projectType'],
       description: row.description as string,
+      website: row.website as string,
+      scriptTemplateId: row.script_template_id as string | undefined,
+      accountPool: row.account_pool as string,
       links: fromJsonArray(row.links as JsonField),
       eligibilityCriteria: fromJsonArray(row.eligibility_criteria as JsonField),
       tasks: fromJsonArray(row.tasks as JsonField),
@@ -585,6 +622,13 @@ export class StoreService {
   deleteAccount(id: string): boolean {
     const result = this.stmt('account.delete').run(id)
     return result.changes > 0
+  }
+
+  listAccountPools(): string[] {
+    const rows = this.db
+      .prepare('SELECT DISTINCT pool FROM accounts WHERE pool IS NOT NULL AND pool != \'\' ORDER BY pool')
+      .all() as Array<{ pool: string }>
+    return rows.map((r) => r.pool)
   }
 
   createTemplate(data: Omit<Template, 'id' | 'updatedAt'>): Template {
@@ -792,6 +836,9 @@ export class StoreService {
       data.status,
       data.projectType,
       data.description,
+      data.website,
+      data.scriptTemplateId ?? null,
+      data.accountPool,
       toJson(data.links),
       toJson(data.eligibilityCriteria),
       toJson(data.tasks),
@@ -846,6 +893,9 @@ export class StoreService {
       updated.status,
       updated.projectType,
       updated.description,
+      updated.website,
+      updated.scriptTemplateId ?? null,
+      updated.accountPool,
       toJson(updated.links),
       toJson(updated.eligibilityCriteria),
       toJson(updated.tasks),

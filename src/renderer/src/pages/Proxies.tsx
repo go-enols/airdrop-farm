@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { proxyApi } from '../api'
-import type { Proxy, ListResponse } from '../types'
+import type { Proxy, ProxyFormat, ListResponse } from '../types'
 import {
   Plus,
   Search,
@@ -23,12 +23,13 @@ const statusColor: Record<string, string> = {
 }
 
 const emptyForm = {
-  protocol: 'http' as 'http' | 'https' | 'socks5',
+  protocol: 'http' as Proxy['protocol'],
   host: '',
   port: 0,
   username: '' as string | null,
   password: '' as string | null,
-  status: 'active' as 'active' | 'inactive' | 'expired',
+  status: 'active' as Proxy['status'],
+  format: 'manual' as ProxyFormat,
   labels: [] as string[]
 }
 
@@ -88,6 +89,7 @@ const Proxies: React.FC = () => {
         username: form.username || null,
         password: form.password || null,
         status: form.status,
+        format: form.format,
         labels: form.labels
       })
       setShowAdd(false)
@@ -110,6 +112,7 @@ const Proxies: React.FC = () => {
         username: form.username || null,
         password: form.password || null,
         status: form.status,
+        format: form.format,
         labels: form.labels
       })
       setEditingProxy(null)
@@ -170,6 +173,7 @@ const Proxies: React.FC = () => {
       username: proxy.username || '',
       password: proxy.password || '',
       status: proxy.status,
+      format: proxy.format || 'manual',
       labels: [...proxy.labels]
     })
     setLabelInput('')
@@ -222,13 +226,29 @@ const Proxies: React.FC = () => {
         <select
           value={form.protocol}
           onChange={(e) =>
-            setForm((f) => ({ ...f, protocol: e.target.value as 'http' | 'https' | 'socks5' }))
+            setForm((f) => ({ ...f, protocol: e.target.value as Proxy['protocol'] }))
           }
           className="w-full px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
         >
           <option value="http">HTTP</option>
           <option value="https">HTTPS</option>
           <option value="socks5">SOCKS5</option>
+          <option value="ws">WebSocket</option>
+        </select>
+      </div>
+      <div>
+        <label className="block text-sm font-medium mb-1">格式</label>
+        <select
+          value={form.format}
+          onChange={(e) =>
+            setForm((f) => ({ ...f, format: e.target.value as ProxyFormat }))
+          }
+          className="w-full px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+        >
+          <option value="manual">手动输入</option>
+          <option value="api">API 拉取</option>
+          <option value="ip">IP:PORT</option>
+          <option value="ws">WebSocket</option>
         </select>
       </div>
       <div className="grid grid-cols-3 gap-3">

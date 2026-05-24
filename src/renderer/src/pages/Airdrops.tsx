@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { airdropApi } from '../api'
+import { airdropApi, accountApi, scriptApi } from '../api'
+import type { TaskTemplate } from '../types'
 import type {
   AirdropProject,
   AirdropStatus,
@@ -70,6 +71,9 @@ const AIRDROP_TYPES: AirdropProjectType[] = [
 interface EditFormData {
   name: string
   chain: string
+  website: string
+  scriptTemplateId: string
+  accountPool: string
   status: AirdropStatus
   projectType: AirdropProjectType
   description: string
@@ -88,16 +92,22 @@ const Airdrops: React.FC = () => {
   const [form, setForm] = useState<{
     name: string
     chain: string
+    website: string
+    scriptTemplateId: string
+    accountPool: string
     status: AirdropStatus
     projectType: AirdropProjectType
     description: string
-  }>({ name: '', chain: '', status: 'ongoing', projectType: 'testnet', description: '' })
+  }>({ name: '', chain: '', website: '', scriptTemplateId: '', accountPool: '', status: 'ongoing', projectType: 'testnet', description: '' })
   const [creating, setCreating] = useState(false)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [editingItem, setEditingItem] = useState<AirdropProject | null>(null)
   const [editForm, setEditForm] = useState<EditFormData>({
     name: '',
     chain: '',
+    website: '',
+    scriptTemplateId: '',
+    accountPool: '',
     status: 'ongoing',
     projectType: 'testnet',
     description: '',
@@ -110,15 +120,42 @@ const Airdrops: React.FC = () => {
   const [saving, setSaving] = useState(false)
   const [editError, setEditError] = useState<string | null>(null)
   const [createError, setCreateError] = useState<string | null>(null)
+  const [taskTemplates, setTaskTemplates] = useState<TaskTemplate[]>([])
+  const [accountPools, setAccountPools] = useState<string[]>([])
+
+  // Load task templates and account pools
+  useEffect(() => {
+    scriptApi.listInstalled().then((scripts) => {
+      // Convert InstalledScript[] to TaskTemplate-like list
+      setTaskTemplates(
+        scripts.map((s) => ({
+          id: s.id,
+          name: s.name,
+          version: s.version,
+          description: s.description,
+          installPath: s.installPath,
+          manifest: s.schema as Record<string, unknown>,
+          remoteUrl: s.remoteUrl,
+          isInstalled: true,
+          downloadedAt: s.downloadedAt,
+          updatedAt: s.updatedAt
+        }))
+      )
+    }).catch(() => { /* ignore */ })
+    accountApi.listPools().then(setAccountPools).catch(() => { /* ignore */ })
+  }, [])
 
   const handleCreate = useCallback(async () => {
-    if (!form.name.trim() || !form.chain.trim()) return
+    if (!form.name.trim() || !form.website.trim()) return
     setCreating(true)
     setCreateError(null)
     try {
       await airdropApi.create({
         name: form.name.trim(),
         chain: form.chain.trim(),
+        website: form.website.trim(),
+        scriptTemplateId: form.scriptTemplateId || undefined,
+        accountPool: form.accountPool.trim(),
         status: form.status,
         projectType: form.projectType,
         description: form.description.trim(),
@@ -130,7 +167,7 @@ const Airdrops: React.FC = () => {
         labels: []
       })
       setShowCreate(false)
-      setForm({ name: '', chain: '', status: 'ongoing', projectType: 'testnet', description: '' })
+      setForm({ name: '', chain: '', website: '', scriptTemplateId: '', accountPool: '', status: 'ongoing', projectType: 'testnet', description: '' })
       refresh()
     } catch {
       setCreateError(t('common.error'))
@@ -157,6 +194,9 @@ const Airdrops: React.FC = () => {
     setEditForm({
       name: item.name,
       chain: item.chain,
+      website: item.website || '',
+      scriptTemplateId: item.scriptTemplateId || '',
+      accountPool: item.accountPool || '',
       status: item.status,
       projectType: item.projectType,
       description: item.description,
@@ -177,6 +217,9 @@ const Airdrops: React.FC = () => {
       await airdropApi.update(editingItem.id, {
         name: editForm.name.trim(),
         chain: editForm.chain.trim(),
+        website: editForm.website.trim(),
+        scriptTemplateId: editForm.scriptTemplateId || undefined,
+        accountPool: editForm.accountPool.trim(),
         status: editForm.status,
         projectType: editForm.projectType,
         description: editForm.description.trim(),
@@ -468,9 +511,28 @@ const Airdrops: React.FC = () => {
         scrollable
       >
         <div className="space-y-4">
+          {/* 脚本模板（可选） */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('airdrops.name')}
+              脚本模板（可选）
+            </label>
+            <select
+              value={form.scriptTemplateId}
+              onChange={(e) => setForm((f) => ({ ...f, scriptTemplateId: e.target.value }))}
+              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">无</option>
+              {taskTemplates.map((tmpl) => (
+                <option key={tmpl.id} value={tmpl.id}>
+                  {tmpl.name} (v{tmpl.version})
+                </option>
+              ))}
+            </select>
+          </div>
+          {/* 名称（必填） */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t('airdrops.name')} *
             </label>
             <input
               type="text"
@@ -479,6 +541,20 @@ const Airdrops: React.FC = () => {
               className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
+          {/* 官网（必填） */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              官网 *
+            </label>
+            <input
+              type="url"
+              value={form.website}
+              onChange={(e) => setForm((f) => ({ ...f, website: e.target.value }))}
+              placeholder="https://"
+              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+          {/* 链 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               {t('airdrops.chain')}
@@ -490,6 +566,7 @@ const Airdrops: React.FC = () => {
               className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
+          {/* 状态 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               {t('airdrops.status')}
@@ -506,6 +583,7 @@ const Airdrops: React.FC = () => {
               ))}
             </select>
           </div>
+          {/* 类型 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               {t('airdrops.projectType')}
@@ -524,18 +602,43 @@ const Airdrops: React.FC = () => {
               ))}
             </select>
           </div>
+          {/* 描述（支持 Markdown） */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('airdrops.description')}
+              {t('airdrops.description')}（支持 Markdown）
             </label>
             <textarea
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-              rows={3}
-              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+              rows={5}
+              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none font-mono"
             />
           </div>
+          {/* 账号组（必填） */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              账号组 *
+            </label>
+            <select
+              value={form.accountPool}
+              onChange={(e) => setForm((f) => ({ ...f, accountPool: e.target.value }))}
+              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">请选择账号池</option>
+              {accountPools.map((pool) => (
+                <option key={pool} value={pool}>
+                  {pool}
+                </option>
+              ))}
+            </select>
+            {accountPools.length === 0 && (
+              <p className="text-xs text-text-muted mt-1">
+                暂无账号池，请先在「账户管理」页面创建账号并指定账号池
+              </p>
+            )}
+          </div>
         </div>
+        {createError && <div className="text-red-600 text-sm mt-3">{createError}</div>}
         <div className="flex justify-end gap-3 mt-6">
           <button
             onClick={() => setShowCreate(false)}
@@ -545,7 +648,7 @@ const Airdrops: React.FC = () => {
           </button>
           <button
             onClick={handleCreate}
-            disabled={creating || !form.name.trim() || !form.chain.trim()}
+            disabled={creating || !form.name.trim() || !form.website.trim() || !form.accountPool.trim()}
             className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {t('common.create')}
@@ -582,6 +685,52 @@ const Airdrops: React.FC = () => {
               onChange={(e) => setEditForm((f) => ({ ...f, chain: e.target.value }))}
               className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              官网
+            </label>
+            <input
+              type="url"
+              value={editForm.website}
+              onChange={(e) => setEditForm((f) => ({ ...f, website: e.target.value }))}
+              placeholder="https://"
+              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              脚本模板（可选）
+            </label>
+            <select
+              value={editForm.scriptTemplateId}
+              onChange={(e) => setEditForm((f) => ({ ...f, scriptTemplateId: e.target.value }))}
+              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">无</option>
+              {taskTemplates.map((tmpl) => (
+                <option key={tmpl.id} value={tmpl.id}>
+                  {tmpl.name} (v{tmpl.version})
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              账号组
+            </label>
+            <select
+              value={editForm.accountPool}
+              onChange={(e) => setEditForm((f) => ({ ...f, accountPool: e.target.value }))}
+              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="">请选择账号池</option>
+              {accountPools.map((pool) => (
+                <option key={pool} value={pool}>
+                  {pool}
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">

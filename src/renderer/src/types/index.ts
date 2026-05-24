@@ -2,6 +2,7 @@ export type {
   Wallet,
   Account,
   Proxy,
+  ProxyFormat,
   CaptchaKey,
   ProxyProvider,
   Task,
@@ -25,5 +26,11 @@ export type {
   UpdateInfo,
   AirdropStatus,
   AirdropProjectType,
-  AirdropTaskStatus
+  AirdropTaskStatus,
+  RemoteScript,
+  InstalledScript,
+  RemoteTemplate,
+  TaskOutput,
+  TaskLogBatch,
+  TaskProgressUpdate
 } from '../../../shared/types'

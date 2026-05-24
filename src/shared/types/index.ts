@@ -19,14 +19,17 @@ export interface Account {
   updatedAt: string
 }
 
+export type ProxyFormat = 'manual' | 'api' | 'ip' | 'ws'
+
 export interface Proxy {
   id: string
-  protocol: 'http' | 'https' | 'socks5'
+  protocol: 'http' | 'https' | 'socks5' | 'ws'
   host: string
   port: number
   username: string | null
   password: string | null
   status: 'active' | 'inactive' | 'expired'
+  format: ProxyFormat
   labels: string[]
   createdAt: string
 }
@@ -153,6 +156,9 @@ export interface AirdropProject {
   status: AirdropStatus
   projectType: AirdropProjectType
   description: string
+  website: string
+  scriptTemplateId?: string
+  accountPool: string
   links: AirdropLink[]
   eligibilityCriteria: EligibilityCriterion[]
   tasks: AirdropTaskItem[]
@@ -297,4 +303,61 @@ export interface ApiError {
 export interface ApiResult<T = unknown> {
   data?: T
   error?: ApiError
+}
+
+export interface RemoteScript {
+  id: string
+  name: string
+  version: string
+  description: string
+  schema: Record<string, unknown>
+  checksum: string
+  downloadUrl: string
+  changelog?: string
+  tags?: string[]
+  updatedAt: string
+}
+
+export interface InstalledScript {
+  id: string
+  name: string
+  version: string
+  description: string
+  schema: Record<string, unknown>
+  installPath: string
+  checksum: string
+  remoteUrl: string | null
+  downloadedAt: string
+  updatedAt: string
+}
+
+export interface RemoteTemplate {
+  id: string
+  name: string
+  type: string
+  version: string
+  description: string
+  schema: Record<string, unknown>
+  downloadUrl: string | null
+  downloadCount: number
+  updatedAt: string
+}
+
+export interface TaskOutput {
+  taskId: string
+  exitCode: number | null
+  stdout: string
+  stderr: string
+  durationMs: number
+}
+
+export interface TaskLogBatch {
+  taskId: string
+  logs: Array<{ level: TaskLogLevel; message: string; timestamp: string }>
+}
+
+export interface TaskProgressUpdate {
+  taskId: string
+  percent: number
+  message: string
 }

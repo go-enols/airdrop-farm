@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { templateApi } from '../api'
-import type { Template } from '../types'
-import { Plus, Search, Trash2, ChevronLeft, ChevronRight, Edit3 } from 'lucide-react'
+import { templateApi, marketplaceApi, getMarketplaceUrl } from '../api'
+import type { Template, RemoteTemplate, ListResponse } from '../types'
+import { Search, ChevronLeft, ChevronRight, Download, Globe } from 'lucide-react'
 import { Modal } from '../components/common'
 
 const PAGE_SIZE = 10
@@ -15,14 +15,14 @@ const Templates: React.FC = () => {
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [page, setPage] = useState(1)
-  const [showCreate, setShowCreate] = useState(false)
-  const [form, setForm] = useState({ name: '', type: '', version: '', schema: '{}' })
-  const [creating, setCreating] = useState(false)
-  const [editingItem, setEditingItem] = useState<Template | null>(null)
-  const [editForm, setEditForm] = useState({ name: '', type: '', version: '', schema: '{}' })
-  const [saving, setSaving] = useState(false)
-  const [editError, setEditError] = useState<string | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const [showMarketplace, setShowMarketplace] = useState(false)
+  const [marketItems, setMarketItems] = useState<RemoteTemplate[]>([])
+  const [marketLoading, setMarketLoading] = useState(false)
+  const [marketError, setMarketError] = useState<string | null>(null)
+  const [marketplaceUrl, setMarketplaceUrl] = useState('')
+  const [installingId, setInstallingId] = useState<string | null>(null)
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
@@ -50,9 +50,12 @@ const Templates: React.FC = () => {
   }, [t])
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData()
   }, [fetchData])
+
+  useEffect(() => {
+    getMarketplaceUrl().then(setMarketplaceUrl)
+  }, [])
 
   const filtered = useMemo(() => {
     if (!debouncedSearch.trim()) return allItems
@@ -70,36 +73,32 @@ const Templates: React.FC = () => {
   const paged = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (page > totalPages) setPage(totalPages)
   }, [totalPages, page])
 
-  const handleCreate = async (): Promise<void> => {
-    if (!form.name.trim() || !form.type.trim() || !form.version.trim()) return
-    let parsedSchema: Record<string, unknown> = {}
+  const loadMarketplace = async (): Promise<void> => {
+    setMarketLoading(true)
+    setMarketError(null)
     try {
-      parsedSchema = JSON.parse(form.schema || '{}')
-    } catch {
-      setError(t('common.invalidJson'))
-      return
-    }
-    setCreating(true)
-    setError(null)
-    try {
-      await templateApi.create({
-        name: form.name.trim(),
-        type: form.type.trim(),
-        version: form.version.trim(),
-        schema: parsedSchema,
-        isLocal: true
-      })
-      setShowCreate(false)
-      setForm({ name: '', type: '', version: '', schema: '{}' })
-      fetchData()
-    } catch {
-      setError(t('common.error'))
+      const res = await marketplaceApi.listTemplates(marketplaceUrl)
+      setMarketItems((res as ListResponse<RemoteTemplate>).items || [])
+    } catch (e: unknown) {
+      setMarketError(e instanceof Error ? e.message : t('common.error'))
+      setMarketItems([])
     } finally {
-      setCreating(false)
+      setMarketLoading(false)
+    }
+  }
+
+  const handleInstall = async (template: RemoteTemplate): Promise<void> => {
+    setInstallingId(template.id)
+    try {
+      await marketplaceApi.installTemplate(marketplaceUrl, template)
+      await fetchData()
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : t('common.error'))
+    } finally {
+      setInstallingId(null)
     }
   }
 
@@ -110,44 +109,6 @@ const Templates: React.FC = () => {
       fetchData()
     } catch {
       setError(t('common.error'))
-    }
-  }
-
-  const openEdit = (item: Template): void => {
-    setEditingItem(item)
-    setEditForm({
-      name: item.name,
-      type: item.type,
-      version: item.version,
-      schema: JSON.stringify(item.schema, null, 2)
-    })
-    setEditError(null)
-  }
-
-  const handleEdit = async (): Promise<void> => {
-    if (!editingItem) return
-    let parsedSchema: Record<string, unknown> = {}
-    try {
-      parsedSchema = JSON.parse(editForm.schema || '{}')
-    } catch {
-      setEditError(t('common.invalidJson'))
-      return
-    }
-    setSaving(true)
-    setEditError(null)
-    try {
-      await templateApi.update(editingItem.id, {
-        name: editForm.name.trim(),
-        type: editForm.type.trim(),
-        version: editForm.version.trim(),
-        schema: parsedSchema
-      })
-      setEditingItem(null)
-      fetchData()
-    } catch {
-      setEditError(t('common.error'))
-    } finally {
-      setSaving(false)
     }
   }
 
@@ -167,11 +128,11 @@ const Templates: React.FC = () => {
             />
           </div>
           <button
-            onClick={() => setShowCreate(true)}
+            onClick={() => setShowMarketplace(true)}
             className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
           >
-            <Plus size={16} />
-            {t('templates.createTemplate')}
+            <Globe size={16} />
+            浏览模板市场
           </button>
         </div>
       </div>
@@ -207,9 +168,6 @@ const Templates: React.FC = () => {
                     {t('templates.version')}
                   </th>
                   <th className="text-left px-4 py-3 font-medium text-gray-600">
-                    {t('templates.isLocal')}
-                  </th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">
                     {t('templates.updatedAt')}
                   </th>
                   <th className="text-right px-4 py-3 font-medium text-gray-600">
@@ -226,35 +184,17 @@ const Templates: React.FC = () => {
                     <td className="px-4 py-3 font-medium">{item.name}</td>
                     <td className="px-4 py-3 text-gray-600">{item.type}</td>
                     <td className="px-4 py-3 font-mono text-xs">{item.version}</td>
-                    <td className="px-4 py-3">
-                      {item.isLocal ? (
-                        <span className="inline-block px-2 py-0.5 text-xs bg-green-50 text-green-600 rounded-full">
-                          {t('templates.isLocal')}
-                        </span>
-                      ) : (
-                        <span className="inline-block px-2 py-0.5 text-xs bg-gray-100 text-text-muted rounded-full">
-                          Remote
-                        </span>
-                      )}
-                    </td>
                     <td className="px-4 py-3 text-text-muted text-xs">
                       {new Date(item.updatedAt).toLocaleString()}
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => openEdit(item)}
-                          className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
-                        >
-                          <Edit3 size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(item.id)}
-                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => handleDelete(item.id)}
+                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        title={t('common.delete')}
+                      >
+                        <Download size={16} className="rotate-180" />
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -290,142 +230,92 @@ const Templates: React.FC = () => {
       )}
 
       <Modal
-        open={showCreate}
-        onClose={() => setShowCreate(false)}
-        title={t('templates.createTemplate')}
+        open={showMarketplace}
+        onClose={() => setShowMarketplace(false)}
+        title="模板市场"
+        maxWidth="max-w-2xl"
       >
         <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('templates.name')}
-            </label>
+          <div className="flex gap-2">
             <input
               type="text"
-              value={form.name}
-              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              value={marketplaceUrl}
+              onChange={(e) => setMarketplaceUrl(e.target.value)}
+              placeholder="市场服务器地址"
+              className="flex-1 px-3 py-2 rounded-lg border border-border-light bg-bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
+            <button
+              onClick={loadMarketplace}
+              disabled={marketLoading || !marketplaceUrl.trim()}
+              className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-medium hover:bg-primary-hover disabled:opacity-50 transition-colors"
+            >
+              {marketLoading ? '加载中...' : '获取列表'}
+            </button>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('templates.type')}
-            </label>
-            <input
-              type="text"
-              value={form.type}
-              onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
-              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('templates.version')}
-            </label>
-            <input
-              type="text"
-              value={form.version}
-              onChange={(e) => setForm((f) => ({ ...f, version: e.target.value }))}
-              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('templates.schema')} (JSON)
-            </label>
-            <textarea
-              value={form.schema}
-              onChange={(e) => setForm((f) => ({ ...f, schema: e.target.value }))}
-              rows={6}
-              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-mono resize-none"
-            />
-          </div>
-        </div>
-        {error && <div className="text-red-600 text-sm mt-3">{error}</div>}
-        <div className="flex justify-end gap-3 mt-6">
-          <button
-            onClick={() => setShowCreate(false)}
-            className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            {t('common.cancel')}
-          </button>
-          <button
-            onClick={handleCreate}
-            disabled={creating || !form.name.trim() || !form.type.trim() || !form.version.trim()}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {t('common.create')}
-          </button>
-        </div>
-      </Modal>
 
-      <Modal
-        open={!!editingItem}
-        onClose={() => setEditingItem(null)}
-        title={t('templates.editTemplate')}
-      >
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('templates.name')}
-            </label>
-            <input
-              type="text"
-              value={editForm.name}
-              onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('templates.type')}
-            </label>
-            <input
-              type="text"
-              value={editForm.type}
-              onChange={(e) => setEditForm((f) => ({ ...f, type: e.target.value }))}
-              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('templates.version')}
-            </label>
-            <input
-              type="text"
-              value={editForm.version}
-              onChange={(e) => setEditForm((f) => ({ ...f, version: e.target.value }))}
-              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('templates.schema')} (JSON)
-            </label>
-            <textarea
-              value={editForm.schema}
-              onChange={(e) => setEditForm((f) => ({ ...f, schema: e.target.value }))}
-              rows={8}
-              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-mono resize-none"
-            />
-          </div>
-        </div>
-        {editError && <div className="text-red-600 text-sm mt-3">{editError}</div>}
-        <div className="flex justify-end gap-3 mt-6">
-          <button
-            onClick={() => setEditingItem(null)}
-            className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            {t('common.cancel')}
-          </button>
-          <button
-            onClick={handleEdit}
-            disabled={
-              saving || !editForm.name.trim() || !editForm.type.trim() || !editForm.version.trim()
-            }
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {t('common.save')}
-          </button>
+          {marketError && (
+            <div className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-4 py-2">
+              {marketError}
+            </div>
+          )}
+
+          {marketItems.length === 0 ? (
+            <div className="text-center py-8 text-text-muted text-sm">
+              {marketplaceUrl ? '点击获取列表查看可用模板' : '请输入市场服务器地址'}
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {marketItems.map((tmpl) => {
+                const isInstalled = allItems.some(
+                  (i) => i.id === tmpl.id
+                )
+                const needsUpdate = allItems.some(
+                  (i) => i.id === tmpl.id && i.version !== tmpl.version
+                )
+                return (
+                  <div
+                    key={tmpl.id}
+                    className="flex items-center justify-between p-3 rounded-lg border border-border-light hover:bg-bg-card-hover transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-text-primary">{tmpl.name}</span>
+                        <span className="text-xs font-mono text-text-muted">v{tmpl.version}</span>
+                        <span className="text-xs px-1.5 py-0.5 rounded bg-bg-tertiary text-text-muted">
+                          {tmpl.type}
+                        </span>
+                        {isInstalled && !needsUpdate && (
+                          <span className="text-xs px-1.5 py-0.5 rounded bg-success-light text-success">
+                            已安装
+                          </span>
+                        )}
+                        {needsUpdate && (
+                          <span className="text-xs px-1.5 py-0.5 rounded bg-warning-light text-warning">
+                            可更新
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-text-muted mt-0.5 truncate">{tmpl.description}</p>
+                    </div>
+                    <button
+                      onClick={() => handleInstall(tmpl)}
+                      disabled={installingId === tmpl.id}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 disabled:opacity-50 transition-colors shrink-0"
+                    >
+                      <Download size={13} />
+                      {installingId === tmpl.id
+                        ? '安装中...'
+                        : needsUpdate
+                          ? '更新'
+                          : isInstalled
+                            ? '重装'
+                            : '安装'}
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
         </div>
       </Modal>
     </div>
