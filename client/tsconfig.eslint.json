@@ -23,6 +23,7 @@
     "src/**/*.d.ts",
     "src/preload/index.d.ts",
     "tests/**/*.ts",
+    "test/**/*.ts",
     "vitest.config.ts",
     "electron.vite.config.ts",
     "eslint.config.mjs"
