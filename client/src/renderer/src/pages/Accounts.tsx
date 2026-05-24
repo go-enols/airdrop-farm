@@ -8,36 +8,9 @@ import type { ParsedAccount, ParseError } from '../utils/account-import'
 import { usePaginatedList, useTemplateList } from '../hooks'
 import { Pagination, SearchInput, Modal } from '../components/common'
 import DynamicForm from '../components/DynamicForm'
-import type { FieldMeta } from '../../../shared/schemas/task-params'
+import { jsonSchemaToFieldMeta } from '../../../shared/schemas/task-params'
 
 const PAGE_SIZE = 10
-
-function jsonSchemaToFieldMeta(schema: Record<string, unknown>): FieldMeta[] {
-  const properties = (schema.properties as Record<string, Record<string, unknown>>) || {}
-  const required: string[] = (schema.required as string[]) || []
-  const fields: FieldMeta[] = []
-
-  for (const [name, prop] of Object.entries(properties)) {
-    const jsonType = prop.type as string
-    let type: FieldMeta['type'] = 'string'
-    if (jsonType === 'number' || jsonType === 'integer') type = 'number'
-    else if (jsonType === 'boolean') type = 'boolean'
-
-    const label = (prop.title as string) || name
-    const isRequired = required.includes(name)
-
-    fields.push({
-      name,
-      type,
-      label,
-      required: isRequired,
-      defaultValue: prop.default,
-      description: prop.description as string
-    })
-  }
-
-  return fields
-}
 
 const Accounts: React.FC = () => {
   const { t } = useTranslation()
@@ -186,7 +159,7 @@ const Accounts: React.FC = () => {
         }
       }
     } catch {
-      // 忽略池检查错误
+      console.warn('Pool check failed, proceeding anyway')
     }
     setCreating(true)
     setCreateError(null)
@@ -220,7 +193,7 @@ const Accounts: React.FC = () => {
         await accountApi.delete(id)
         fetchData()
       } catch {
-        // Ignore delete errors
+        window.alert(t('common.operationFailed'))
       }
     },
     [t, fetchData]

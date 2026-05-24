@@ -77,8 +77,4 @@ export function getScriptsDir(): string {
   return dir
 }
 
-export function getTemplatesDir(): string {
-  const dir = join(dataDir, 'uploads', 'templates')
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true })
-  return dir
-}
+// getTemplatesDir was removed — unused (no callers)

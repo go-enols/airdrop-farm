@@ -51,6 +51,7 @@ const Tasks: React.FC = () => {
     Record<string, { percent: number; message: string } | null>
   >({})
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const progressTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const [installedScripts, setInstalledScripts] = useState<InstalledScript[]>([])
   const [selectedScript, setSelectedScript] = useState<InstalledScript | null>(null)
@@ -118,6 +119,12 @@ const Tasks: React.FC = () => {
   }, [errorMsg])
 
   useEffect(() => {
+    if (!successMsg) return
+    const timer = setTimeout(() => setSuccessMsg(null), 3000)
+    return () => clearTimeout(timer)
+  }, [successMsg])
+
+  useEffect(() => {
     loadInstalledScripts()
   }, [])
 
@@ -150,7 +157,8 @@ const Tasks: React.FC = () => {
               level: l.level as TaskLog['level'],
               message: l.message,
             }))
-            return [...prev, ...newLogs]
+            const combined = [...prev, ...newLogs]
+            return combined.length > 500 ? combined.slice(-500) : combined
           })
         }
       }
@@ -177,8 +185,7 @@ const Tasks: React.FC = () => {
 
   const showError = (msg: string): void => setErrorMsg(msg)
   const showSuccess = (msg: string): void => {
-    setErrorMsg(msg)
-    setTimeout(() => setErrorMsg(null), 3000)
+    setSuccessMsg(msg)
   }
 
   const handleAction = async (
@@ -205,7 +212,8 @@ const Tasks: React.FC = () => {
     try {
       const res = await taskApi.getLogs(taskId)
       setLogs(res)
-    } catch {
+    } catch (e: unknown) {
+      showError(t('common.operationFailed') + ': ' + String(e))
       setLogs([])
     } finally {
       setLogsLoading(false)
@@ -225,8 +233,8 @@ const Tasks: React.FC = () => {
     try {
       const scripts = await scriptApi.listInstalled()
       setInstalledScripts(scripts)
-    } catch {
-      /* ignore */
+    } catch (e: unknown) {
+      showError(t('common.operationFailed') + ': ' + String(e))
     }
   }
 
@@ -305,7 +313,8 @@ const Tasks: React.FC = () => {
         setSelectedAccountIds(new Set())
         setBatchMode(false)
       }
-    } catch {
+    } catch (e: unknown) {
+      showError(t('common.operationFailed') + ': ' + String(e))
       setRequiredTemplates([])
       setAvailableAccounts([])
       setAvailablePools([])
@@ -338,8 +347,8 @@ const Tasks: React.FC = () => {
           }
         }
       }
-    } catch {
-      // 校验失败时允许继续
+    } catch (e: unknown) {
+      showError(t('common.operationFailed') + ': ' + String(e))
     }
     const config = formFields.length > 0 ? formValues : {}
 
@@ -501,12 +510,17 @@ const Tasks: React.FC = () => {
   const handleBatchAction = async (action: 'start' | 'stop' | 'delete'): Promise<void> => {
     const ids = Array.from(selectedIds)
     if (ids.length === 0) return
-    try {
-      await Promise.all(ids.map((id) => taskApi[action](id)))
-      setSelectedIds(new Set())
-      refresh()
-    } catch (e: unknown) {
-      showError(e instanceof Error ? e.message : String(e))
+    const results = await Promise.allSettled(ids.map((id) => taskApi[action](id)))
+    const succeeded = results.filter((r) => r.status === 'fulfilled').length
+    const failed = results.filter((r) => r.status === 'rejected').length
+    setSelectedIds(new Set())
+    refresh()
+    if (failed === 0) {
+      showSuccess(t('tasks.batchSuccess', { count: succeeded }))
+    } else if (succeeded > 0) {
+      showError(t('tasks.batchPartial', { succeeded, failed }))
+    } else {
+      showError(t('tasks.batchFailed', { count: failed }))
     }
   }
 
@@ -617,6 +631,14 @@ const Tasks: React.FC = () => {
         <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-danger-light text-danger border border-danger/20">
           <span className="flex-1 text-sm">{errorMsg}</span>
           <button onClick={() => setErrorMsg(null)} className="text-danger/70 hover:text-danger">
+            &times;
+          </button>
+        </div>
+      )}
+      {successMsg && (
+        <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-success-light text-success border border-success/20">
+          <span className="flex-1 text-sm">{successMsg}</span>
+          <button onClick={() => setSuccessMsg(null)} className="text-success/70 hover:text-success">
             &times;
           </button>
         </div>
@@ -857,7 +879,7 @@ const Tasks: React.FC = () => {
         />
       )}
 
-      <Modal open={showCreate} onClose={() => setShowCreate(false)} title={t('tasks.createTask')} maxWidth="max-w-lg">
+      <Modal open={showCreate} onClose={() => { setShowCreate(false); resetCreateForm() }} title={t('tasks.createTask')} maxWidth="max-w-lg">
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">{t('tasks.selectScript')}</label>
@@ -956,7 +978,7 @@ const Tasks: React.FC = () => {
         </div>
         <div className="flex justify-end gap-2 mt-6">
           <button
-            onClick={() => setShowCreate(false)}
+            onClick={() => { setShowCreate(false); resetCreateForm() }}
             className="px-4 py-2 rounded-lg border border-border-light text-sm hover:bg-bg-card-hover transition-colors"
           >
             {t('common.cancel')}

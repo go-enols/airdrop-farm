@@ -27,7 +27,7 @@ const Settings: React.FC = () => {
 
   const [proxyProviders, setProxyProviders] = useState<ListResponse<ProxyProvider> | null>(null)
   const [showProxyProviderForm, setShowProxyProviderForm] = useState(false)
-  const [editingProxyProvider, _setEditingProxyProvider] = useState<ProxyProvider | null>(null)
+  const [editingProxyProvider] = useState<ProxyProvider | null>(null)
   const [proxyProviderForm, setProxyProviderForm] = useState({
     name: '',
     apiUrl: '',
@@ -57,8 +57,6 @@ const Settings: React.FC = () => {
 
   // Listen for update status from main process
   useEffect(() => {
-    if (!window.electronAPI) return
-
     const handleUpdateStatus = (...args: unknown[]): void => {
       const payload = args[0] as { status: string; data?: unknown }
       setUpdateStatus(
@@ -80,8 +78,10 @@ const Settings: React.FC = () => {
       }
     }
 
-    // on returns a cleanup function
-    return window.electronAPI.on('update:status', handleUpdateStatus)
+    const unsubscribe = (window as any).electronAPI?.on?.('update:status', handleUpdateStatus)
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe()
+    }
   }, [])
 
   const checkForUpdates = async (): Promise<void> => {
@@ -628,7 +628,7 @@ const Settings: React.FC = () => {
           </h2>
         </div>
         <p className="text-xs text-text-muted">
-          代理提供商已移至「代理管理」页面统一管理。此处仅作只读展示。
+          {t('settings.proxyProvidersReadonly')}
         </p>
         <div className="flex-1 overflow-auto min-h-0">
           {!(proxyProviders?.items || []).length ? (
@@ -663,7 +663,7 @@ const Settings: React.FC = () => {
                       <td className="px-4 py-2.5 text-xs uppercase">{item.protocol}</td>
                       <td className="px-4 py-2.5">{item.refreshInterval}s</td>
                       <td className="px-4 py-2.5 text-right">
-                        <span className="text-xs text-text-muted">只读</span>
+                        <span className="text-xs text-text-muted">{t('common.readonly')}</span>
                       </td>
                     </tr>
                   ))}
@@ -678,7 +678,7 @@ const Settings: React.FC = () => {
       <section className="bg-bg-card rounded-xl border border-border-light shadow-sm p-5 flex flex-col gap-3 h-full xl:col-span-2 md:col-span-2">
         <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary">
           <Server size={18} />
-          脚本/模板市场
+          {t('settings.marketplaceSection')}
         </h2>
         <div className="flex items-center gap-3">
           <input
@@ -699,7 +699,7 @@ const Settings: React.FC = () => {
           {marketplaceMsg && <span className="text-sm text-success">{marketplaceMsg}</span>}
         </div>
         <div className="text-xs text-text-muted">
-          设置脚本和模板市场的服务器地址。修改后将在下次打开市场浏览器时生效。
+          {t('settings.marketplaceUrlHint')}
         </div>
         <div className="pt-3 border-t border-border-light space-y-2">
           <div className="flex items-center gap-2 text-sm font-medium text-text-primary">
@@ -810,7 +810,7 @@ const Settings: React.FC = () => {
             className="flex items-center gap-1.5 px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors shadow-lg"
           >
             <Save size={16} />
-            {saving ? t('common.loading') : `${t('common.save')} 设置`}
+            {saving ? t('common.loading') : t('settings.saveSettings')}
           </button>
         </div>
       )}

@@ -28,7 +28,6 @@ app.use((_req, res) => {
 export function startServer(): void {
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Marketplace server running on http://0.0.0.0:${PORT}`)
-    console.log(`API Key: ${process.env.MARKETPLACE_API_KEY || 'airdrop-farm-dev-key'}`)
   })
 }
 

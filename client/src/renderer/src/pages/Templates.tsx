@@ -32,8 +32,9 @@ const Templates: React.FC = () => {
     getMarketplaceUrl().then((url) => {
       setMarketplaceUrl(url)
       setUrlInput(url)
+      if (url) fetchMarketplace(url)
     })
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadInstalled = useCallback(async () => {
     try {
@@ -48,26 +49,24 @@ const Templates: React.FC = () => {
 
   useEffect(() => { loadInstalled() }, [loadInstalled])
 
-  const fetchMarketplace = useCallback(async () => {
+  const fetchMarketplace = useCallback(async (urlOverride?: string) => {
+    const baseUrl = urlOverride ?? marketplaceUrl
+    if (!baseUrl) return
     setLoading(true)
     setError(null)
     try {
       const [tplRes, scriptRes] = await Promise.all([
-        marketplaceApi.listTemplates(marketplaceUrl),
-        marketplaceApi.listScripts(marketplaceUrl)
+        marketplaceApi.listTemplates(baseUrl),
+        marketplaceApi.listScripts(baseUrl)
       ])
-      setAccountTemplates((tplRes as any).items || [])
-      setTaskScripts((scriptRes as any).items || [])
+      setAccountTemplates(tplRes.items || [])
+      setTaskScripts(scriptRes.items || [])
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : t('common.error'))
     } finally {
       setLoading(false)
     }
   }, [marketplaceUrl, t])
-
-  useEffect(() => {
-    if (marketplaceUrl) fetchMarketplace()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleInstallTemplate = async (tmpl: RemoteTemplate): Promise<void> => {
     setInstallingId(tmpl.id)
@@ -135,8 +134,8 @@ const Templates: React.FC = () => {
             type="text"
             value={urlInput}
             onChange={(e) => setUrlInput(e.target.value)}
-            onBlur={() => { if (urlInput.trim()) setMarketplaceUrl(urlInput.trim()) }}
-            onKeyDown={(e) => { if (e.key === 'Enter' && urlInput.trim()) { setMarketplaceUrl(urlInput.trim()); fetchMarketplace() } }}
+            onBlur={() => { if (urlInput.trim()) { setMarketplaceUrl(urlInput.trim()); fetchMarketplace(urlInput.trim()) } }}
+            onKeyDown={(e) => { if (e.key === 'Enter' && urlInput.trim()) { setMarketplaceUrl(urlInput.trim()); fetchMarketplace(urlInput.trim()) } }}
             placeholder="http://localhost:3400"
             className="px-3 py-1.5 text-xs border border-border-light rounded-lg bg-bg-card w-52 focus:outline-none focus:ring-2 focus:ring-primary"
           />

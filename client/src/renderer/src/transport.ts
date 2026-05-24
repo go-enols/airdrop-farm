@@ -153,7 +153,7 @@ export async function call<T>(channel: string, args: unknown[] = []): Promise<T>
   } catch (ipcErr) {
     try {
       const result = await callHTTP<T>(channel, args)
-      activeTransport = 'http'
+      setActiveTransport('http')
       console.warn(
         `[transport] IPC failed (${(ipcErr as Error).message}), switched to HTTP: ${channel}`
       )

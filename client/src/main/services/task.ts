@@ -1,4 +1,6 @@
-import { spawn, ChildProcess, execSync } from 'child_process'
+import { spawn, ChildProcess, exec } from 'child_process'
+import { promisify } from 'util'
+const execAsync = promisify(exec)
 import { join } from 'path'
 import { existsSync, readFileSync, statSync } from 'fs'
 import { app } from 'electron'
@@ -30,6 +32,8 @@ interface RunningTask {
   stderr: string
 }
 
+const MAX_COMPLETED_OUTPUTS = 100
+
 export class TaskService {
   private runningTasks = new Map<string, RunningTask>()
   private completedOutputs = new Map<string, TaskOutput>()
@@ -44,7 +48,7 @@ export class TaskService {
     this.scriptsDir = join(app.getPath('userData'), 'scripts')
   }
 
-  private installDependencies(cwd: string, running: RunningTask): void {
+  private async installDependencies(cwd: string, running: RunningTask): Promise<void> {
     const pkgPath = join(cwd, 'package.json')
     if (!existsSync(pkgPath)) return
     const nmPath = join(cwd, 'node_modules')
@@ -52,10 +56,9 @@ export class TaskService {
 
     running.logBuffer.push('info', '检测到 package.json，正在安装依赖...')
     try {
-      execSync('npm install --production --no-audit --no-fund', {
+      await execAsync('npm install --production --no-audit --no-fund', {
         cwd,
         timeout: 120000,
-        stdio: 'pipe'
       })
       running.logBuffer.push('info', '依赖安装完成')
     } catch (err) {
@@ -126,7 +129,7 @@ export class TaskService {
         }
       }
 
-      this.installDependencies(cwd, running)
+      await this.installDependencies(cwd, running)
 
       const env: Record<string, string> = { ...process.env as Record<string, string> }
       for (const [key, value] of Object.entries(task.config)) {
@@ -193,6 +196,7 @@ export class TaskService {
         this.sendToRenderer('task:statusChanged', { id, status })
         this.sendToRenderer('task:output', output)
         this.completedOutputs.set(id, output)
+        this.trimCompletedOutputs()
         this.runningTasks.delete(id)
       })
 
@@ -329,6 +333,15 @@ export class TaskService {
     }
     this.runningTasks.clear()
     this.completedOutputs.clear()
+  }
+
+  private trimCompletedOutputs(): void {
+    if (this.completedOutputs.size <= MAX_COMPLETED_OUTPUTS) return
+    const entries = [...this.completedOutputs.entries()]
+    const toDelete = entries.slice(0, entries.length - MAX_COMPLETED_OUTPUTS)
+    for (const [key] of toDelete) {
+      this.completedOutputs.delete(key)
+    }
   }
 
   private sendToRenderer(channel: string, data: unknown): void {

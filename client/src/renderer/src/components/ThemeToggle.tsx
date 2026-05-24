@@ -28,6 +28,7 @@ const ThemeToggle: React.FC<Props> = ({ collapsed = false }) => {
     return (
       <button
         onClick={next}
+        aria-label={current.label}
         className="flex items-center justify-center w-full p-1.5 rounded-lg text-text-secondary hover:bg-bg-tertiary transition-colors"
         title={`${t('settings.theme')}: ${current.label}`}
       >

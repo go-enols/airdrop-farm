@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 export type ThemePref = 'auto' | 'light' | 'dark'
 export type ResolvedTheme = 'light' | 'dark'
@@ -49,7 +49,17 @@ export function useTheme(): {
   const [pref, setPrefState] = useState<ThemePref>(() => readPref())
   const [theme, setTheme] = useState<ResolvedTheme>(() => resolveTheme(readPref()))
 
+  const isFirstMount = useRef(true)
+
   useEffect(() => {
+    if (isFirstMount.current) {
+      isFirstMount.current = false
+      if ((window as unknown as Record<string, unknown>).__themeResolved) {
+        const hasDark = document.documentElement.classList.contains('dark')
+        setTheme(hasDark ? 'dark' : 'light')
+        return
+      }
+    }
     const resolved = applyTheme(pref)
     setTheme(resolved)
   }, [pref])

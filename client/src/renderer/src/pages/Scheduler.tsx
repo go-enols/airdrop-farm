@@ -43,6 +43,7 @@ const Scheduler: React.FC = () => {
 
   useEffect(() => {
     taskTemplateApi.list(1, 999).then((res) => setTaskTemplates(res.items || []))
+      .catch(() => setError(t('common.error')))
   }, [])
 
   const getTemplateName = (id: string): string =>
@@ -202,7 +203,7 @@ const Scheduler: React.FC = () => {
           <p className="mt-4 text-lg">{t('scheduler.noSchedules')}</p>
         </div>
       ) : (
-        <div className="dark:bg-bg-card rounded-xl border border-border-light overflow-hidden">
+        <div className="bg-bg-card rounded-xl border border-border-light overflow-hidden">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border-light bg-bg-tertiary">
@@ -296,7 +297,7 @@ const Scheduler: React.FC = () => {
 
       <Modal
         open={showCreate}
-        onClose={() => setShowCreate(false)}
+        onClose={() => { setShowCreate(false); setForm({ templateId: '', presetIdx: 0, customCron: '' }); setFormFields([]); setFormValues({}) }}
         title={t('scheduler.createSchedule')}
       >
         <div className="space-y-4">
@@ -382,7 +383,7 @@ const Scheduler: React.FC = () => {
 
       <Modal
         open={!!editingItem}
-        onClose={() => setEditingItem(null)}
+        onClose={() => { setEditingItem(null); setEditForm({ presetIdx: 0, customCron: '' }); setEditError(null) }}
         title={t('scheduler.editSchedule')}
       >
         <div className="space-y-4">

@@ -200,6 +200,8 @@ app.whenReady().then(async () => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
+  } else {
+    schedulerService.stop()
   }
 })
 
@@ -214,17 +216,24 @@ app.on('before-quit', (e) => {
   taskService.cleanup()
   // Kill marketplace server if running
   if (marketplaceServerProcess) {
-    marketplaceServerProcess.kill('SIGTERM')
+    try {
+      marketplaceServerProcess.kill('SIGTERM')
+    } catch {
+      // process already dead, ignore
+    }
     marketplaceServerProcess = null
   }
-  httpServer
-    .stop()
-    .then(() => {
-      store.close()
-      app.quit()
-    })
-    .catch(() => {
-      store.close()
-      app.quit()
-    })
+  // Wait 500ms for task exit handlers to flush before closing store
+  setTimeout(() => {
+    httpServer
+      .stop()
+      .then(() => {
+        store.close()
+        app.quit()
+      })
+      .catch(() => {
+        store.close()
+        app.quit()
+      })
+  }, 500)
 })

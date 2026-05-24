@@ -87,6 +87,9 @@ const Wallets: React.FC = () => {
   const [jsonParsed, setJsonParsed] = useState<ParsedWallet[]>([])
   const [jsonError, setJsonError] = useState('')
   const [jsonImporting, setJsonImporting] = useState(false)
+  const [mnemonicSaveProgress, setMnemonicSaveProgress] = useState({ current: 0, total: 0 })
+  const [importSaveProgress, setImportSaveProgress] = useState({ current: 0, total: 0 })
+  const [jsonSaveProgress, setJsonSaveProgress] = useState({ current: 0, total: 0 })
 
   const [deleteTarget, setDeleteTarget] = useState<Wallet | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -260,8 +263,11 @@ const Wallets: React.FC = () => {
   const handleSaveMnemonicDerived = async (): Promise<void> => {
     if (mnemonicDerivedResults.length === 0) return
     setMnemonicSaving(true)
-    try {
-      for (const item of mnemonicDerivedResults) {
+    const total = mnemonicDerivedResults.length
+    let successCount = 0
+    setMnemonicSaveProgress({ current: 0, total })
+    for (const item of mnemonicDerivedResults) {
+      try {
         await walletApi.create({
           address: item.address,
           privateKey: item.privateKey,
@@ -269,15 +275,22 @@ const Wallets: React.FC = () => {
           walletType: item.walletType as Wallet['walletType'],
           labels: []
         })
+        successCount++
+      } catch {
+        // individual failure tracked
       }
-      closeCreateModal()
-      fetchWallets()
-      showSuccess(t('wallets.operationSuccess'))
-    } catch {
-      showError(t('wallets.operationFailed'))
-    } finally {
-      setMnemonicSaving(false)
+      setMnemonicSaveProgress({ current: successCount, total })
     }
+    closeCreateModal()
+    fetchWallets()
+    if (successCount === total) {
+      showSuccess(t('wallets.operationSuccess'))
+    } else if (successCount > 0) {
+      showError(t('wallets.partialSuccess', { success: successCount, total }))
+    } else {
+      showError(t('wallets.operationFailed'))
+    }
+    setMnemonicSaving(false)
   }
 
   const handleDerive = async (): Promise<void> => {
@@ -297,8 +310,11 @@ const Wallets: React.FC = () => {
   const handleSaveImported = async (): Promise<void> => {
     if (derivedResults.length === 0) return
     setImportSaving(true)
-    try {
-      for (const item of derivedResults) {
+    const total = derivedResults.length
+    let successCount = 0
+    setImportSaveProgress({ current: 0, total })
+    for (const item of derivedResults) {
+      try {
         await walletApi.create({
           address: item.address,
           privateKey: item.privateKey,
@@ -306,15 +322,22 @@ const Wallets: React.FC = () => {
           walletType: item.walletType as Wallet['walletType'],
           labels: []
         })
+        successCount++
+      } catch {
+        // individual failure tracked
       }
-      closeImportModal()
-      fetchWallets()
-      showSuccess(t('wallets.operationSuccess'))
-    } catch {
-      showError(t('wallets.operationFailed'))
-    } finally {
-      setImportSaving(false)
+      setImportSaveProgress({ current: successCount, total })
     }
+    closeImportModal()
+    fetchWallets()
+    if (successCount === total) {
+      showSuccess(t('wallets.operationSuccess'))
+    } else if (successCount > 0) {
+      showError(t('wallets.partialSuccess', { success: successCount, total }))
+    } else {
+      showError(t('wallets.operationFailed'))
+    }
+    setImportSaving(false)
   }
 
   const handleDelete = async (): Promise<void> => {
@@ -487,8 +510,11 @@ const Wallets: React.FC = () => {
   const handleImportJson = async (): Promise<void> => {
     if (jsonParsed.length === 0) return
     setJsonImporting(true)
-    try {
-      for (const item of jsonParsed) {
+    const total = jsonParsed.length
+    let successCount = 0
+    setJsonSaveProgress({ current: 0, total })
+    for (const item of jsonParsed) {
+      try {
         await walletApi.create({
           address: item.address,
           privateKey: item.privateKey,
@@ -496,15 +522,22 @@ const Wallets: React.FC = () => {
           walletType: item.walletType,
           labels: item.labels ?? []
         })
+        successCount++
+      } catch {
+        // individual failure tracked
       }
-      closeImportModal()
-      fetchWallets()
-      showSuccess(t('wallets.operationSuccess'))
-    } catch {
-      showError(t('wallets.operationFailed'))
-    } finally {
-      setJsonImporting(false)
+      setJsonSaveProgress({ current: successCount, total })
     }
+    closeImportModal()
+    fetchWallets()
+    if (successCount === total) {
+      showSuccess(t('wallets.operationSuccess'))
+    } else if (successCount > 0) {
+      showError(t('wallets.partialSuccess', { success: successCount, total }))
+    } else {
+      showError(t('wallets.operationFailed'))
+    }
+    setJsonImporting(false)
   }
 
   const isAllSelected = wallets.length > 0 && selectedIds.size === wallets.length
@@ -1014,7 +1047,7 @@ const Wallets: React.FC = () => {
                             className="flex-1 py-2 bg-success text-white rounded-lg text-sm font-medium hover:bg-success-hover disabled:opacity-50 transition-colors"
                           >
                             {mnemonicSaving
-                              ? t('wallets.createModal.saving')
+                              ? `${t('wallets.createModal.saving')} (${mnemonicSaveProgress.current}/${mnemonicSaveProgress.total})`
                               : t('wallets.importModal.saveAll')}
                           </button>
                         </div>
@@ -1176,7 +1209,7 @@ const Wallets: React.FC = () => {
                       className="flex-1 py-2 bg-success text-white rounded-lg text-sm font-medium hover:bg-success-hover disabled:opacity-50 transition-colors"
                     >
                       {importSaving
-                        ? t('wallets.importModal.saving')
+                        ? `${t('wallets.importModal.saving')} (${importSaveProgress.current}/${importSaveProgress.total})`
                         : t('wallets.importModal.saveAll')}
                     </button>
                   </div>
@@ -1265,8 +1298,8 @@ const Wallets: React.FC = () => {
                         className="flex-1 py-2 bg-success text-white rounded-lg text-sm font-medium hover:bg-success-hover disabled:opacity-50 transition-colors"
                       >
                         {jsonImporting
-                          ? t('wallets.importingWallets')
-                          : `导入 ${jsonParsed.length} 个钱包`}
+                          ? `${t('wallets.importingWallets')} (${jsonSaveProgress.current}/${jsonSaveProgress.total})`
+                          : t('wallets.importJsonCount', { count: jsonParsed.length })}
                       </button>
                     </div>
                   </>

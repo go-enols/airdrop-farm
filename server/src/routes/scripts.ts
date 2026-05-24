@@ -128,8 +128,13 @@ router.post('/', upload.single('file'), (req: Request, res: Response) => {
       }
     }
     rmSync(tmpDir, { recursive: true, force: true })
-  } catch {
-    // manifest validation failed
+  } catch (err) {
+    if (!manifestErr) {
+      // Real error (e.g., unzip not installed), not a validation failure
+      const msg = err instanceof Error ? err.message : String(err)
+      manifestErr = `验证脚本包失败: ${msg}`
+      console.error(`[scripts] zip validation error: ${msg}`)
+    }
   }
   if (manifestErr) {
     rmSync(req.file.path, { force: true })
@@ -142,10 +147,17 @@ router.post('/', upload.single('file'), (req: Request, res: Response) => {
   const schema = req.body.schema || '{}'
   const tagsJson = typeof tags === 'string' ? tags : JSON.stringify(tags || [])
 
-  stmts.scriptInsert.run(
-    id, name, version, description || '', schema, entryPoint || '',
-    checksum, req.file.filename, tagsJson, changelog || '', 0, now, now
-  )
+  try {
+    stmts.scriptInsert.run(
+      id, name, version, description || '', schema, entryPoint || '',
+      checksum, req.file.filename, tagsJson, changelog || '', 0, now, now
+    )
+  } catch (dbErr) {
+    rmSync(req.file.path, { force: true })
+    const msg = dbErr instanceof Error ? dbErr.message : String(dbErr)
+    res.status(500).json({ error: { message: `数据库写入失败: ${msg}`, code: 'DB_ERROR' } })
+    return
+  }
 
   const row = stmts.scriptGetById.get(id) as Record<string, unknown>
   res.status(201).json({ data: rowToScript(row) })

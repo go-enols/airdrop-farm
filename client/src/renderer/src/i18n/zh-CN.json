@@ -43,7 +43,9 @@
     "category": "分类",
     "viewAll": "查看全部",
     "invalidJson": "JSON 格式无效",
-    "status": "状态"
+    "status": "状态",
+    "saveSuccess": "保存成功",
+    "readonly": "只读"
   },
   "nav": {
     "dashboard": "仪表盘",
@@ -122,6 +124,7 @@
     "tabMnemonic": "助记词派生",
     "tabJson": "JSON 导入",
     "importJson": "选择 JSON 文件",
+    "importJsonCount": "导入 {{count}} 个钱包",
     "importJsonHint": "支持单个钱包对象或钱包对象数组，必填字段：address、privateKey、walletType（evm/solana/sui/bitcoin）",
     "invalidJsonFormat": "JSON 格式无效",
     "parsedWallets": "已解析钱包",
@@ -129,6 +132,7 @@
     "confirmBatchDelete": "确认删除选中的 {{count}} 个钱包？",
     "operationFailed": "操作失败",
     "operationSuccess": "操作成功",
+    "partialSuccess": "部分成功: {{success}}/{{total}} 个已保存",
     "exportSuccess": "导出成功",
     "exportError": "导出失败",
     "createModal": {
@@ -503,7 +507,11 @@
     "theme": "外观",
     "themeAuto": "跟随系统",
     "themeLight": "浅色",
-    "themeDark": "深色"
+    "themeDark": "深色",
+    "proxyProvidersReadonly": "代理提供商已移至「代理管理」页面统一管理。此处仅作只读展示。",
+    "marketplaceSection": "脚本/模板市场",
+    "marketplaceUrlHint": "设置脚本和模板市场的服务器地址。修改后将在下次打开市场浏览器时生效。",
+    "saveSettings": "保存设置"
   },
   "updates": {
     "checkNow": "检查更新",

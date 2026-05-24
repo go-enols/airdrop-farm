@@ -63,8 +63,6 @@ const TitleBar: React.FC = () => {
     void windowApi.close()
   }
 
-  const isWin = platform === 'win32'
-
   return (
     <header
       className="flex-shrink-0 flex items-center justify-between h-8 bg-bg-card border-b border-border-light select-none"
@@ -103,9 +101,7 @@ const TitleBar: React.FC = () => {
           onClick={onClose}
           aria-label={t('window.close')}
           title={t('window.close')}
-          className={`flex items-center justify-center w-11 h-8 text-text-secondary transition-colors ${
-            isWin ? 'hover:bg-danger hover:text-white' : 'hover:bg-danger hover:text-white'
-          }`}
+          className="flex items-center justify-center w-11 h-8 text-text-secondary hover:bg-danger hover:text-white transition-colors"
           style={noDragStyle}
         >
           <X size={14} />

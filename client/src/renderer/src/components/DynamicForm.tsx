@@ -71,9 +71,10 @@ function renderField(
           <input
             type="number"
             value={strValue || defaultStr}
-            onChange={(e) =>
-              onChange(field.name, e.target.value === '' ? undefined : Number(e.target.value))
-            }
+            onChange={(e) => {
+              const num = Number(e.target.value)
+              onChange(field.name, e.target.value === '' ? undefined : (isNaN(num) ? (value as number) : num))
+            }}
             min={field.min}
             max={field.max}
             className={`${inputBase} ${error ? 'border-danger' : ''}`}
@@ -87,7 +88,7 @@ function renderField(
       return (
         <div>
           <select
-            value={strValue || defaultStr}
+            value={strValue}
             onChange={(e) => onChange(field.name, e.target.value)}
             className={`${inputBase} ${error ? 'border-danger' : ''}`}
           >

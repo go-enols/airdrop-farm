@@ -36,7 +36,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebar-collapsed') === 'true')
 
   return (
     <div className="flex flex-col h-screen bg-bg-page">
@@ -47,7 +47,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         >
           <div className="flex items-center justify-end h-12 px-3 border-b border-border-light">
             <button
-              onClick={() => setCollapsed(!collapsed)}
+              onClick={() => {
+                const next = !collapsed
+                setCollapsed(next)
+                localStorage.setItem('sidebar-collapsed', String(next))
+              }}
               className="p-1 rounded hover:bg-bg-tertiary"
               aria-label={collapsed ? t('common.refresh') : t('common.close')}
             >
@@ -56,7 +60,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </div>
           <nav className="flex-1 py-2 space-y-0.5 px-2 overflow-y-auto">
             {NAV_ITEMS.map(({ path, icon: Icon, key }) => {
-              const active = location.pathname === path
+              const active = location.pathname.startsWith(path) && (path === '/' ? location.pathname === '/' : true)
               return (
                 <button
                   key={path}
