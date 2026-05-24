@@ -17,8 +17,10 @@ import {
   Layers,
   Target
 } from 'lucide-react'
+import type { TFunction } from 'i18next'
 import { appApi, airdropApi } from '../api'
 import type { StatsAggregate, AirdropProject } from '../types'
+import { statusLabel } from '../utils/i18n-status'
 
 const statusIcons: Record<string, React.ReactNode> = {
   running: <Activity className="w-4 h-4 animate-pulse" />,
@@ -102,23 +104,13 @@ function QuickActionButton({
   )
 }
 
-function AirdropCard({ airdrop }: { airdrop: AirdropProject }): React.JSX.Element {
-  const statusLabels: Record<string, string> = {
-    ongoing: '进行中',
-    completed: '已完成',
-    cancelled: '已取消',
-    claimed: '已领取'
-  }
-
-  const typeLabels: Record<string, string> = {
-    testnet: '测试网',
-    mainnet: '主网',
-    galxe: 'Galxe',
-    quest: '任务',
-    social: '社交',
-    other: '其他'
-  }
-
+function AirdropCard({
+  airdrop,
+  t
+}: {
+  airdrop: AirdropProject
+  t: TFunction
+}): React.JSX.Element {
   const statusColors: Record<string, string> = {
     ongoing: 'bg-primary',
     completed: 'bg-success',
@@ -151,12 +143,12 @@ function AirdropCard({ airdrop }: { airdrop: AirdropProject }): React.JSX.Elemen
         <span
           className={`px-2 py-1 rounded-md text-xs ${statusColors[airdrop.status] || 'bg-bg-tertiary0'}/20 text-white/80`}
         >
-          {statusLabels[airdrop.status] || airdrop.status}
+          {statusLabel('airdrop', airdrop.status, t)}
         </span>
         <span
           className={`px-2 py-1 rounded-md text-xs ${typeColors[airdrop.projectType] || 'bg-bg-tertiary0'}/20 text-white/80`}
         >
-          {typeLabels[airdrop.projectType] || airdrop.projectType}
+          {statusLabel('airdropType', airdrop.projectType, t)}
         </span>
       </div>
     </div>
@@ -246,7 +238,7 @@ export default function Dashboard(): React.JSX.Element {
           icon={Wallet}
           label={t('dashboard.stats.wallets')}
           value={stats?.walletTotal || 0}
-          color="bg-blue-500/10 text-blue-600"
+          color="bg-primary/10 text-primary"
         />
         <StatCard
           icon={User}
@@ -279,7 +271,7 @@ export default function Dashboard(): React.JSX.Element {
             <div className="space-y-3">
               {Object.entries(stats.taskStatusDistribution).map(([status, count]) => (
                 <div key={status} className="flex items-center gap-3">
-                  <StatusBadge status={status} label={t(`dashboard.status.${status}`) || status} />
+                  <StatusBadge status={status} label={statusLabel('task', status, t)} />
                   <div className="flex-1 h-2 bg-bg-tertiary rounded-full overflow-hidden">
                     <div
                       className={`h-full bg-status-${status}-bg`}
@@ -343,7 +335,7 @@ export default function Dashboard(): React.JSX.Element {
         {ongoingAirdrops.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {ongoingAirdrops.map((airdrop) => (
-              <AirdropCard key={airdrop.id} airdrop={airdrop} />
+              <AirdropCard key={airdrop.id} airdrop={airdrop} t={t} />
             ))}
           </div>
         ) : (
@@ -392,7 +384,7 @@ export default function Dashboard(): React.JSX.Element {
                     <td className="py-3 px-4">
                       <StatusBadge
                         status={task.status}
-                        label={t(`dashboard.status.${task.status}`) || task.status}
+                        label={statusLabel('task', task.status, t)}
                       />
                     </td>
                     <td className="py-3 px-4 text-sm text-text-secondary">

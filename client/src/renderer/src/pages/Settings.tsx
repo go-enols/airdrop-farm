@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { settingApi, appApi, captchaKeyApi, proxyProviderApi, updateApi, getMarketplaceUrl, setMarketplaceUrl } from '../api'
+import { settingApi, appApi, captchaKeyApi, proxyProviderApi, updateApi, getMarketplaceUrl, setMarketplaceUrl, getMarketplaceApiKey, setMarketplaceApiKey } from '../api'
 import { logApi } from '../api'
 import type { AppInfo, CaptchaKey, ProxyProvider, ListResponse, UpdateInfo } from '../types'
 import { Save, Info, Plus, Trash2, Edit3, Key, Globe, Download, RefreshCw, Server } from 'lucide-react'
+import ThemeToggle from '../components/ThemeToggle'
+import { Modal, ConfirmDialog } from '../components/common'
 
 const LOG_LEVELS = ['debug', 'info', 'warn', 'error'] as const
 
@@ -41,6 +43,9 @@ const Settings: React.FC = () => {
   const [marketplaceUrl, setMarketplaceUrlLocal] = useState('')
   const [marketplaceSaving, setMarketplaceSaving] = useState(false)
   const [marketplaceMsg, setMarketplaceMsg] = useState('')
+  const [marketplaceApiKey, setMarketplaceApiKeyLocal] = useState('')
+  const [marketplaceApiKeySaving, setMarketplaceApiKeySaving] = useState(false)
+  const [marketplaceApiKeyMsg, setMarketplaceApiKeyMsg] = useState('')
 
   // Auto-update state
   const [updateStatus, setUpdateStatus] = useState<
@@ -164,6 +169,7 @@ const Settings: React.FC = () => {
     fetchCaptchaKeys()
     fetchProxyProviders()
     loadMarketplaceUrl()
+    loadMarketplaceApiKey()
   }, [fetchAppInfo, fetchLogLevel, fetchSettings, fetchCaptchaKeys, fetchProxyProviders])
 
   const loadMarketplaceUrl = async (): Promise<void> => {
@@ -172,6 +178,28 @@ const Settings: React.FC = () => {
       setMarketplaceUrlLocal(url)
     } catch {
       /* ignore */
+    }
+  }
+
+  const loadMarketplaceApiKey = async (): Promise<void> => {
+    try {
+      const key = await getMarketplaceApiKey()
+      setMarketplaceApiKeyLocal(key)
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const handleSaveMarketplaceApiKey = async (): Promise<void> => {
+    setMarketplaceApiKeySaving(true)
+    try {
+      await setMarketplaceApiKey(marketplaceApiKey)
+      setMarketplaceApiKeyMsg(t('common.saveSuccess'))
+      setTimeout(() => setMarketplaceApiKeyMsg(''), 3000)
+    } catch {
+      setErrorMsg(t('common.operationFailed'))
+    } finally {
+      setMarketplaceApiKeySaving(false)
     }
   }
 
@@ -337,7 +365,7 @@ const Settings: React.FC = () => {
     Object.keys(edited).length !== Object.keys(settings).length
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6">
       {errorMsg && (
         <div className="px-4 py-2 text-sm text-danger bg-danger-light rounded-lg flex items-center justify-between">
           <span>{errorMsg}</span>
@@ -349,11 +377,12 @@ const Settings: React.FC = () => {
 
       <h1 className="text-2xl font-bold">{t('settings.title')}</h1>
 
-      <section className="border border-border-light rounded-lg p-5 space-y-3 bg-bg-card">
-        <div className="flex items-center gap-2 text-lg font-semibold text-text-primary">
-          <Info size={20} />
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <section className="bg-bg-card rounded-xl border border-border-light shadow-sm p-5 flex flex-col gap-3 h-full xl:col-span-3 md:col-span-2">
+        <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary">
+          <Info size={18} />
           {t('settings.about')}
-        </div>
+        </h2>
         {appInfo ? (
           <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
             <div className="text-text-muted">Version</div>
@@ -386,12 +415,12 @@ const Settings: React.FC = () => {
         )}
       </section>
 
-      <section className="border border-border-light rounded-lg p-5 space-y-3 bg-bg-card">
+      <section className="bg-bg-card rounded-xl border border-border-light shadow-sm p-5 flex flex-col gap-3 h-full xl:col-span-3 md:col-span-2">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-lg font-semibold text-text-primary">
-            <RefreshCw size={20} />
+          <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary">
+            <RefreshCw size={18} />
             {t('settings.updates')}
-          </div>
+          </h2>
           <button
             onClick={checkForUpdates}
             disabled={updateStatus === 'checking' || updateStatus === 'downloading'}
@@ -418,21 +447,21 @@ const Settings: React.FC = () => {
         )}
 
         {(updateStatus === 'available' || updateStatus === 'downloading') && updateInfo && (
-          <div className="px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg space-y-2">
-            <p className="text-sm text-blue-800 dark:text-blue-300">
+          <div className="px-4 py-3 bg-primary-light border border-primary/30 rounded-lg space-y-2">
+            <p className="text-sm text-primary">
               <strong>{t('updates.updateAvailable')}</strong>
             </p>
-            <p className="text-sm text-blue-700 dark:text-blue-400">
+            <p className="text-sm text-primary">
               {t('updates.version')}: <span className="font-mono">{updateInfo.version}</span>
             </p>
-            <p className="text-sm text-blue-700 dark:text-blue-400">
+            <p className="text-sm text-primary">
               {t('updates.releaseDate')}:{' '}
               {updateInfo.pub_date ? new Date(updateInfo.pub_date).toLocaleDateString() : '-'}
             </p>
             <button
               onClick={downloadUpdate}
               disabled={(updateStatus as string) === 'downloading'}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors mt-2"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors mt-2"
             >
               {(updateStatus as string) === 'downloading' ? (
                 <>
@@ -447,12 +476,12 @@ const Settings: React.FC = () => {
               )}
             </button>
             {(updateStatus as string) === 'downloading' && downloadProgress.total > 0 && (
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mt-2">
+              <div className="w-full bg-bg-tertiary rounded-full h-2.5 mt-2">
                 <div
-                  className="bg-blue-600 h-2.5 rounded-full transition-width duration-300"
+                  className="bg-primary h-2.5 rounded-full transition-width duration-300"
                   style={{ width: `${downloadProgress.percent}%` }}
                 />
-                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                <p className="text-xs text-primary mt-1">
                   {Math.round(downloadProgress.percent)}% -{' '}
                   {(downloadProgress.transferred / 1024 / 1024).toFixed(1)}MB /{' '}
                   {(downloadProgress.total / 1024 / 1024).toFixed(1)}MB
@@ -463,13 +492,13 @@ const Settings: React.FC = () => {
         )}
 
         {updateStatus === 'downloaded' && (
-          <div className="px-4 py-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-            <p className="text-sm text-green-800 dark:text-green-300 mb-2">
+          <div className="px-4 py-3 bg-success-light border border-success/30 rounded-lg">
+            <p className="text-sm text-success mb-2">
               {t('updates.updateReady')}
             </p>
             <button
               onClick={installUpdate}
-              className="px-3 py-1.5 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              className="px-3 py-1.5 text-sm bg-success text-white rounded-lg hover:bg-success-hover transition-colors"
             >
               {t('updates.restartInstall')}
             </button>
@@ -481,9 +510,24 @@ const Settings: React.FC = () => {
         )}
       </section>
 
-      <section className="border border-border-light rounded-lg p-5 space-y-3 bg-bg-card">
-        <div className="text-lg font-semibold text-text-primary">{t('logs.level')}</div>
-        <div className="flex items-center gap-3">
+      {/* 外观 / Theme */}
+      <section className="bg-bg-card rounded-xl border border-border-light shadow-sm p-5 flex flex-col gap-3 h-full">
+        <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary">
+          <RefreshCw size={18} />
+          {t('settings.theme')}
+        </h2>
+        <div className="flex-1 flex items-center">
+          <ThemeToggle />
+        </div>
+      </section>
+
+      {/* 日志级别 / Log Level */}
+      <section className="bg-bg-card rounded-xl border border-border-light shadow-sm p-5 flex flex-col gap-3 h-full">
+        <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary">
+          <Save size={18} />
+          {t('logs.level')}
+        </h2>
+        <div className="flex items-center gap-3 flex-wrap">
           <select
             value={logLevel}
             onChange={(e) => setLogLevel(e.target.value)}
@@ -504,15 +548,16 @@ const Settings: React.FC = () => {
             {logLevelSaving ? t('common.loading') : t('common.save')}
           </button>
           {logLevelMsg && <span className="text-sm text-success">{logLevelMsg}</span>}
-</div>
+        </div>
       </section>
 
-      <section className="border border-border-light rounded-lg p-5 space-y-3 bg-bg-card">
+      {/* 验证码密钥 / Captcha Keys */}
+      <section className="bg-bg-card rounded-xl border border-border-light shadow-sm p-5 flex flex-col gap-3 h-full">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-lg font-semibold text-text-primary">
-            <Key size={20} />
+          <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary">
+            <Key size={18} />
             {t('settings.captchaKeys')}
-          </div>
+          </h2>
           <button
             onClick={openCaptchaKeyAdd}
             className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
@@ -521,114 +566,120 @@ const Settings: React.FC = () => {
             {t('settings.addCaptchaKey')}
           </button>
         </div>
-        {!(captchaKeys?.items || []).length ? (
-          <div className="text-sm text-text-muted">{t('settings.noCaptchaKeys')}</div>
-        ) : (
-          <div className="overflow-x-auto border border-border-light rounded-lg">
-            <table className="w-full text-sm">
-              <thead className="bg-bg-tertiary">
-                <tr>
-                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">
-                    {t('settings.provider')}
-                  </th>
-                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">
-                    {t('settings.apiKey')}
-                  </th>
-                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">
-                    {t('settings.balance')}
-                  </th>
-                  <th className="px-4 py-2.5 text-right font-medium text-text-muted">
-                    {t('common.actions')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border-light/50">
-                {(captchaKeys?.items || []).map((item) => (
-                  <tr key={item.id} className="hover:bg-bg-card-hover transition-colors">
-                    <td className="px-4 py-2.5">{item.provider}</td>
-                    <td className="px-4 py-2.5 font-mono text-xs">{item.apiKey.slice(0, 8)}...</td>
-                    <td className="px-4 py-2.5">{item.balance}</td>
-                    <td className="px-4 py-2.5 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => openCaptchaKeyEdit(item)}
-                          className="p-1 text-text-muted hover:text-primary hover:bg-primary-light rounded transition-colors"
-                        >
-                          <Edit3 size={16} />
-                        </button>
-                        <button
-                          onClick={() => setDeleteCaptchaKeyId(item.id)}
-                          className="p-1 text-danger hover:bg-danger-light rounded transition-colors"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
+        <div className="flex-1 overflow-auto min-h-0">
+          {!(captchaKeys?.items || []).length ? (
+            <div className="text-sm text-text-muted">{t('settings.noCaptchaKeys')}</div>
+          ) : (
+            <div className="border border-border-light rounded-lg overflow-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-bg-tertiary">
+                  <tr>
+                    <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                      {t('settings.provider')}
+                    </th>
+                    <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                      {t('settings.apiKey')}
+                    </th>
+                    <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                      {t('settings.balance')}
+                    </th>
+                    <th className="px-4 py-2.5 text-right font-medium text-text-muted">
+                      {t('common.actions')}
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                </thead>
+                <tbody className="divide-y divide-border-light/50">
+                  {(captchaKeys?.items || []).map((item) => (
+                    <tr key={item.id} className="hover:bg-bg-card-hover transition-colors">
+                      <td className="px-4 py-2.5">{item.provider}</td>
+                      <td className="px-4 py-2.5 font-mono text-xs">{item.apiKey.slice(0, 8)}...</td>
+                      <td className="px-4 py-2.5">{item.balance}</td>
+                      <td className="px-4 py-2.5 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => openCaptchaKeyEdit(item)}
+                            className="p-1 text-text-muted hover:text-primary hover:bg-primary-light rounded transition-colors"
+                          >
+                            <Edit3 size={16} />
+                          </button>
+                          <button
+                            onClick={() => setDeleteCaptchaKeyId(item.id)}
+                            className="p-1 text-danger hover:bg-danger-light rounded transition-colors"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </section>
 
-      <section className="border border-border-light rounded-lg p-5 space-y-3 bg-bg-card">
+      {/* 代理提供商 / Proxy Providers */}
+      <section className="bg-bg-card rounded-xl border border-border-light shadow-sm p-5 flex flex-col gap-3 h-full">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-lg font-semibold text-text-primary">
-            <Globe size={20} />
+          <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary">
+            <Globe size={18} />
             {t('settings.proxyProviders')}
-          </div>
+          </h2>
         </div>
         <p className="text-xs text-text-muted">
           代理提供商已移至「代理管理」页面统一管理。此处仅作只读展示。
         </p>
-        {!(proxyProviders?.items || []).length ? (
-          <div className="text-sm text-text-muted">{t('settings.noProxyProviders')}</div>
-        ) : (
-          <div className="overflow-x-auto border border-border-light rounded-lg">
-            <table className="w-full text-sm">
-              <thead className="bg-bg-tertiary">
-                <tr>
-                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">
-                    {t('settings.providerName')}
-                  </th>
-                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">
-                    {t('settings.apiUrl')}
-                  </th>
-                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">
-                    {t('proxies.protocol')}
-                  </th>
-                  <th className="px-4 py-2.5 text-left font-medium text-text-muted">
-                    {t('settings.refreshInterval')}
-                  </th>
-                  <th className="px-4 py-2.5 text-right font-medium text-text-muted">
-                    {t('common.actions')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border-light/50">
-                {(proxyProviders?.items || []).map((item) => (
-                  <tr key={item.id} className="hover:bg-bg-card-hover transition-colors">
-                    <td className="px-4 py-2.5">{item.name}</td>
-                    <td className="px-4 py-2.5 font-mono text-xs">{item.apiUrl}</td>
-                    <td className="px-4 py-2.5 text-xs uppercase">{item.protocol}</td>
-                    <td className="px-4 py-2.5">{item.refreshInterval}s</td>
-                    <td className="px-4 py-2.5 text-right">
-                      <span className="text-xs text-text-muted">只读</span>
-                    </td>
+        <div className="flex-1 overflow-auto min-h-0">
+          {!(proxyProviders?.items || []).length ? (
+            <div className="text-sm text-text-muted">{t('settings.noProxyProviders')}</div>
+          ) : (
+            <div className="border border-border-light rounded-lg overflow-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-bg-tertiary">
+                  <tr>
+                    <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                      {t('settings.providerName')}
+                    </th>
+                    <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                      {t('settings.apiUrl')}
+                    </th>
+                    <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                      {t('proxies.protocol')}
+                    </th>
+                    <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                      {t('settings.refreshInterval')}
+                    </th>
+                    <th className="px-4 py-2.5 text-right font-medium text-text-muted">
+                      {t('common.actions')}
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                </thead>
+                <tbody className="divide-y divide-border-light/50">
+                  {(proxyProviders?.items || []).map((item) => (
+                    <tr key={item.id} className="hover:bg-bg-card-hover transition-colors">
+                      <td className="px-4 py-2.5">{item.name}</td>
+                      <td className="px-4 py-2.5 font-mono text-xs">{item.apiUrl}</td>
+                      <td className="px-4 py-2.5 text-xs uppercase">{item.protocol}</td>
+                      <td className="px-4 py-2.5">{item.refreshInterval}s</td>
+                      <td className="px-4 py-2.5 text-right">
+                        <span className="text-xs text-text-muted">只读</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </section>
 
-      <section className="border border-border-light rounded-lg p-5 space-y-3 bg-bg-card">
-        <div className="flex items-center gap-2 text-lg font-semibold text-text-primary">
-          <Server size={20} />
+      {/* 脚本/模板市场 / Marketplace */}
+      <section className="bg-bg-card rounded-xl border border-border-light shadow-sm p-5 flex flex-col gap-3 h-full xl:col-span-2 md:col-span-2">
+        <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary">
+          <Server size={18} />
           脚本/模板市场
-        </div>
+        </h2>
         <div className="flex items-center gap-3">
           <input
             type="text"
@@ -650,53 +701,86 @@ const Settings: React.FC = () => {
         <div className="text-xs text-text-muted">
           设置脚本和模板市场的服务器地址。修改后将在下次打开市场浏览器时生效。
         </div>
+        <div className="pt-3 border-t border-border-light space-y-2">
+          <div className="flex items-center gap-2 text-sm font-medium text-text-primary">
+            <Key size={16} />
+            {t('settings.marketplaceApiKey')}
+          </div>
+          <div className="flex items-center gap-3">
+            <input
+              type="password"
+              value={marketplaceApiKey}
+              onChange={(e) => setMarketplaceApiKeyLocal(e.target.value)}
+              placeholder="airdrop-farm-dev-key"
+              className="flex-1 px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+            <button
+              onClick={handleSaveMarketplaceApiKey}
+              disabled={marketplaceApiKeySaving}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors"
+            >
+              <Save size={16} />
+              {marketplaceApiKeySaving ? t('common.loading') : t('common.save')}
+            </button>
+            {marketplaceApiKeyMsg && (
+              <span className="text-sm text-success">{marketplaceApiKeyMsg}</span>
+            )}
+          </div>
+          <div className="text-xs text-text-muted">{t('settings.marketplaceApiKeyHint')}</div>
+        </div>
       </section>
 
-      <section className="border border-border-light rounded-lg p-5 space-y-3 bg-bg-card">
-        <div className="text-lg font-semibold text-text-primary">{t('settings.general')}</div>
-        {Object.keys(edited).length === 0 && Object.keys(settings).length === 0 ? (
-          <div className="text-sm text-text-muted">{t('common.noData')}</div>
-        ) : (
-          <div className="space-y-3">
-            {Object.entries(edited).map(([key, value]) => (
-              <div key={key} className="flex items-center gap-3">
-                <label className="w-48 text-sm font-mono text-text-muted shrink-0">{key}</label>
-                <input
-                  type="text"
-                  value={value}
-                  onChange={(e) => setEdited((prev) => ({ ...prev, [key]: e.target.value }))}
-                  className="flex-1 px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                <button
-                  onClick={() => setDeleteSettingKey(key)}
-                  className="p-1 text-danger hover:bg-danger-light rounded shrink-0 transition-colors"
-                  title={t('common.deleteSetting')}
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            ))}
+      {/* 通用设置 / General Settings */}
+      <section className="bg-bg-card rounded-xl border border-border-light shadow-sm p-5 flex flex-col gap-3 h-full xl:col-span-3 md:col-span-2">
+        <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary">
+          <Key size={18} />
+          {t('settings.general')}
+        </h2>
+        <div className="flex-1 min-h-0">
+          {Object.keys(edited).length === 0 && Object.keys(settings).length === 0 ? (
+            <div className="text-sm text-text-muted">{t('common.noData')}</div>
+          ) : (
+            <div className="space-y-3">
+              {Object.entries(edited).map(([key, value]) => (
+                <div key={key} className="flex items-center gap-3">
+                  <label className="w-48 text-sm font-mono text-text-muted shrink-0">{key}</label>
+                  <input
+                    type="text"
+                    value={value}
+                    onChange={(e) => setEdited((prev) => ({ ...prev, [key]: e.target.value }))}
+                    className="flex-1 px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <button
+                    onClick={() => setDeleteSettingKey(key)}
+                    className="p-1 text-danger hover:bg-danger-light rounded shrink-0 transition-colors"
+                    title={t('common.deleteSetting')}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="flex items-center gap-3 pt-2 border-t border-border-light mt-3">
+            <input
+              type="text"
+              value={newSettingKey}
+              onChange={(e) => setNewSettingKey(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleAddSetting()
+              }}
+              placeholder={t('common.newKey') + '...'}
+              className="w-48 px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+            <button
+              onClick={handleAddSetting}
+              disabled={!newSettingKey.trim()}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-bg-tertiary border border-border-light rounded-lg hover:bg-bg-card-hover disabled:opacity-40 transition-colors"
+            >
+              <Plus size={16} />
+              {t('common.addSetting')}
+            </button>
           </div>
-        )}
-        <div className="flex items-center gap-3 pt-2 border-t border-border-light">
-          <input
-            type="text"
-            value={newSettingKey}
-            onChange={(e) => setNewSettingKey(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleAddSetting()
-            }}
-            placeholder={t('common.newKey') + '...'}
-            className="w-48 px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
-          />
-          <button
-            onClick={handleAddSetting}
-            disabled={!newSettingKey.trim()}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-bg-tertiary border border-border-light rounded-lg hover:bg-bg-card-hover disabled:opacity-40 transition-colors"
-          >
-            <Plus size={16} />
-            {t('common.addSetting')}
-          </button>
         </div>
         {hasChanges && (
           <div className="flex justify-end pt-2">
@@ -711,252 +795,191 @@ const Settings: React.FC = () => {
           </div>
         )}
       </section>
+      </div>
 
-      {showCaptchaKeyForm && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-          onClick={() => setShowCaptchaKeyForm(false)}
-        >
-          <div
-            className="bg-bg-card rounded-xl shadow-xl w-full max-w-md p-6"
-            onClick={(e) => e.stopPropagation()}
+      {/* Sticky save bar */}
+      {hasChanges && (
+        <div className="sticky bottom-0 -mx-6 px-6 py-3 bg-bg-page/80 backdrop-blur border-t border-border-light flex items-center justify-between gap-3 z-10 mt-4 rounded-b-lg">
+          <span className="text-sm text-text-muted">
+            <Info size={14} className="inline mr-1" />
+            {t('settings.stickyUnsavedChanges')}
+          </span>
+          <button
+            onClick={handleSaveSettings}
+            disabled={saving}
+            className="flex items-center gap-1.5 px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors shadow-lg"
           >
-            <h2 className="text-lg font-semibold text-text-primary mb-4">
-              {editingCaptchaKey ? t('settings.editCaptchaKey') : t('settings.addCaptchaKey')}
-            </h2>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1">
-                  {t('settings.provider')}
-                </label>
-                <input
-                  type="text"
-                  value={captchaKeyForm.provider}
-                  onChange={(e) => setCaptchaKeyForm((f) => ({ ...f, provider: e.target.value }))}
-                  className="w-full px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1">
-                  {t('settings.apiKey')}
-                </label>
-                <input
-                  type="text"
-                  value={captchaKeyForm.apiKey}
-                  onChange={(e) => setCaptchaKeyForm((f) => ({ ...f, apiKey: e.target.value }))}
-                  className="w-full px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-6">
-              <button
-                onClick={() => setShowCaptchaKeyForm(false)}
-                className="px-4 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover transition-colors"
-              >
-                {t('common.cancel')}
-              </button>
-              <button
-                onClick={handleSaveCaptchaKey}
-                className="px-4 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
-              >
-                {t('common.save')}
-              </button>
-            </div>
-          </div>
+            <Save size={16} />
+            {saving ? t('common.loading') : `${t('common.save')} 设置`}
+          </button>
         </div>
       )}
 
-      {showProxyProviderForm && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-          onClick={() => setShowProxyProviderForm(false)}
-        >
-          <div
-            className="bg-bg-card rounded-xl shadow-xl w-full max-w-md p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-lg font-semibold text-text-primary mb-4">
-              {editingProxyProvider
-                ? t('settings.editProxyProvider')
-                : t('settings.addProxyProvider')}
-            </h2>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1">
-                  {t('settings.providerName')}
-                </label>
-                <input
-                  type="text"
-                  value={proxyProviderForm.name}
-                  onChange={(e) => setProxyProviderForm((f) => ({ ...f, name: e.target.value }))}
-                  className="w-full px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1">
-                  {t('settings.apiUrl')}
-                </label>
-                <input
-                  type="text"
-                  value={proxyProviderForm.apiUrl}
-                  onChange={(e) => setProxyProviderForm((f) => ({ ...f, apiUrl: e.target.value }))}
-                  className="w-full px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1">
-                  {t('settings.apiKey')}
-                </label>
-                <input
-                  type="text"
-                  value={proxyProviderForm.apiKey}
-                  onChange={(e) => setProxyProviderForm((f) => ({ ...f, apiKey: e.target.value }))}
-                  className="w-full px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1">
-                  {t('proxies.protocol')}
-                </label>
-                <select
-                  value={proxyProviderForm.protocol}
-                  onChange={(e) =>
-                    setProxyProviderForm((f) => ({
-                      ...f,
-                      protocol: e.target.value as 'http' | 'https' | 'socks5'
-                    }))
-                  }
-                  className="w-full px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  <option value="http">HTTP</option>
-                  <option value="https">HTTPS</option>
-                  <option value="socks5">SOCKS5</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1">
-                  {t('settings.refreshInterval')}
-                </label>
-                <input
-                  type="number"
-                  value={proxyProviderForm.refreshInterval}
-                  onChange={(e) =>
-                    setProxyProviderForm((f) => ({ ...f, refreshInterval: Number(e.target.value) }))
-                  }
-                  className="w-full px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-6">
-              <button
-                onClick={() => setShowProxyProviderForm(false)}
-                className="px-4 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover transition-colors"
-              >
-                {t('common.cancel')}
-              </button>
-              <button
-                onClick={handleSaveProxyProvider}
-                className="px-4 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
-              >
-                {t('common.save')}
-              </button>
-            </div>
+      <Modal
+        open={showCaptchaKeyForm}
+        onClose={() => setShowCaptchaKeyForm(false)}
+        title={editingCaptchaKey ? t('settings.editCaptchaKey') : t('settings.addCaptchaKey')}
+      >
+        <div className="space-y-3">
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-1">
+              {t('settings.provider')}
+            </label>
+            <input
+              type="text"
+              value={captchaKeyForm.provider}
+              onChange={(e) => setCaptchaKeyForm((f) => ({ ...f, provider: e.target.value }))}
+              className="w-full px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-1">
+              {t('settings.apiKey')}
+            </label>
+            <input
+              type="text"
+              value={captchaKeyForm.apiKey}
+              onChange={(e) => setCaptchaKeyForm((f) => ({ ...f, apiKey: e.target.value }))}
+              className="w-full px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+            />
           </div>
         </div>
-      )}
+        <div className="flex justify-end gap-2 mt-6">
+          <button
+            onClick={() => setShowCaptchaKeyForm(false)}
+            className="px-4 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover transition-colors"
+          >
+            {t('common.cancel')}
+          </button>
+          <button
+            onClick={handleSaveCaptchaKey}
+            className="px-4 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
+          >
+            {t('common.save')}
+          </button>
+        </div>
+      </Modal>
 
-      {deleteCaptchaKeyId && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-          onClick={() => setDeleteCaptchaKeyId(null)}
-        >
-          <div
-            className="bg-bg-card rounded-xl shadow-xl w-full max-w-sm p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-lg font-semibold text-text-primary mb-2">{t('common.delete')}</h2>
-            <p className="text-sm text-text-secondary mb-6">
-              {t('settings.confirmDeleteCaptchaKey')}
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setDeleteCaptchaKeyId(null)}
-                className="px-4 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover transition-colors"
-              >
-                {t('common.cancel')}
-              </button>
-              <button
-                onClick={handleDeleteCaptchaKey}
-                className="px-4 py-1.5 text-sm bg-danger text-white rounded-lg hover:bg-danger-hover transition-colors"
-              >
-                {t('common.delete')}
-              </button>
-            </div>
+      <Modal
+        open={showProxyProviderForm}
+        onClose={() => setShowProxyProviderForm(false)}
+        title={editingProxyProvider ? t('settings.editProxyProvider') : t('settings.addProxyProvider')}
+      >
+        <div className="space-y-3">
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-1">
+              {t('settings.providerName')}
+            </label>
+            <input
+              type="text"
+              value={proxyProviderForm.name}
+              onChange={(e) => setProxyProviderForm((f) => ({ ...f, name: e.target.value }))}
+              className="w-full px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-1">
+              {t('settings.apiUrl')}
+            </label>
+            <input
+              type="text"
+              value={proxyProviderForm.apiUrl}
+              onChange={(e) => setProxyProviderForm((f) => ({ ...f, apiUrl: e.target.value }))}
+              className="w-full px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-1">
+              {t('settings.apiKey')}
+            </label>
+            <input
+              type="text"
+              value={proxyProviderForm.apiKey}
+              onChange={(e) => setProxyProviderForm((f) => ({ ...f, apiKey: e.target.value }))}
+              className="w-full px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-1">
+              {t('proxies.protocol')}
+            </label>
+            <select
+              value={proxyProviderForm.protocol}
+              onChange={(e) =>
+                setProxyProviderForm((f) => ({
+                  ...f,
+                  protocol: e.target.value as 'http' | 'https' | 'socks5'
+                }))
+              }
+              className="w-full px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="http">HTTP</option>
+              <option value="https">HTTPS</option>
+              <option value="socks5">SOCKS5</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-1">
+              {t('settings.refreshInterval')}
+            </label>
+            <input
+              type="number"
+              value={proxyProviderForm.refreshInterval}
+              onChange={(e) =>
+                setProxyProviderForm((f) => ({ ...f, refreshInterval: Number(e.target.value) }))
+              }
+              className="w-full px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+            />
           </div>
         </div>
-      )}
+        <div className="flex justify-end gap-2 mt-6">
+          <button
+            onClick={() => setShowProxyProviderForm(false)}
+            className="px-4 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover transition-colors"
+          >
+            {t('common.cancel')}
+          </button>
+          <button
+            onClick={handleSaveProxyProvider}
+            className="px-4 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
+          >
+            {t('common.save')}
+          </button>
+        </div>
+      </Modal>
 
-      {deleteProxyProviderId && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-          onClick={() => setDeleteProxyProviderId(null)}
-        >
-          <div
-            className="bg-bg-card rounded-xl shadow-xl w-full max-w-sm p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-lg font-semibold text-text-primary mb-2">{t('common.delete')}</h2>
-            <p className="text-sm text-text-secondary mb-6">
-              {t('settings.confirmDeleteProxyProvider')}
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setDeleteProxyProviderId(null)}
-                className="px-4 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover transition-colors"
-              >
-                {t('common.cancel')}
-              </button>
-              <button
-                onClick={handleDeleteProxyProvider}
-                className="px-4 py-1.5 text-sm bg-danger text-white rounded-lg hover:bg-danger-hover transition-colors"
-              >
-                {t('common.delete')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={!!deleteCaptchaKeyId}
+        onClose={() => setDeleteCaptchaKeyId(null)}
+        onConfirm={handleDeleteCaptchaKey}
+        title={t('common.delete')}
+        message={t('settings.confirmDeleteCaptchaKey')}
+        confirmText={t('common.delete')}
+        cancelText={t('common.cancel')}
+        danger
+      />
 
-      {deleteSettingKey && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-          onClick={() => setDeleteSettingKey(null)}
-        >
-          <div
-            className="bg-bg-card rounded-xl shadow-xl w-full max-w-sm p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h2 className="text-lg font-semibold text-text-primary mb-2">
-              {t('common.deleteSetting')}
-            </h2>
-            <p className="text-sm text-text-secondary mb-6">{t('common.confirmDeleteSetting')}</p>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setDeleteSettingKey(null)}
-                className="px-4 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover transition-colors"
-              >
-                {t('common.cancel')}
-              </button>
-              <button
-                onClick={handleDeleteSetting}
-                className="px-4 py-1.5 text-sm bg-danger text-white rounded-lg hover:bg-danger-hover transition-colors"
-              >
-                {t('common.delete')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={!!deleteProxyProviderId}
+        onClose={() => setDeleteProxyProviderId(null)}
+        onConfirm={handleDeleteProxyProvider}
+        title={t('common.delete')}
+        message={t('settings.confirmDeleteProxyProvider')}
+        confirmText={t('common.delete')}
+        cancelText={t('common.cancel')}
+        danger
+      />
+
+      <ConfirmDialog
+        open={!!deleteSettingKey}
+        onClose={() => setDeleteSettingKey(null)}
+        onConfirm={handleDeleteSetting}
+        title={t('common.deleteSetting')}
+        message={t('common.confirmDeleteSetting')}
+        confirmText={t('common.delete')}
+        cancelText={t('common.cancel')}
+        danger
+      />
     </div>
   )
 }

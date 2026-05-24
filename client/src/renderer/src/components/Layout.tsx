@@ -16,6 +16,7 @@ import {
   Menu,
   X
 } from 'lucide-react'
+import TitleBar from './TitleBar'
 
 const NAV_ITEMS = [
   { path: '/', icon: LayoutDashboard, key: 'nav.dashboard' },
@@ -38,41 +39,44 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false)
 
   return (
-    <div className="flex h-screen bg-bg-page">
-      <aside
-        className={`${collapsed ? 'w-16' : 'w-52'} flex flex-col border-r border-border-light bg-bg-card transition-all duration-200`}
-      >
-        <div className="flex items-center justify-between h-12 px-3 border-b border-border-light">
-          {!collapsed && <span className="font-bold text-sm text-text-primary">Airdrop Farm</span>}
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="p-1 rounded hover:bg-bg-tertiary"
-          >
-            {collapsed ? <Menu size={16} /> : <X size={16} />}
-          </button>
-        </div>
-        <nav className="flex-1 py-2 space-y-0.5 px-2">
-          {NAV_ITEMS.map(({ path, icon: Icon, key }) => {
-            const active = location.pathname === path
-            return (
-              <button
-                key={path}
-                onClick={() => navigate(path)}
-                className={`flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-sm transition-colors ${
-                  active
-                    ? 'bg-primary/10 text-primary font-medium'
-                    : 'text-text-secondary hover:bg-bg-tertiary'
-                }`}
-                title={t(key)}
-              >
-                <Icon size={18} />
-                {!collapsed && <span>{t(key)}</span>}
-              </button>
-            )
-          })}
-        </nav>
-      </aside>
-      <main className="flex-1 overflow-auto p-6 bg-bg-page">{children}</main>
+    <div className="flex flex-col h-screen bg-bg-page">
+      <TitleBar />
+      <div className="flex flex-1 overflow-hidden">
+        <aside
+          className={`${collapsed ? 'w-16' : 'w-52'} flex flex-col border-r border-border-light bg-bg-card transition-all duration-200`}
+        >
+          <div className="flex items-center justify-end h-12 px-3 border-b border-border-light">
+            <button
+              onClick={() => setCollapsed(!collapsed)}
+              className="p-1 rounded hover:bg-bg-tertiary"
+              aria-label={collapsed ? t('common.refresh') : t('common.close')}
+            >
+              {collapsed ? <Menu size={16} /> : <X size={16} />}
+            </button>
+          </div>
+          <nav className="flex-1 py-2 space-y-0.5 px-2 overflow-y-auto">
+            {NAV_ITEMS.map(({ path, icon: Icon, key }) => {
+              const active = location.pathname === path
+              return (
+                <button
+                  key={path}
+                  onClick={() => navigate(path)}
+                  className={`flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-sm transition-colors ${
+                    active
+                      ? 'bg-primary/10 text-primary font-medium'
+                      : 'text-text-secondary hover:bg-bg-tertiary'
+                  }`}
+                  title={t(key)}
+                >
+                  <Icon size={18} />
+                  {!collapsed && <span>{t(key)}</span>}
+                </button>
+              )
+            })}
+          </nav>
+        </aside>
+        <main className="flex-1 overflow-auto p-6 bg-bg-page">{children}</main>
+      </div>
     </div>
   )
 }

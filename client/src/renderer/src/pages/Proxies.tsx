@@ -13,6 +13,7 @@ import {
   CheckSquare,
   Square
 } from 'lucide-react'
+import { statusLabel } from '../utils/i18n-status'
 
 const PAGE_SIZE = 20
 
@@ -230,14 +231,14 @@ const Proxies: React.FC = () => {
           }
           className="w-full px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
         >
-          <option value="http">HTTP</option>
-          <option value="https">HTTPS</option>
-          <option value="socks5">SOCKS5</option>
-          <option value="ws">WebSocket</option>
+          <option value="http">{t('proxies.protocolHttp')}</option>
+          <option value="https">{t('proxies.protocolHttps')}</option>
+          <option value="socks5">{t('proxies.protocolSocks5')}</option>
+          <option value="ws">{t('proxies.protocolWs')}</option>
         </select>
       </div>
       <div>
-        <label className="block text-sm font-medium mb-1">格式</label>
+        <label className="block text-sm font-medium mb-1">{t('proxies.format')}</label>
         <select
           value={form.format}
           onChange={(e) =>
@@ -245,10 +246,10 @@ const Proxies: React.FC = () => {
           }
           className="w-full px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
         >
-          <option value="manual">手动输入</option>
-          <option value="api">API 拉取</option>
-          <option value="ip">IP:PORT</option>
-          <option value="ws">WebSocket</option>
+          <option value="manual">{t('proxies.formatManual')}</option>
+          <option value="api">{t('proxies.formatApi')}</option>
+          <option value="ip">{t('proxies.formatIp')}</option>
+          <option value="ws">{t('proxies.formatWs')}</option>
         </select>
       </div>
       <div className="grid grid-cols-3 gap-3">
@@ -298,9 +299,9 @@ const Proxies: React.FC = () => {
           }
           className="w-full px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
         >
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-          <option value="expired">Expired</option>
+          <option value="active">{t('proxies.statusActive')}</option>
+          <option value="inactive">{t('proxies.statusInactive')}</option>
+          <option value="expired">{t('proxies.statusExpired')}</option>
         </select>
       </div>
       <div>
@@ -451,7 +452,7 @@ const Proxies: React.FC = () => {
                       <span
                         className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColor[proxy.status] || statusColor.inactive}`}
                       >
-                        {proxy.status}
+                        {statusLabel('proxy', proxy.status, t)}
                       </span>
                     </td>
                     <td className="px-4 py-2.5">

@@ -1,4 +1,4 @@
-import { ipcMain, IpcMainInvokeEvent, app } from 'electron'
+import { ipcMain, IpcMainInvokeEvent, app, dialog, BrowserWindow } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import { StoreService } from '../services/store'
 import { WalletService } from '../services/wallet'
@@ -315,6 +315,54 @@ export function registerIpcHandlers(services: Services): void {
     autoUpdater.quitAndInstall()
     return null
   })
+
+  register('dialog:openFile', async (...args: unknown[]) => {
+    const _filters = args[0] as { name: string; extensions: string[] }[] | undefined
+    const win = BrowserWindow.getFocusedWindow()
+    if (!win) return { canceled: true, filePath: null, content: null }
+    const result = await dialog.showOpenDialog(win, {
+      properties: ['openFile'],
+      filters: _filters ?? [{ name: 'JSON', extensions: ['json'] }]
+    })
+    if (result.canceled || result.filePaths.length === 0)
+      return { canceled: true, filePath: null, content: null }
+    const fs = await import('fs')
+    const content = fs.readFileSync(result.filePaths[0], 'utf-8')
+    return { canceled: false, filePath: result.filePaths[0], content }
+  })
+
+  register('dialog:saveFile', async (...args: unknown[]) => {
+    const _defaultName = args[0] as string
+    const _content = args[1] as string
+    const win = BrowserWindow.getFocusedWindow()
+    if (!win) return { canceled: true, filePath: null }
+    const result = await dialog.showSaveDialog(win, {
+      defaultPath: _defaultName,
+      filters: [{ name: 'JSON', extensions: ['json'] }]
+    })
+    if (result.canceled || !result.filePath) return { canceled: true, filePath: null }
+    const fs = await import('fs')
+    fs.writeFileSync(result.filePath, _content, 'utf-8')
+    return { canceled: false, filePath: result.filePath }
+  })
+
+  register('window:minimize', () => {
+    BrowserWindow.getFocusedWindow()?.minimize()
+    return null
+  })
+  register('window:maximize', () => {
+    const win = BrowserWindow.getFocusedWindow()
+    if (!win) return null
+    if (win.isMaximized()) win.unmaximize()
+    else win.maximize()
+    return null
+  })
+  register('window:close', () => {
+    BrowserWindow.getFocusedWindow()?.close()
+    return null
+  })
+  register('window:isMaximized', () => BrowserWindow.getFocusedWindow()?.isMaximized() ?? false)
+  register('window:platform', () => process.platform)
 
   logger.info('All handlers registered', { count: handlerMap.size })
 }

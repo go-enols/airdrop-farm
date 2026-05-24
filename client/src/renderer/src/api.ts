@@ -109,6 +109,8 @@ export const templateApi = {
 }
 
 export const taskTemplateApi = {
+  list: (page?: number, pageSize?: number, search?: string) =>
+    call<ListResponse<TaskTemplate>>('taskTemplate:list', [page, pageSize, search]),
   get: (id: string) => call<TaskTemplate | null>('taskTemplate:get', [id])
 }
 
@@ -179,8 +181,31 @@ export const updateApi = {
   install: () => call<void>('update:install')
 }
 
+export const windowApi = {
+  minimize: () => call<void>('window:minimize'),
+  toggleMaximize: () => call<void>('window:maximize'),
+  close: () => call<void>('window:close'),
+  isMaximized: () => call<boolean>('window:isMaximized'),
+  platform: () => call<string>('window:platform')
+}
+
+export const dialogApi = {
+  openFile: (filters?: { name: string; extensions: string[] }[]) =>
+    call<{ canceled: boolean; filePath: string | null; content: string | null }>(
+      'dialog:openFile',
+      [filters]
+    ),
+  saveFile: (defaultName: string, content: string) =>
+    call<{ canceled: boolean; filePath: string | null }>('dialog:saveFile', [
+      defaultName,
+      content
+    ])
+}
+
 const MARKETPLACE_URL_KEY = 'marketplace_server_url'
+const MARKETPLACE_API_KEY_KEY = 'marketplace_api_key'
 const DEFAULT_MARKETPLACE_URL = 'http://localhost:3400'
+const DEFAULT_MARKETPLACE_API_KEY = 'airdrop-farm-dev-key'
 
 export async function getMarketplaceUrl(): Promise<string> {
   try {
@@ -196,13 +221,35 @@ export async function setMarketplaceUrl(url: string): Promise<void> {
   await settingApi.set(MARKETPLACE_URL_KEY, url)
 }
 
+export async function getMarketplaceApiKey(): Promise<string> {
+  try {
+    const saved = await settingApi.get(MARKETPLACE_API_KEY_KEY)
+    if (saved) return saved
+  } catch {
+    /* ignore */
+  }
+  return DEFAULT_MARKETPLACE_API_KEY
+}
+
+export async function setMarketplaceApiKey(key: string): Promise<void> {
+  await settingApi.set(MARKETPLACE_API_KEY_KEY, key)
+}
+
+export async function getMarketplaceHeaders(): Promise<Record<string, string>> {
+  const key = await getMarketplaceApiKey()
+  return key ? { Authorization: `Bearer ${key}` } : {}
+}
+
 export const marketplaceApi = {
   getUrl: getMarketplaceUrl,
   setUrl: setMarketplaceUrl,
+  getApiKey: getMarketplaceApiKey,
+  setApiKey: setMarketplaceApiKey,
 
   listScripts: async (serverUrl?: string) => {
     const base = serverUrl || (await getMarketplaceUrl())
-    const resp = await fetch(`${base}/api/scripts`)
+    const headers = await getMarketplaceHeaders()
+    const resp = await fetch(`${base}/api/scripts`, { headers })
     if (!resp.ok) throw new Error(`Failed to fetch scripts: ${resp.status}`)
     const json = await resp.json()
     // Server returns { data: { items, total } }; unwrap if data envelope present
@@ -212,7 +259,8 @@ export const marketplaceApi = {
 
   listTemplates: async (serverUrl?: string) => {
     const base = serverUrl || (await getMarketplaceUrl())
-    const resp = await fetch(`${base}/api/templates`)
+    const headers = await getMarketplaceHeaders()
+    const resp = await fetch(`${base}/api/templates`, { headers })
     if (!resp.ok) throw new Error(`Failed to fetch templates: ${resp.status}`)
     const json = await resp.json()
     const data = json.data ?? json

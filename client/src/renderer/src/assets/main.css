@@ -95,8 +95,26 @@
     box-sizing: border-box;
   }
 
+  html,
+  body,
+  #root {
+    height: 100%;
+    overflow: hidden;
+  }
+
   html {
     scroll-behavior: smooth;
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  input,
+  select,
+  textarea {
+    color-scheme: inherit;
   }
 
   body {
@@ -134,10 +152,18 @@
   .select-all {
     user-select: all;
   }
+
+  .drag {
+    -webkit-app-region: drag;
+  }
+
+  .no-drag {
+    -webkit-app-region: no-drag;
+  }
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  html:not(.light):not(.dark) {
     --color-bg-page: #030712;
     --color-bg-card: #111827;
     --color-bg-card-hover: #1f2937;

@@ -1,10 +1,28 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { schedulerApi } from '../api'
-import type { ScheduledTask } from '../types'
+import { schedulerApi, taskTemplateApi } from '../api'
+import type { ScheduledTask, TaskTemplate } from '../types'
+import type { FieldMeta } from '../../../shared/schemas/task-params'
+import { jsonSchemaToFieldMeta } from '../../../shared/schemas/task-params'
 import { Plus, Trash2, Clock, Edit3, ToggleLeft, ToggleRight } from 'lucide-react'
-import { useTemplateList } from '../hooks'
-import { Modal } from '../components/common'
+import { Modal, DynamicForm } from '../components/common'
+
+const PRESETS: { label: string; cron: string }[] = [
+  { label: 'scheduler.preset30min', cron: '*/30 * * * *' },
+  { label: 'scheduler.preset1hour', cron: '0 * * * *' },
+  { label: 'scheduler.preset2hour', cron: '0 */2 * * *' },
+  { label: 'scheduler.preset4hour', cron: '0 */4 * * *' },
+  { label: 'scheduler.preset6hour', cron: '0 */6 * * *' },
+  { label: 'scheduler.preset12hour', cron: '0 */12 * * *' },
+  { label: 'scheduler.presetDaily', cron: '0 0 * * *' },
+  { label: 'scheduler.presetCustom', cron: '' },
+]
+
+function cronDescription(expr: string, t: (k: string) => string): string {
+  const preset = PRESETS.find((p) => p.cron === expr)
+  if (preset && preset.cron) return t(preset.label)
+  return expr
+}
 
 const Scheduler: React.FC = () => {
   const { t } = useTranslation()
@@ -12,14 +30,28 @@ const Scheduler: React.FC = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showCreate, setShowCreate] = useState(false)
-  const [form, setForm] = useState({ templateId: '', cronExpression: '' })
+  const [form, setForm] = useState({ templateId: '', presetIdx: 0, customCron: '' })
   const [creating, setCreating] = useState(false)
   const [editingItem, setEditingItem] = useState<ScheduledTask | null>(null)
-  const [editForm, setEditForm] = useState({ cronExpression: '' })
+  const [editForm, setEditForm] = useState({ presetIdx: 0, customCron: '' })
   const [saving, setSaving] = useState(false)
   const [editError, setEditError] = useState<string | null>(null)
   const [togglingId, setTogglingId] = useState<string | null>(null)
-  const { templates } = useTemplateList()
+  const [taskTemplates, setTaskTemplates] = useState<TaskTemplate[]>([])
+  const [formFields, setFormFields] = useState<FieldMeta[]>([])
+  const [formValues, setFormValues] = useState<Record<string, unknown>>({})
+
+  useEffect(() => {
+    taskTemplateApi.list(1, 999).then((res) => setTaskTemplates(res.items || []))
+  }, [])
+
+  const getTemplateName = (id: string): string =>
+    taskTemplates.find((tt) => tt.id === id)?.name || id
+
+  const getCronExpression = (presetIdx: number, custom: string): string => {
+    if (presetIdx === PRESETS.length - 1) return custom.trim()
+    return PRESETS[presetIdx]?.cron || ''
+  }
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -36,25 +68,46 @@ const Scheduler: React.FC = () => {
   }, [t])
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData()
   }, [fetchData])
 
+  const handleScriptChange = (id: string): void => {
+    setForm((f) => ({ ...f, templateId: id }))
+    setFormValues({})
+    if (!id) { setFormFields([]); return }
+    const tt = taskTemplates.find((t) => t.id === id)
+    if (tt?.manifest?.schema) {
+      try {
+        const schema = tt.manifest.schema as Record<string, unknown>
+        if (schema.type === 'object' && schema.properties) {
+          setFormFields(jsonSchemaToFieldMeta(schema))
+        } else {
+          setFormFields([])
+        }
+      } catch { setFormFields([]) }
+    } else {
+      setFormFields([])
+    }
+  }
+
   const handleCreate = async (): Promise<void> => {
-    if (!form.templateId.trim() || !form.cronExpression.trim()) return
+    const cronExpr = getCronExpression(form.presetIdx, form.customCron)
+    if (!form.templateId.trim() || !cronExpr) return
     setCreating(true)
     setError(null)
     try {
       await schedulerApi.create({
         templateId: form.templateId.trim(),
-        config: {},
-        cronExpression: form.cronExpression.trim(),
+        config: formFields.length > 0 ? formValues : {},
+        cronExpression: cronExpr,
         enabled: true,
         lastRun: null,
         nextRun: null
       })
       setShowCreate(false)
-      setForm({ templateId: '', cronExpression: '' })
+      setForm({ templateId: '', presetIdx: 0, customCron: '' })
+      setFormFields([])
+      setFormValues({})
       fetchData()
     } catch {
       setError(t('common.error'))
@@ -88,18 +141,22 @@ const Scheduler: React.FC = () => {
 
   const openEdit = (item: ScheduledTask): void => {
     setEditingItem(item)
-    setEditForm({ cronExpression: item.cronExpression })
+    const presetIdx = PRESETS.findIndex((p) => p.cron === item.cronExpression)
+    setEditForm({
+      presetIdx: presetIdx >= 0 ? presetIdx : PRESETS.length - 1,
+      customCron: presetIdx >= 0 ? '' : item.cronExpression
+    })
     setEditError(null)
   }
 
   const handleEdit = async (): Promise<void> => {
     if (!editingItem) return
+    const cronExpr = getCronExpression(editForm.presetIdx, editForm.customCron)
+    if (!cronExpr) return
     setSaving(true)
     setEditError(null)
     try {
-      await schedulerApi.update(editingItem.id, {
-        cronExpression: editForm.cronExpression.trim()
-      })
+      await schedulerApi.update(editingItem.id, { cronExpression: cronExpr })
       setEditingItem(null)
       fetchData()
     } catch {
@@ -114,13 +171,15 @@ const Scheduler: React.FC = () => {
     return new Date(time).toLocaleString()
   }
 
+  const isCustom = (idx: number): boolean => idx === PRESETS.length - 1
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t('scheduler.title')}</h1>
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-hover transition-colors"
         >
           <Plus size={16} />
           {t('scheduler.createSchedule')}
@@ -128,17 +187,17 @@ const Scheduler: React.FC = () => {
       </div>
 
       {error && (
-        <div className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-4 py-2">
+        <div className="text-danger text-sm bg-danger-light border border-danger/30 rounded-lg px-4 py-2">
           {error}
         </div>
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center py-20 text-gray-400">
+        <div className="flex items-center justify-center py-20 text-text-muted">
           <span>{t('common.loading')}</span>
         </div>
       ) : items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+        <div className="flex flex-col items-center justify-center py-20 text-text-muted">
           <Clock size={48} />
           <p className="mt-4 text-lg">{t('scheduler.noSchedules')}</p>
         </div>
@@ -146,23 +205,23 @@ const Scheduler: React.FC = () => {
         <div className="dark:bg-bg-card rounded-xl border border-border-light overflow-hidden">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100 bg-bg-tertiary">
-                <th className="text-left px-4 py-3 font-medium text-gray-600">
-                  {t('scheduler.templateId')}
+              <tr className="border-b border-border-light bg-bg-tertiary">
+                <th className="text-left px-4 py-3 font-medium text-text-secondary">
+                  {t('scheduler.scriptName')}
                 </th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">
-                  {t('scheduler.cronExpression')}
+                <th className="text-left px-4 py-3 font-medium text-text-secondary">
+                  {t('scheduler.interval')}
                 </th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                <th className="text-left px-4 py-3 font-medium text-text-secondary">
                   {t('scheduler.enabled')}
                 </th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                <th className="text-left px-4 py-3 font-medium text-text-secondary">
                   {t('scheduler.lastRun')}
                 </th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                <th className="text-left px-4 py-3 font-medium text-text-secondary">
                   {t('scheduler.nextRun')}
                 </th>
-                <th className="text-right px-4 py-3 font-medium text-gray-600">
+                <th className="text-right px-4 py-3 font-medium text-text-secondary">
                   {t('scheduler.actions')}
                 </th>
               </tr>
@@ -171,12 +230,12 @@ const Scheduler: React.FC = () => {
               {items.map((item) => (
                 <tr
                   key={item.id}
-                  className="border-b border-gray-50 hover:bg-bg-tertiary transition-colors"
+                  className="border-b border-border-light hover:bg-bg-tertiary transition-colors"
                 >
-                  <td className="px-4 py-3 text-xs">
-                    {templates.find((t) => t.id === item.templateId)?.name || item.templateId}
+                  <td className="px-4 py-3 text-xs">{getTemplateName(item.templateId)}</td>
+                  <td className="px-4 py-3 text-xs text-text-muted font-mono">
+                    {cronDescription(item.cronExpression, t)}
                   </td>
-                  <td className="px-4 py-3 font-mono text-xs">{item.cronExpression}</td>
                   <td className="px-4 py-3">
                     <button
                       onClick={() => handleToggle(item)}
@@ -187,17 +246,17 @@ const Scheduler: React.FC = () => {
                         <>
                           <ToggleRight
                             size={20}
-                            className="text-green-500 group-hover:text-green-600 transition-colors"
+                            className="text-success group-hover:text-success transition-colors"
                           />
-                          <span className="text-xs font-medium text-green-600">
-                            {t('scheduler.enabled')}
+                          <span className="text-xs font-medium text-success">
+                            {t('scheduler.enabledTrue')}
                           </span>
                         </>
                       ) : (
                         <>
                           <ToggleLeft
                             size={20}
-                            className="text-gray-400 group-hover:text-text-muted transition-colors"
+                            className="text-text-muted group-hover:text-text-secondary transition-colors"
                           />
                           <span className="text-xs font-medium text-text-muted">
                             {t('scheduler.disabled')}
@@ -206,21 +265,25 @@ const Scheduler: React.FC = () => {
                       )}
                     </button>
                   </td>
-                  <td className="px-4 py-3 text-text-muted text-xs">{formatTime(item.lastRun)}</td>
-                  <td className="px-4 py-3 text-text-muted text-xs">{formatTime(item.nextRun)}</td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-3 text-xs text-text-muted">
+                    {formatTime(item.lastRun)}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-text-muted">
+                    {formatTime(item.nextRun)}
+                  </td>
+                  <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => openEdit(item)}
-                        className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                        className="p-1.5 text-text-muted hover:text-primary rounded"
                       >
-                        <Edit3 size={16} />
+                        <Edit3 size={14} />
                       </button>
                       <button
                         onClick={() => handleDelete(item.id)}
-                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        className="p-1.5 text-text-muted hover:text-danger rounded"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </td>
@@ -238,46 +301,79 @@ const Scheduler: React.FC = () => {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('scheduler.templateId')}
+            <label className="block text-sm font-medium text-text-secondary mb-1">
+              {t('scheduler.selectScript')}
             </label>
             <select
               value={form.templateId}
-              onChange={(e) => setForm((f) => ({ ...f, templateId: e.target.value }))}
-              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              onChange={(e) => handleScriptChange(e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg bg-bg-card text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
             >
-              <option value="">{t('scheduler.selectTemplate')}</option>
-              {templates.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name} ({t.type})
+              <option value="">{t('scheduler.selectScriptPlaceholder')}</option>
+              {taskTemplates.map((tt) => (
+                <option key={tt.id} value={tt.id}>
+                  {tt.name}
                 </option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('scheduler.cronExpression')}
+            <label className="block text-sm font-medium text-text-secondary mb-1">
+              {t('scheduler.interval')}
             </label>
-            <input
-              type="text"
-              value={form.cronExpression}
-              onChange={(e) => setForm((f) => ({ ...f, cronExpression: e.target.value }))}
-              placeholder="* * * * *"
-              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-mono"
-            />
+            <select
+              value={form.presetIdx}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, presetIdx: Number(e.target.value), customCron: '' }))
+              }
+              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg bg-bg-card text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              {PRESETS.map((p, i) => (
+                <option key={i} value={i}>
+                  {t(p.label)}
+                </option>
+              ))}
+            </select>
           </div>
+          {isCustom(form.presetIdx) && (
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-1">
+                {t('scheduler.customCron')}
+              </label>
+              <input
+                type="text"
+                value={form.customCron}
+                onChange={(e) => setForm((f) => ({ ...f, customCron: e.target.value }))}
+                placeholder="0 */6 * * *"
+                className="w-full px-3 py-2 text-sm border border-border-light rounded-lg font-mono bg-bg-card text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <p className="text-xs text-text-muted mt-1">{t('scheduler.cronHint')}</p>
+            </div>
+          )}
+          {formFields.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-2">
+                {t('tasks.config')}
+              </label>
+              <DynamicForm fields={formFields} values={formValues} onChange={setFormValues} />
+            </div>
+          )}
         </div>
         <div className="flex justify-end gap-3 mt-6">
           <button
             onClick={() => setShowCreate(false)}
-            className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="px-4 py-2 text-sm text-text-secondary hover:bg-bg-tertiary rounded-lg transition-colors"
           >
             {t('common.cancel')}
           </button>
           <button
             onClick={handleCreate}
-            disabled={creating || !form.templateId.trim() || !form.cronExpression.trim()}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            disabled={
+              creating ||
+              !form.templateId.trim() ||
+              (isCustom(form.presetIdx) && !form.customCron.trim())
+            }
+            className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {t('common.create')}
           </button>
@@ -291,44 +387,68 @@ const Scheduler: React.FC = () => {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('scheduler.templateId')}
+            <label className="block text-sm font-medium text-text-secondary mb-1">
+              {t('scheduler.scriptName')}
             </label>
             <input
               type="text"
-              value={
-                templates.find((t) => t.id === editingItem?.templateId)?.name ||
-                editingItem?.templateId
-              }
+              value={editingItem ? getTemplateName(editingItem.templateId) : ''}
               disabled
               className="w-full px-3 py-2 text-sm border border-border-light rounded-lg bg-bg-tertiary text-text-muted"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('scheduler.cronExpression')}
+            <label className="block text-sm font-medium text-text-secondary mb-1">
+              {t('scheduler.interval')}
             </label>
-            <input
-              type="text"
-              value={editForm.cronExpression}
-              onChange={(e) => setEditForm((f) => ({ ...f, cronExpression: e.target.value }))}
-              placeholder="* * * * *"
-              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary font-mono"
-            />
+            <select
+              value={editForm.presetIdx}
+              onChange={(e) =>
+                setEditForm((f) => ({
+                  ...f,
+                  presetIdx: Number(e.target.value),
+                  customCron: ''
+                }))
+              }
+              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg bg-bg-card text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              {PRESETS.map((p, i) => (
+                <option key={i} value={i}>
+                  {t(p.label)}
+                </option>
+              ))}
+            </select>
           </div>
+          {isCustom(editForm.presetIdx) && (
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-1">
+                {t('scheduler.customCron')}
+              </label>
+              <input
+                type="text"
+                value={editForm.customCron}
+                onChange={(e) => setEditForm((f) => ({ ...f, customCron: e.target.value }))}
+                placeholder="0 */6 * * *"
+                className="w-full px-3 py-2 text-sm border border-border-light rounded-lg font-mono bg-bg-card text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <p className="text-xs text-text-muted mt-1">{t('scheduler.cronHint')}</p>
+            </div>
+          )}
         </div>
-        {editError && <div className="text-red-600 text-sm mt-3">{editError}</div>}
+        {editError && <div className="text-danger text-sm mt-3">{editError}</div>}
         <div className="flex justify-end gap-3 mt-6">
           <button
             onClick={() => setEditingItem(null)}
-            className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="px-4 py-2 text-sm text-text-secondary hover:bg-bg-tertiary rounded-lg transition-colors"
           >
             {t('common.cancel')}
           </button>
           <button
             onClick={handleEdit}
-            disabled={saving || !editForm.cronExpression.trim()}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            disabled={
+              saving || (isCustom(editForm.presetIdx) && !editForm.customCron.trim())
+            }
+            className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {t('common.save')}
           </button>

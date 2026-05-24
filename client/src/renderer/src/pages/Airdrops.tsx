@@ -27,19 +27,19 @@ import { SearchInput, Pagination, Modal } from '../components/common'
 const PAGE_SIZE = 12
 
 const STATUS_COLORS: Record<AirdropStatus, string> = {
-  ongoing: 'bg-blue-50 text-blue-600',
-  completed: 'bg-green-50 text-green-600',
-  cancelled: 'bg-red-50 text-red-600',
+  ongoing: 'bg-primary-light text-primary',
+  completed: 'bg-success-light text-success',
+  cancelled: 'bg-danger-light text-danger',
   claimed: 'bg-purple-50 text-purple-600'
 }
 
 const TYPE_COLORS: Record<AirdropProjectType, string> = {
   testnet: 'bg-cyan-50 text-cyan-600',
-  mainnet: 'bg-blue-50 text-blue-600',
+  mainnet: 'bg-primary-light text-primary',
   galxe: 'bg-orange-50 text-orange-600',
   quest: 'bg-purple-50 text-purple-600',
   social: 'bg-pink-50 text-pink-600',
-  other: 'bg-gray-100 text-gray-600'
+  other: 'bg-bg-tertiary text-text-secondary'
 }
 
 const STATUS_KEYS: Record<AirdropStatus, string> = {
@@ -333,7 +333,7 @@ const Airdrops: React.FC = () => {
           />
           <button
             onClick={() => setShowCreate(true)}
-            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-hover transition-colors"
           >
             <Plus size={16} />
             {t('airdrops.createAirdrop')}
@@ -342,17 +342,17 @@ const Airdrops: React.FC = () => {
       </div>
 
       {(error || createError) && (
-        <div className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-4 py-2">
+        <div className="text-danger text-sm bg-danger-light border border-danger/30 rounded-lg px-4 py-2">
           {createError || t('common.error')}
         </div>
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center py-20 text-gray-400">
+        <div className="flex items-center justify-center py-20 text-text-muted">
           <span>{t('common.loading')}</span>
         </div>
       ) : items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+        <div className="flex flex-col items-center justify-center py-20 text-text-muted">
           <ExternalLink size={48} />
           <p className="mt-4 text-lg">{t('airdrops.noAirdrops')}</p>
         </div>
@@ -369,13 +369,13 @@ const Airdrops: React.FC = () => {
                   <div className="flex items-center gap-1 shrink-0">
                     <button
                       onClick={() => openEdit(item)}
-                      className="p-1 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors"
+                      className="p-1 text-text-muted hover:text-primary hover:bg-primary-light rounded transition-colors"
                     >
                       <Edit3 size={14} />
                     </button>
                     <button
                       onClick={() => handleDelete(item.id)}
-                      className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                      className="p-1 text-text-muted hover:text-danger hover:bg-danger-light rounded transition-colors"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -395,14 +395,14 @@ const Airdrops: React.FC = () => {
                 </div>
                 <div className="text-sm text-text-muted mb-2">{item.chain}</div>
                 {item.description && (
-                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">{item.description}</p>
+                  <p className="text-sm text-text-secondary mb-3 line-clamp-2">{item.description}</p>
                 )}
                 {item.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {item.tags.map((tag, i) => (
                       <span
                         key={i}
-                        className="inline-block px-2 py-0.5 text-xs bg-gray-100 text-text-muted rounded-full"
+                        className="inline-block px-2 py-0.5 text-xs bg-bg-tertiary text-text-muted rounded-full"
                       >
                         {tag}
                       </span>
@@ -412,21 +412,21 @@ const Airdrops: React.FC = () => {
 
                 <button
                   onClick={() => toggleExpand(item.id)}
-                  className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 mt-2 transition-colors"
+                  className="flex items-center gap-1 text-xs text-text-muted hover:text-text-secondary mt-2 transition-colors"
                 >
                   {expandedId === item.id ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                   {expandedId === item.id ? t('common.close') : t('common.edit')}
                 </button>
 
                 {expandedId === item.id && (
-                  <div className="mt-3 pt-3 border-t border-gray-100 space-y-3">
+                  <div className="mt-3 pt-3 border-t border-border-light space-y-3">
                     <div>
                       <div className="flex items-center gap-1 text-xs font-medium text-text-muted mb-1">
                         <Link size={12} />
                         {t('airdrops.links')}
                       </div>
                       {item.links.length === 0 ? (
-                        <p className="text-xs text-gray-300">{t('airdrops.noLinks')}</p>
+                        <p className="text-xs text-text-muted">{t('airdrops.noLinks')}</p>
                       ) : (
                         <div className="space-y-1">
                           {item.links.map((link, i) => (
@@ -435,7 +435,7 @@ const Airdrops: React.FC = () => {
                               href={link.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700"
+                              className="flex items-center gap-1 text-xs text-primary hover:text-primary"
                             >
                               <ExternalLink size={10} />
                               {link.label || link.url}
@@ -450,14 +450,14 @@ const Airdrops: React.FC = () => {
                         {t('airdrops.tasks')}
                       </div>
                       {item.tasks.length === 0 ? (
-                        <p className="text-xs text-gray-300">{t('airdrops.noTasks')}</p>
+                        <p className="text-xs text-text-muted">{t('airdrops.noTasks')}</p>
                       ) : (
                         <div className="space-y-1">
                           {item.tasks.map((task, i) => (
-                            <div key={i} className="text-xs text-gray-600">
+                            <div key={i} className="text-xs text-text-secondary">
                               <span className="font-medium">{task.title}</span>
                               {task.description && (
-                                <span className="text-gray-400 ml-1">— {task.description}</span>
+                                <span className="text-text-muted ml-1">— {task.description}</span>
                               )}
                             </div>
                           ))}
@@ -470,14 +470,14 @@ const Airdrops: React.FC = () => {
                         {t('airdrops.earnings')}
                       </div>
                       {item.earnings.length === 0 ? (
-                        <p className="text-xs text-gray-300">{t('airdrops.noEarnings')}</p>
+                        <p className="text-xs text-text-muted">{t('airdrops.noEarnings')}</p>
                       ) : (
                         <div className="space-y-1">
                           {item.earnings.map((earning, i) => (
-                            <div key={i} className="text-xs text-gray-600">
+                            <div key={i} className="text-xs text-text-secondary">
                               {earning.amount} {earning.token}
                               {earning.valueUsd != null && (
-                                <span className="text-gray-400 ml-1">(${earning.valueUsd})</span>
+                                <span className="text-text-muted ml-1">(${earning.valueUsd})</span>
                               )}
                             </div>
                           ))}
@@ -513,15 +513,15 @@ const Airdrops: React.FC = () => {
         <div className="space-y-4">
           {/* 脚本模板（可选） */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              脚本模板（可选）
+            <label className="block text-sm font-medium text-text-secondary mb-1">
+              {t('airdrops.scriptTemplateOptional')}
             </label>
             <select
               value={form.scriptTemplateId}
               onChange={(e) => setForm((f) => ({ ...f, scriptTemplateId: e.target.value }))}
               className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             >
-              <option value="">无</option>
+              <option value="">{t('airdrops.noScriptTemplate')}</option>
               {taskTemplates.map((tmpl) => (
                 <option key={tmpl.id} value={tmpl.id}>
                   {tmpl.name} (v{tmpl.version})
@@ -531,7 +531,7 @@ const Airdrops: React.FC = () => {
           </div>
           {/* 名称（必填） */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-text-secondary mb-1">
               {t('airdrops.name')} *
             </label>
             <input
@@ -543,8 +543,8 @@ const Airdrops: React.FC = () => {
           </div>
           {/* 官网（必填） */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              官网 *
+            <label className="block text-sm font-medium text-text-secondary mb-1">
+              {t('airdrops.website')} *
             </label>
             <input
               type="url"
@@ -556,7 +556,7 @@ const Airdrops: React.FC = () => {
           </div>
           {/* 链 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-text-secondary mb-1">
               {t('airdrops.chain')}
             </label>
             <input
@@ -568,7 +568,7 @@ const Airdrops: React.FC = () => {
           </div>
           {/* 状态 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-text-secondary mb-1">
               {t('airdrops.status')}
             </label>
             <select
@@ -585,7 +585,7 @@ const Airdrops: React.FC = () => {
           </div>
           {/* 类型 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-text-secondary mb-1">
               {t('airdrops.projectType')}
             </label>
             <select
@@ -604,8 +604,8 @@ const Airdrops: React.FC = () => {
           </div>
           {/* 描述（支持 Markdown） */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              {t('airdrops.description')}（支持 Markdown）
+            <label className="block text-sm font-medium text-text-secondary mb-1">
+              {t('airdrops.description')}{t('airdrops.descriptionMarkdownHint')}
             </label>
             <textarea
               value={form.description}
@@ -616,15 +616,15 @@ const Airdrops: React.FC = () => {
           </div>
           {/* 账号组（必填） */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              账号组 *
+            <label className="block text-sm font-medium text-text-secondary mb-1">
+              {t('airdrops.accountPool')} *
             </label>
             <select
               value={form.accountPool}
               onChange={(e) => setForm((f) => ({ ...f, accountPool: e.target.value }))}
               className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             >
-              <option value="">请选择账号池</option>
+              <option value="">{t('airdrops.selectAccountPool')}</option>
               {accountPools.map((pool) => (
                 <option key={pool} value={pool}>
                   {pool}
@@ -633,23 +633,23 @@ const Airdrops: React.FC = () => {
             </select>
             {accountPools.length === 0 && (
               <p className="text-xs text-text-muted mt-1">
-                暂无账号池，请先在「账户管理」页面创建账号并指定账号池
+                {t('airdrops.noAccountPoolHint')}
               </p>
             )}
           </div>
         </div>
-        {createError && <div className="text-red-600 text-sm mt-3">{createError}</div>}
+        {createError && <div className="text-danger text-sm mt-3">{createError}</div>}
         <div className="flex justify-end gap-3 mt-6">
           <button
             onClick={() => setShowCreate(false)}
-            className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="px-4 py-2 text-sm text-text-secondary hover:bg-bg-tertiary rounded-lg transition-colors"
           >
             {t('common.cancel')}
           </button>
           <button
             onClick={handleCreate}
             disabled={creating || !form.name.trim() || !form.website.trim() || !form.accountPool.trim()}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {t('common.create')}
           </button>
@@ -665,7 +665,7 @@ const Airdrops: React.FC = () => {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-text-secondary mb-1">
               {t('airdrops.name')}
             </label>
             <input
@@ -676,7 +676,7 @@ const Airdrops: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-text-secondary mb-1">
               {t('airdrops.chain')}
             </label>
             <input
@@ -687,8 +687,8 @@ const Airdrops: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              官网
+            <label className="block text-sm font-medium text-text-secondary mb-1">
+              {t('airdrops.website')}
             </label>
             <input
               type="url"
@@ -699,15 +699,15 @@ const Airdrops: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              脚本模板（可选）
+            <label className="block text-sm font-medium text-text-secondary mb-1">
+              {t('airdrops.scriptTemplateOptional')}
             </label>
             <select
               value={editForm.scriptTemplateId}
               onChange={(e) => setEditForm((f) => ({ ...f, scriptTemplateId: e.target.value }))}
               className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             >
-              <option value="">无</option>
+              <option value="">{t('airdrops.noScriptTemplate')}</option>
               {taskTemplates.map((tmpl) => (
                 <option key={tmpl.id} value={tmpl.id}>
                   {tmpl.name} (v{tmpl.version})
@@ -716,15 +716,15 @@ const Airdrops: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              账号组
+            <label className="block text-sm font-medium text-text-secondary mb-1">
+              {t('airdrops.accountPool')}
             </label>
             <select
               value={editForm.accountPool}
               onChange={(e) => setEditForm((f) => ({ ...f, accountPool: e.target.value }))}
               className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             >
-              <option value="">请选择账号池</option>
+              <option value="">{t('airdrops.selectAccountPool')}</option>
               {accountPools.map((pool) => (
                 <option key={pool} value={pool}>
                   {pool}
@@ -733,7 +733,7 @@ const Airdrops: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-text-secondary mb-1">
               {t('airdrops.status')}
             </label>
             <select
@@ -751,7 +751,7 @@ const Airdrops: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-text-secondary mb-1">
               {t('airdrops.projectType')}
             </label>
             <select
@@ -769,7 +769,7 @@ const Airdrops: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-text-secondary mb-1">
               {t('airdrops.description')}
             </label>
             <textarea
@@ -780,7 +780,7 @@ const Airdrops: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-text-secondary mb-1">
               {t('airdrops.tags')}
             </label>
             <input
@@ -792,7 +792,7 @@ const Airdrops: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-text-secondary mb-1">
               {t('airdrops.labels')}
             </label>
             <input
@@ -806,20 +806,20 @@ const Airdrops: React.FC = () => {
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
+              <label className="text-sm font-medium text-text-secondary flex items-center gap-1">
                 <Link size={14} />
                 {t('airdrops.links')}
               </label>
               <button
                 onClick={addLink}
-                className="text-xs text-blue-500 hover:text-blue-700 flex items-center gap-0.5"
+                className="text-xs text-primary hover:text-primary flex items-center gap-0.5"
               >
                 <Plus size={12} />
                 {t('airdrops.addLink')}
               </button>
             </div>
             {editForm.links.length === 0 ? (
-              <p className="text-xs text-gray-300">{t('airdrops.noLinks')}</p>
+              <p className="text-xs text-text-muted">{t('airdrops.noLinks')}</p>
             ) : (
               <div className="space-y-2">
                 {editForm.links.map((link, i) => (
@@ -840,7 +840,7 @@ const Airdrops: React.FC = () => {
                     />
                     <button
                       onClick={() => removeLink(i)}
-                      className="p-1 text-gray-400 hover:text-red-500 shrink-0"
+                      className="p-1 text-text-muted hover:text-danger shrink-0"
                     >
                       <Trash2 size={12} />
                     </button>
@@ -852,20 +852,20 @@ const Airdrops: React.FC = () => {
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
+              <label className="text-sm font-medium text-text-secondary flex items-center gap-1">
                 <ListChecks size={14} />
                 {t('airdrops.tasks')}
               </label>
               <button
                 onClick={addTask}
-                className="text-xs text-blue-500 hover:text-blue-700 flex items-center gap-0.5"
+                className="text-xs text-primary hover:text-primary flex items-center gap-0.5"
               >
                 <Plus size={12} />
                 {t('airdrops.addTask')}
               </button>
             </div>
             {editForm.tasks.length === 0 ? (
-              <p className="text-xs text-gray-300">{t('airdrops.noTasks')}</p>
+              <p className="text-xs text-text-muted">{t('airdrops.noTasks')}</p>
             ) : (
               <div className="space-y-2">
                 {editForm.tasks.map((task, i) => (
@@ -888,7 +888,7 @@ const Airdrops: React.FC = () => {
                     </div>
                     <button
                       onClick={() => removeTask(i)}
-                      className="p-1 text-gray-400 hover:text-red-500 shrink-0 mt-1"
+                      className="p-1 text-text-muted hover:text-danger shrink-0 mt-1"
                     >
                       <Trash2 size={12} />
                     </button>
@@ -900,20 +900,20 @@ const Airdrops: React.FC = () => {
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
+              <label className="text-sm font-medium text-text-secondary flex items-center gap-1">
                 <DollarSign size={14} />
                 {t('airdrops.earnings')}
               </label>
               <button
                 onClick={addEarning}
-                className="text-xs text-blue-500 hover:text-blue-700 flex items-center gap-0.5"
+                className="text-xs text-primary hover:text-primary flex items-center gap-0.5"
               >
                 <Plus size={12} />
                 {t('airdrops.addEarning')}
               </button>
             </div>
             {editForm.earnings.length === 0 ? (
-              <p className="text-xs text-gray-300">{t('airdrops.noEarnings')}</p>
+              <p className="text-xs text-text-muted">{t('airdrops.noEarnings')}</p>
             ) : (
               <div className="space-y-2">
                 {editForm.earnings.map((earning, i) => (
@@ -941,7 +941,7 @@ const Airdrops: React.FC = () => {
                     />
                     <button
                       onClick={() => removeEarning(i)}
-                      className="p-1 text-gray-400 hover:text-red-500 shrink-0"
+                      className="p-1 text-text-muted hover:text-danger shrink-0"
                     >
                       <Trash2 size={12} />
                     </button>
@@ -951,18 +951,18 @@ const Airdrops: React.FC = () => {
             )}
           </div>
         </div>
-        {editError && <div className="text-red-600 text-sm mt-3">{editError}</div>}
+        {editError && <div className="text-danger text-sm mt-3">{editError}</div>}
         <div className="flex justify-end gap-3 mt-6">
           <button
             onClick={() => setEditingItem(null)}
-            className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="px-4 py-2 text-sm text-text-secondary hover:bg-bg-tertiary rounded-lg transition-colors"
           >
             {t('common.cancel')}
           </button>
           <button
             onClick={handleEdit}
             disabled={saving || !editForm.name.trim() || !editForm.chain.trim()}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {t('common.save')}
           </button>

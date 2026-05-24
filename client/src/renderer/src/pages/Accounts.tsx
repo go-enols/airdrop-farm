@@ -1,8 +1,10 @@
 import { useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { accountApi } from '../api'
+import { accountApi, dialogApi, templateApi } from '../api'
 import type { Account } from '../types'
-import { Plus, Trash2, Edit3, Search, Upload } from 'lucide-react'
+import { Plus, Trash2, Edit3, Search, Upload, Download, FileDown } from 'lucide-react'
+import { parseAccountImport } from '../utils/account-import'
+import type { ParsedAccount, ParseError } from '../utils/account-import'
 import { usePaginatedList, useTemplateList } from '../hooks'
 import { Pagination, SearchInput, Modal } from '../components/common'
 import DynamicForm from '../components/DynamicForm'
@@ -70,6 +72,31 @@ const Accounts: React.FC = () => {
   const [showBatchImport, setShowBatchImport] = useState(false)
   const [batchJson, setBatchJson] = useState('')
   const [batchError, setBatchError] = useState<string | null>(null)
+  const [showImportPreview, setShowImportPreview] = useState(false)
+  const [importValid, setImportValid] = useState<ParsedAccount[]>([])
+  const [importErrors, setImportErrors] = useState<ParseError[]>([])
+  const [importing, setImporting] = useState(false)
+
+  const handleExport = useCallback(async () => {
+    try {
+      const resp = await accountApi.list(1, 9999)
+      const exportData = resp.items.map((item) => ({
+        templateId: item.templateId,
+        data: item.data,
+        pool: item.pool,
+        labels: item.labels,
+        notes: item.notes
+      }))
+      const json = JSON.stringify(exportData, null, 2)
+      const date = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+      const result = await dialogApi.saveFile(`accounts-${date}.json`, json)
+      if (!result.canceled && result.filePath) {
+        window.alert(t('accounts.exportSuccess'))
+      }
+    } catch {
+      window.alert(t('accounts.exportFailed'))
+    }
+  }, [t])
 
   const handleBatchImport = useCallback(async () => {
     setBatchError(null)
@@ -77,11 +104,11 @@ const Accounts: React.FC = () => {
     try {
       parsed = JSON.parse(batchJson)
       if (!Array.isArray(parsed)) {
-        setBatchError('请输入 JSON 数组')
+        setBatchError(t('accounts.batchImportInvalidArray'))
         return
       }
     } catch {
-      setBatchError('JSON 格式无效')
+      setBatchError(t('common.invalidJson'))
       return
     }
     const items = parsed.map((item) => ({
@@ -95,12 +122,44 @@ const Accounts: React.FC = () => {
       const count = await accountApi.batchCreate(items)
       setShowBatchImport(false)
       setBatchJson('')
-      window.alert(`成功导入 ${count} 个账户`)
+      window.alert(t('accounts.batchImportSuccess', { count }))
       fetchData()
     } catch {
       setBatchError(t('common.operationFailed'))
     }
   }, [batchJson, t, fetchData])
+
+  const handleFileImport = useCallback(async () => {
+    try {
+      const result = await dialogApi.openFile([{ name: 'JSON', extensions: ['json'] }])
+      if (result.canceled || !result.content) return
+
+      const templatesResp = await templateApi.list(1, 9999)
+      const { valid, errors } = parseAccountImport(result.content, templatesResp.items)
+      setImportValid(valid)
+      setImportErrors(errors)
+      setShowImportPreview(true)
+    } catch {
+      window.alert(t('common.operationFailed'))
+    }
+  }, [t])
+
+  const handleConfirmImport = useCallback(async () => {
+    if (importValid.length === 0) return
+    setImporting(true)
+    try {
+      const count = await accountApi.batchCreate(importValid)
+      setShowImportPreview(false)
+      setImportValid([])
+      setImportErrors([])
+      window.alert(t('accounts.importSucceeded', { count }))
+      fetchData()
+    } catch {
+      window.alert(t('common.operationFailed'))
+    } finally {
+      setImporting(false)
+    }
+  }, [importValid, t, fetchData])
 
   const handleCreate = useCallback(async () => {
     if (!form.templateId.trim() || !form.pool.trim()) return
@@ -122,7 +181,7 @@ const Accounts: React.FC = () => {
       const pools = await accountApi.listPools()
       const poolName = form.pool.trim()
       if (!pools.includes(poolName)) {
-        if (!window.confirm(`账号池「${poolName}」尚不存在，是否创建？`)) {
+        if (!window.confirm(t('accounts.poolNotExistConfirm', { name: poolName }))) {
           return
         }
       }
@@ -222,14 +281,28 @@ const Accounts: React.FC = () => {
           />
           <button
             onClick={() => setShowBatchImport(true)}
-            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-text-secondary bg-bg-tertiary rounded-lg hover:bg-bg-card-hover transition-colors"
           >
             <Upload size={16} />
-            批量导入
+            {t('accounts.batchImport')}
+          </button>
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-text-secondary bg-bg-tertiary rounded-lg hover:bg-bg-card-hover transition-colors"
+          >
+            <Download size={16} />
+            {t('accounts.export')}
+          </button>
+          <button
+            onClick={handleFileImport}
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-text-secondary bg-bg-tertiary rounded-lg hover:bg-bg-card-hover transition-colors"
+          >
+            <FileDown size={16} />
+            {t('accounts.importFile')}
           </button>
           <button
             onClick={() => setShowCreate(true)}
-            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-hover transition-colors"
           >
             <Plus size={16} />
             {t('accounts.createAccount')}
@@ -238,17 +311,17 @@ const Accounts: React.FC = () => {
       </div>
 
       {(error || createError) && (
-        <div className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-4 py-2">
+        <div className="text-danger text-sm bg-danger-light border border-danger/30 rounded-lg px-4 py-2">
           {createError || t('common.error')}
         </div>
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center py-20 text-gray-400">
+        <div className="flex items-center justify-center py-20 text-text-muted">
           <span>{t('common.loading')}</span>
         </div>
       ) : items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+        <div className="flex flex-col items-center justify-center py-20 text-text-muted">
           <Search size={48} />
           <p className="mt-4 text-lg">{t('accounts.noAccounts')}</p>
         </div>
@@ -257,23 +330,23 @@ const Accounts: React.FC = () => {
           <div className="dark:bg-bg-card rounded-xl border border-border-light overflow-hidden">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 bg-bg-tertiary">
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">
+                <tr className="border-b border-border-light bg-bg-tertiary">
+                  <th className="text-left px-4 py-3 font-medium text-text-secondary">
                     {t('accounts.templateId')}
                   </th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  <th className="text-left px-4 py-3 font-medium text-text-secondary">
                     {t('accounts.pool')}
                   </th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  <th className="text-left px-4 py-3 font-medium text-text-secondary">
                     {t('accounts.labels')}
                   </th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  <th className="text-left px-4 py-3 font-medium text-text-secondary">
                     {t('accounts.notes')}
                   </th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  <th className="text-left px-4 py-3 font-medium text-text-secondary">
                     {t('accounts.createdAt')}
                   </th>
-                  <th className="text-right px-4 py-3 font-medium text-gray-600">
+                  <th className="text-right px-4 py-3 font-medium text-text-secondary">
                     {t('accounts.actions')}
                   </th>
                 </tr>
@@ -282,10 +355,11 @@ const Accounts: React.FC = () => {
                 {items.map((item) => (
                   <tr
                     key={item.id}
-                    className="border-b border-gray-50 hover:bg-bg-tertiary transition-colors"
+                    className="border-b border-border-light hover:bg-bg-tertiary transition-colors"
                   >
                     <td className="px-4 py-3 text-xs">
-                      {templates.find((t) => t.id === item.templateId)?.name || item.templateId}
+                      {templates.find((t) => t.id === item.templateId)?.name ||
+                        t('accounts.unknownTemplate')}
                     </td>
                     <td className="px-4 py-3">{item.pool}</td>
                     <td className="px-4 py-3">
@@ -294,13 +368,13 @@ const Accounts: React.FC = () => {
                           item.labels.map((l, i) => (
                             <span
                               key={i}
-                              className="inline-block px-2 py-0.5 text-xs bg-blue-50 text-blue-600 rounded-full"
+                              className="inline-block px-2 py-0.5 text-xs bg-primary-light text-primary rounded-full"
                             >
                               {l}
                             </span>
                           ))
                         ) : (
-                          <span className="text-gray-300">—</span>
+                          <span className="text-text-muted">—</span>
                         )}
                       </div>
                     </td>
@@ -314,13 +388,13 @@ const Accounts: React.FC = () => {
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => openEdit(item)}
-                          className="p-1.5 text-gray-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                          className="p-1.5 text-text-muted hover:text-primary hover:bg-primary-light rounded-lg transition-colors"
                         >
                           <Edit3 size={16} />
                         </button>
                         <button
                           onClick={() => handleDelete(item.id)}
-                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          className="p-1.5 text-text-muted hover:text-danger hover:bg-danger-light rounded-lg transition-colors"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -350,7 +424,7 @@ const Accounts: React.FC = () => {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-text-secondary mb-1">
               {t('accounts.templateId')}
             </label>
             <select
@@ -367,7 +441,7 @@ const Accounts: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-text-secondary mb-1">
               {t('accounts.pool')}
             </label>
             <input
@@ -378,7 +452,7 @@ const Accounts: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-text-secondary mb-1">
               {t('accounts.labels')}
             </label>
             <input
@@ -390,7 +464,7 @@ const Accounts: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-text-secondary mb-1">
               {t('accounts.notes')}
             </label>
             <input
@@ -407,7 +481,7 @@ const Accounts: React.FC = () => {
               const fields = jsonSchemaToFieldMeta(selectedTpl!.schema)
               return (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-text-secondary mb-1">
                     {t('accounts.data')}
                   </label>
                   <DynamicForm
@@ -420,7 +494,7 @@ const Accounts: React.FC = () => {
             }
             return (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-text-secondary mb-1">
                   {t('accounts.data')} (JSON)
                 </label>
                 <textarea
@@ -433,21 +507,21 @@ const Accounts: React.FC = () => {
             )
           })()}
         </div>
-        {createError && <div className="text-red-600 text-sm mt-3">{createError}</div>}
+        {createError && <div className="text-danger text-sm mt-3">{createError}</div>}
         <div className="flex justify-end gap-3 mt-6">
           <button
             onClick={() => {
               setShowCreate(false)
               setCreateError(null)
             }}
-            className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="px-4 py-2 text-sm text-text-secondary hover:bg-bg-tertiary rounded-lg transition-colors"
           >
             {t('common.cancel')}
           </button>
           <button
             onClick={handleCreate}
             disabled={creating || !form.templateId.trim() || !form.pool.trim()}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {t('common.create')}
           </button>
@@ -462,7 +536,7 @@ const Accounts: React.FC = () => {
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-text-secondary mb-1">
               {t('accounts.pool')}
             </label>
             <input
@@ -473,7 +547,7 @@ const Accounts: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-text-secondary mb-1">
               {t('accounts.labels')}
             </label>
             <input
@@ -485,7 +559,7 @@ const Accounts: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-text-secondary mb-1">
               {t('accounts.notes')}
             </label>
             <input
@@ -496,7 +570,7 @@ const Accounts: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-text-secondary mb-1">
               {t('accounts.data')} (JSON)
             </label>
             <textarea
@@ -507,18 +581,18 @@ const Accounts: React.FC = () => {
             />
           </div>
         </div>
-        {editError && <div className="text-red-600 text-sm mt-3">{editError}</div>}
+        {editError && <div className="text-danger text-sm mt-3">{editError}</div>}
         <div className="flex justify-end gap-3 mt-6">
           <button
             onClick={() => setEditingItem(null)}
-            className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="px-4 py-2 text-sm text-text-secondary hover:bg-bg-tertiary rounded-lg transition-colors"
           >
             {t('common.cancel')}
           </button>
           <button
             onClick={handleEdit}
             disabled={saving || !editForm.pool.trim()}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {t('common.save')}
           </button>
@@ -531,13 +605,13 @@ const Accounts: React.FC = () => {
           setShowBatchImport(false)
           setBatchError(null)
         }}
-        title="批量导入账户"
+        title={t('accounts.batchImportTitle')}
         scrollable
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              JSON 数组（每个对象包含 templateId、pool、labels、notes、data 字段）
+            <label className="block text-sm font-medium text-text-secondary mb-1">
+              {t('accounts.batchImportLabel')}
             </label>
             <textarea
               value={batchJson}
@@ -551,23 +625,133 @@ const Accounts: React.FC = () => {
             />
           </div>
         </div>
-        {batchError && <div className="text-red-600 text-sm mt-3">{batchError}</div>}
+        {batchError && <div className="text-danger text-sm mt-3">{batchError}</div>}
         <div className="flex justify-end gap-3 mt-6">
           <button
             onClick={() => {
               setShowBatchImport(false)
               setBatchError(null)
             }}
-            className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="px-4 py-2 text-sm text-text-secondary hover:bg-bg-tertiary rounded-lg transition-colors"
           >
             {t('common.cancel')}
           </button>
           <button
             onClick={handleBatchImport}
             disabled={!batchJson.trim()}
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            导入
+            {t('accounts.batchImportDoImport')}
+          </button>
+        </div>
+      </Modal>
+
+      <Modal
+        open={showImportPreview}
+        onClose={() => {
+          setShowImportPreview(false)
+          setImportValid([])
+          setImportErrors([])
+        }}
+        title={t('accounts.importPreview')}
+        scrollable
+      >
+        <div className="space-y-4">
+          {importErrors.length > 0 && (
+            <div>
+              <h4 className="text-sm font-medium text-amber-700 mb-2">
+                {t('accounts.importValidationError')}
+              </h4>
+              <div className="max-h-32 overflow-y-auto bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 space-y-1">
+                {importErrors.map((err, i) => (
+                  <div key={i}>
+                    行 {err.row}: {err.message}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {importValid.length > 0 && (
+            <div>
+              <div className="text-sm text-text-muted mb-3">
+                {t('accounts.parsedCount', {
+                  valid: importValid.length,
+                  error: importErrors.length
+                })}
+              </div>
+
+              <div className="border border-border-light rounded-lg overflow-hidden">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="bg-bg-tertiary border-b border-border-light">
+                      <th className="text-left px-3 py-2 font-medium text-text-secondary">
+                        {t('accounts.templateId')}
+                      </th>
+                      <th className="text-left px-3 py-2 font-medium text-text-secondary">
+                        {t('accounts.pool')}
+                      </th>
+                      <th className="text-left px-3 py-2 font-medium text-text-secondary">
+                        {t('accounts.labels')}
+                      </th>
+                      <th className="text-left px-3 py-2 font-medium text-text-secondary">
+                        {t('accounts.notes')}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {importValid.slice(0, 5).map((item, i) => (
+                      <tr
+                        key={i}
+                        className="border-b border-border-light last:border-b-0"
+                      >
+                        <td className="px-3 py-2 font-mono">{item.templateId || '—'}</td>
+                        <td className="px-3 py-2">{item.pool}</td>
+                        <td className="px-3 py-2">
+                          {item.labels.length > 0
+                            ? item.labels.join(', ')
+                            : '—'}
+                        </td>
+                        <td className="px-3 py-2 max-w-[150px] truncate">
+                          {item.notes || '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {importValid.length > 5 && (
+                <p className="text-xs text-text-muted mt-2">
+                  ...还有 {importValid.length - 5} 条
+                </p>
+              )}
+            </div>
+          )}
+
+          {importValid.length === 0 && importErrors.length === 0 && (
+            <div className="text-sm text-text-muted py-4 text-center">
+              {t('common.noData')}
+            </div>
+          )}
+        </div>
+        <div className="flex justify-end gap-3 mt-6">
+          <button
+            onClick={() => {
+              setShowImportPreview(false)
+              setImportValid([])
+              setImportErrors([])
+            }}
+            className="px-4 py-2 text-sm text-text-secondary hover:bg-bg-tertiary rounded-lg transition-colors"
+          >
+            {t('common.cancel')}
+          </button>
+          <button
+            onClick={handleConfirmImport}
+            disabled={importing || importValid.length === 0}
+            className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {importing ? t('common.loading') : t('common.import')}
           </button>
         </div>
       </Modal>

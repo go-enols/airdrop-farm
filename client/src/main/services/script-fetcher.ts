@@ -28,10 +28,15 @@ export class ScriptFetcher {
     return url || this.defaultServerUrl
   }
 
+  private getAuthHeaders(): Record<string, string> {
+    const key = this.store.getSetting('marketplace_api_key') || 'airdrop-farm-dev-key'
+    return key ? { Authorization: `Bearer ${key}` } : {}
+  }
+
   async fetchScriptList(): Promise<RemoteScript[]> {
     const serverUrl = this.getServerUrl()
     const url = `${serverUrl}/api/scripts`
-    const response = await fetch(url)
+    const response = await fetch(url, { headers: this.getAuthHeaders() })
     if (!response.ok) {
       throw new Error(`Failed to fetch script list: ${response.status} ${response.statusText}`)
     }
@@ -68,12 +73,14 @@ export class ScriptFetcher {
     await this.extractArchive(tmpPath, scriptDir, ext)
     rmSync(tmpPath, { force: true })
 
+    const manifest = this.readManifest(scriptDir)
+
     const installed: InstalledScript = {
       id: script.id,
-      name: script.name,
-      version: script.version,
-      description: script.description,
-      schema: script.schema,
+      name: (manifest.name as string) || script.name,
+      version: (manifest.version as string) || script.version,
+      description: (manifest.description as string) || script.description,
+      schema: (manifest.schema as Record<string, unknown>) || script.schema,
       installPath: scriptDir,
       checksum: script.checksum,
       remoteUrl: this.getServerUrl(),
@@ -82,6 +89,33 @@ export class ScriptFetcher {
     }
 
     writeFileSync(join(scriptDir, 'meta.json'), JSON.stringify(installed, null, 2))
+
+    const existing = this.store.getTaskTemplate(installed.id)
+    if (existing) {
+      this.store.updateTaskTemplate(installed.id, {
+        name: installed.name,
+        version: installed.version,
+        description: installed.description,
+        installPath: installed.installPath,
+        manifest: manifest,
+        remoteUrl: installed.remoteUrl,
+        isInstalled: true,
+        updatedAt: installed.updatedAt
+      })
+    } else {
+      try {
+        const stmt = (this.store as any).db.prepare(
+          `INSERT INTO task_templates (id, name, version, description, install_path, manifest, remote_url, is_installed, downloaded_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`
+        )
+        stmt.run(
+          installed.id, installed.name, installed.version, installed.description,
+          installed.installPath, JSON.stringify(manifest), installed.remoteUrl,
+          installed.downloadedAt, installed.updatedAt
+        )
+      } catch {
+        // ignore duplicate
+      }
+    }
 
     logger.info('Script downloaded', { scriptId, version: script.version })
     return installed
@@ -126,10 +160,25 @@ export class ScriptFetcher {
     }
   }
 
+  private readManifest(scriptDir: string): Record<string, unknown> {
+    const manifestPath = join(scriptDir, 'manifest.json')
+    if (!existsSync(manifestPath)) {
+      logger.warn('No manifest.json found in extracted script', { scriptDir })
+      return {}
+    }
+    try {
+      const raw = readFileSync(manifestPath, 'utf-8')
+      return JSON.parse(raw) as Record<string, unknown>
+    } catch (err) {
+      logger.warn('Failed to parse manifest.json', { scriptDir, error: String(err) })
+      return {}
+    }
+  }
+
   private async downloadFile(url: string, destPath: string, retries = 3): Promise<void> {
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
-        const response = await fetch(url)
+        const response = await fetch(url, { headers: this.getAuthHeaders() })
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`)
         }

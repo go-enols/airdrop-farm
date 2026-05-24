@@ -15,11 +15,13 @@ import {
   CheckSquare,
   Square
 } from 'lucide-react'
-import { walletApi } from '../api'
+import { walletApi, dialogApi } from '../api'
 import type { Wallet } from '../types'
+import { parseWalletJson, type ParsedWallet } from '../utils/wallet-import'
 
 type WalletType = 'evm' | 'solana' | 'sui'
 type CreateTab = 'keypair' | 'mnemonic'
+type ImportTab = 'mnemonic' | 'json'
 
 const WALLET_TYPE_OPTIONS: { value: WalletType; label: string; color: string }[] = [
   { value: 'evm', label: 'EVM', color: 'bg-wallet-evm-bg text-wallet-evm-text' },
@@ -71,6 +73,7 @@ const Wallets: React.FC = () => {
   const [mnemonicSaving, setMnemonicSaving] = useState(false)
 
   const [showImportModal, setShowImportModal] = useState(false)
+  const [importTab, setImportTab] = useState<ImportTab>('mnemonic')
   const [mnemonic, setMnemonic] = useState('')
   const [importTypes, setImportTypes] = useState<WalletType[]>(['evm'])
   const [deriveCount, setDeriveCount] = useState(1)
@@ -79,6 +82,11 @@ const Wallets: React.FC = () => {
   >([])
   const [deriving, setDeriving] = useState(false)
   const [importSaving, setImportSaving] = useState(false)
+
+  const [jsonFilePath, setJsonFilePath] = useState<string | null>(null)
+  const [jsonParsed, setJsonParsed] = useState<ParsedWallet[]>([])
+  const [jsonError, setJsonError] = useState('')
+  const [jsonImporting, setJsonImporting] = useState(false)
 
   const [deleteTarget, setDeleteTarget] = useState<Wallet | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -447,10 +455,56 @@ const Wallets: React.FC = () => {
 
   const closeImportModal = (): void => {
     setShowImportModal(false)
+    setImportTab('mnemonic')
     setMnemonic('')
     setImportTypes(['evm'])
     setDeriveCount(1)
     setDerivedResults([])
+    setJsonFilePath(null)
+    setJsonParsed([])
+    setJsonError('')
+  }
+
+  const handlePickJsonFile = async (): Promise<void> => {
+    setJsonError('')
+    try {
+      const res = await dialogApi.openFile([{ name: 'JSON', extensions: ['json'] }])
+      if (res.canceled || !res.content) return
+      try {
+        const parsed = parseWalletJson(res.content)
+        setJsonParsed(parsed)
+        setJsonFilePath(res.filePath)
+      } catch (err) {
+        setJsonParsed([])
+        setJsonFilePath(res.filePath)
+        setJsonError(`${t('wallets.invalidJsonFormat')}: ${(err as Error).message}`)
+      }
+    } catch {
+      showError(t('wallets.operationFailed'))
+    }
+  }
+
+  const handleImportJson = async (): Promise<void> => {
+    if (jsonParsed.length === 0) return
+    setJsonImporting(true)
+    try {
+      for (const item of jsonParsed) {
+        await walletApi.create({
+          address: item.address,
+          privateKey: item.privateKey,
+          mnemonic: item.mnemonic ?? null,
+          walletType: item.walletType,
+          labels: item.labels ?? []
+        })
+      }
+      closeImportModal()
+      fetchWallets()
+      showSuccess(t('wallets.operationSuccess'))
+    } catch {
+      showError(t('wallets.operationFailed'))
+    } finally {
+      setJsonImporting(false)
+    }
   }
 
   const isAllSelected = wallets.length > 0 && selectedIds.size === wallets.length
@@ -486,7 +540,7 @@ const Wallets: React.FC = () => {
           </button>
           <button
             onClick={handleExport}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-600 text-white text-sm font-medium rounded-lg hover:bg-gray-700 transition-colors"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-bg-tertiary text-text-primary text-sm font-medium rounded-lg hover:bg-bg-card-hover transition-colors"
           >
             <Download size={16} />
             {t('wallets.exportWallets')}
@@ -609,7 +663,7 @@ const Wallets: React.FC = () => {
                       </td>
                       <td className="px-4 py-3">
                         <span
-                          className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${WALLET_TYPE_BADGE[wallet.walletType] || 'bg-gray-100 text-gray-600'}`}
+                          className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${WALLET_TYPE_BADGE[wallet.walletType] || 'bg-bg-tertiary text-text-secondary'}`}
                         >
                           {wallet.walletType.toUpperCase()}
                         </span>
@@ -933,7 +987,7 @@ const Wallets: React.FC = () => {
                                     <td className="px-3 py-1.5 text-text-muted">{r.index}</td>
                                     <td className="px-3 py-1.5">
                                       <span
-                                        className={`inline-block px-1.5 py-0.5 rounded text-xs font-medium ${WALLET_TYPE_BADGE[r.walletType] || 'bg-gray-100 text-gray-600'}`}
+                                        className={`inline-block px-1.5 py-0.5 rounded text-xs font-medium ${WALLET_TYPE_BADGE[r.walletType] || 'bg-bg-tertiary text-text-secondary'}`}
                                       >
                                         {r.walletType.toUpperCase()}
                                       </span>
@@ -987,6 +1041,30 @@ const Wallets: React.FC = () => {
               {t('wallets.importModal.title')}
             </h2>
 
+            <div className="flex border-b border-border-light mb-4">
+              <button
+                onClick={() => setImportTab('mnemonic')}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  importTab === 'mnemonic'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-text-muted hover:text-text-secondary'
+                }`}
+              >
+                {t('wallets.tabMnemonic')}
+              </button>
+              <button
+                onClick={() => setImportTab('json')}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                  importTab === 'json'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-text-muted hover:text-text-secondary'
+                }`}
+              >
+                {t('wallets.tabJson')}
+              </button>
+            </div>
+
+            {importTab === 'mnemonic' && (
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-text-secondary mb-1.5">
@@ -1071,7 +1149,7 @@ const Wallets: React.FC = () => {
                               <td className="px-3 py-1.5 text-text-muted">{r.index}</td>
                               <td className="px-3 py-1.5">
                                 <span
-                                  className={`inline-block px-1.5 py-0.5 rounded text-xs font-medium ${WALLET_TYPE_BADGE[r.walletType] || 'bg-gray-100 text-gray-600'}`}
+                                  className={`inline-block px-1.5 py-0.5 rounded text-xs font-medium ${WALLET_TYPE_BADGE[r.walletType] || 'bg-bg-tertiary text-text-secondary'}`}
                                 >
                                   {r.walletType.toUpperCase()}
                                 </span>
@@ -1105,6 +1183,96 @@ const Wallets: React.FC = () => {
                 </>
               )}
             </div>
+            )}
+
+            {importTab === 'json' && (
+              <div className="space-y-4">
+                <p className="text-xs text-text-muted">{t('wallets.importJsonHint')}</p>
+
+                <button
+                  onClick={handlePickJsonFile}
+                  className="w-full py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary-hover transition-colors"
+                >
+                  {t('wallets.importJson')}
+                </button>
+
+                {jsonFilePath && (
+                  <div className="text-xs font-mono text-text-secondary break-all p-2 bg-bg-tertiary rounded-lg">
+                    {jsonFilePath}
+                  </div>
+                )}
+
+                {jsonError && (
+                  <div className="text-xs text-danger p-2 bg-danger/10 rounded-lg break-all">
+                    {jsonError}
+                  </div>
+                )}
+
+                {jsonParsed.length > 0 && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                        {t('wallets.parsedWallets')} ({jsonParsed.length})
+                      </label>
+                      <div className="border border-border-light rounded-lg overflow-hidden max-h-60 overflow-y-auto">
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="bg-bg-tertiary border-b border-border-light">
+                              <th className="text-left px-3 py-2 font-medium text-text-muted">
+                                {t('wallets.address')}
+                              </th>
+                              <th className="text-left px-3 py-2 font-medium text-text-muted">
+                                {t('wallets.walletType')}
+                              </th>
+                              <th className="text-left px-3 py-2 font-medium text-text-muted">
+                                {t('wallets.privateKey')}
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {jsonParsed.map((w, i) => (
+                              <tr key={i} className="border-b border-border-light/50">
+                                <td className="px-3 py-1.5 font-mono text-text-secondary">
+                                  {truncateAddress(w.address)}
+                                </td>
+                                <td className="px-3 py-1.5">
+                                  <span
+                                    className={`inline-block px-1.5 py-0.5 rounded text-xs font-medium ${WALLET_TYPE_BADGE[w.walletType] || 'bg-bg-tertiary text-text-secondary'}`}
+                                  >
+                                    {w.walletType.toUpperCase()}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-1.5 text-text-secondary">
+                                  {w.privateKey ? '✓' : '—'}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
+                      <button
+                        onClick={closeImportModal}
+                        className="flex-1 py-2 border border-border-light text-text-secondary rounded-lg text-sm font-medium hover:bg-bg-card-hover transition-colors"
+                      >
+                        {t('common.cancel')}
+                      </button>
+                      <button
+                        onClick={handleImportJson}
+                        disabled={jsonImporting}
+                        className="flex-1 py-2 bg-success text-white rounded-lg text-sm font-medium hover:bg-success-hover disabled:opacity-50 transition-colors"
+                      >
+                        {jsonImporting
+                          ? t('wallets.importingWallets')
+                          : `导入 ${jsonParsed.length} 个钱包`}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

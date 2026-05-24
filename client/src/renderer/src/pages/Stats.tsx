@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { appApi } from '../api'
 import type { StatsAggregate } from '../types'
 import { RefreshCw, BarChart3 } from 'lucide-react'
+import { statusLabel } from '../utils/i18n-status'
 
 const Stats: React.FC = () => {
   const { t } = useTranslation()
@@ -100,7 +101,7 @@ const Stats: React.FC = () => {
                 <div className="space-y-1">
                   {distributionEntries(stats.taskStatusDistribution).map(([status, count]) => (
                     <div key={status} className="flex items-center justify-between text-xs">
-                      <span className="text-text-muted">{status}</span>
+                      <span className="text-text-muted">{statusLabel('task', status, t)}</span>
                       <span className="font-medium text-text-primary">{count}</span>
                     </div>
                   ))}
@@ -113,11 +114,11 @@ const Stats: React.FC = () => {
               <div className="text-3xl font-bold mb-2">{formatRate(stats.taskSuccessRate)}</div>
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-text-muted">completed</span>
+                  <span className="text-text-muted">{statusLabel('task', 'complete', t)}</span>
                   <span className="font-medium text-success">{stats.taskCompletedCount}</span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-text-muted">error</span>
+                  <span className="text-text-muted">{statusLabel('task', 'error', t)}</span>
                   <span className="font-medium text-danger">{stats.taskErrorCount}</span>
                 </div>
               </div>

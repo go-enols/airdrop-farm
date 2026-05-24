@@ -15,9 +15,10 @@ import {
   Download,
   Globe
 } from 'lucide-react'
-import { taskApi, scriptApi, taskTemplateApi, templateApi } from '../api'
-import type { Task, TaskLog, InstalledScript, RemoteScript } from '../types'
+import { taskApi, scriptApi, taskTemplateApi, templateApi, marketplaceApi, accountApi } from '../api'
+import type { Task, TaskLog, InstalledScript, RemoteScript, Account } from '../types'
 import type { FieldMeta } from '../../../shared/schemas/task-params'
+import { jsonSchemaToFieldMeta } from '../../../shared/schemas/task-params'
 import { usePaginatedList } from '../hooks'
 import { SearchInput, Pagination, Modal, DynamicForm } from '../components/common'
 
@@ -61,6 +62,12 @@ const Tasks: React.FC = () => {
   const [downloadingScriptId, setDownloadingScriptId] = useState<string | null>(null)
   const [logFilter, setLogFilter] = useState<string>('all')
   const logEndRef = useRef<HTMLDivElement | null>(null)
+  const [requiredTemplates, setRequiredTemplates] = useState<string[]>([])
+  const [availableAccounts, setAvailableAccounts] = useState<Account[]>([])
+  const [selectedAccountIds, setSelectedAccountIds] = useState<Set<string>>(new Set())
+  const [accountPoolFilter, setAccountPoolFilter] = useState<string>('')
+  const [batchMode, setBatchMode] = useState(false)
+  const [availablePools, setAvailablePools] = useState<string[]>([])
 
   useEffect(() => {
     const runningTasks = items.filter((t) => t.status === 'running')
@@ -169,6 +176,10 @@ const Tasks: React.FC = () => {
   }, [logs, expandedId])
 
   const showError = (msg: string): void => setErrorMsg(msg)
+  const showSuccess = (msg: string): void => {
+    setErrorMsg(msg)
+    setTimeout(() => setErrorMsg(null), 3000)
+  }
 
   const handleAction = async (
     action: 'start' | 'stop' | 'pause' | 'resume' | 'delete',
@@ -222,10 +233,8 @@ const Tasks: React.FC = () => {
   const loadRemoteScripts = async (): Promise<void> => {
     setLoadingScripts(true)
     try {
-      const response = await fetch('http://127.0.0.1:3400/api/scripts')
-      if (!response.ok) throw new Error('Failed to fetch scripts')
-      const data = await response.json()
-      setRemoteScripts(data.data?.items || [])
+      const result = await marketplaceApi.listScripts()
+      setRemoteScripts(result.items || [])
     } catch (e: unknown) {
       showError(e instanceof Error ? e.message : String(e))
     } finally {
@@ -252,7 +261,9 @@ const Tasks: React.FC = () => {
       setNewScriptFolder(script.installPath)
       try {
         const schema = script.schema as Record<string, unknown>
-        if (schema.fields && Array.isArray(schema.fields)) {
+        if (schema.type === 'object' && schema.properties) {
+          setFormFields(jsonSchemaToFieldMeta(schema))
+        } else if (schema.fields && Array.isArray(schema.fields)) {
           setFormFields(schema.fields as FieldMeta[])
         } else {
           setFormFields([])
@@ -261,11 +272,43 @@ const Tasks: React.FC = () => {
         setFormFields([])
       }
       setFormValues({})
+      loadAccountsForScript(script)
     } else {
       setSelectedScript(null)
       setFormFields([])
       setFormValues({})
       setNewScriptFolder('')
+      setRequiredTemplates([])
+      setAvailableAccounts([])
+      setAvailablePools([])
+      setSelectedAccountIds(new Set())
+      setBatchMode(false)
+    }
+  }
+
+  const loadAccountsForScript = async (script: InstalledScript): Promise<void> => {
+    try {
+      const tmpl = await taskTemplateApi.get(script.id)
+      const manifest = tmpl?.manifest as Record<string, unknown> | undefined
+      const requiredIds = manifest?.requiredAccountTemplateIds as string[] | undefined
+      if (requiredIds && requiredIds.length > 0) {
+        setRequiredTemplates(requiredIds)
+        const res = await accountApi.list(1, 9999)
+        const accounts = (res.items || []).filter((a) => requiredIds.includes(a.templateId))
+        setAvailableAccounts(accounts)
+        const pools = [...new Set(accounts.map((a) => a.pool).filter(Boolean))]
+        setAvailablePools(pools)
+      } else {
+        setRequiredTemplates([])
+        setAvailableAccounts([])
+        setAvailablePools([])
+        setSelectedAccountIds(new Set())
+        setBatchMode(false)
+      }
+    } catch {
+      setRequiredTemplates([])
+      setAvailableAccounts([])
+      setAvailablePools([])
     }
   }
 
@@ -276,7 +319,7 @@ const Tasks: React.FC = () => {
 
   const handleCreate = async (): Promise<void> => {
     if (!selectedScript) {
-      showError('请选择脚本')
+      showError(t('tasks.selectScriptError'))
       return
     }
     // 校验 requiredAccountTemplateIds
@@ -290,7 +333,7 @@ const Tasks: React.FC = () => {
           const installedIds = new Set(installed.items.map((t) => t.id))
           const missing = requiredIds.filter((id) => !installedIds.has(id))
           if (missing.length > 0) {
-            showError(`缺少必需的账户模板 (${missing.join(', ')})，请先在「模板市场」下载对应模板`)
+            showError(t('tasks.missingTemplates', { ids: missing.join(', ') }))
             return
           }
         }
@@ -299,20 +342,113 @@ const Tasks: React.FC = () => {
       // 校验失败时允许继续
     }
     const config = formFields.length > 0 ? formValues : {}
+
+    if (batchMode && selectedAccountIds.size > 0 && requiredTemplates.length > 0) {
+      const accounts = availableAccounts.filter((a) => selectedAccountIds.has(a.id))
+      await createBatchTasks(accounts, config)
+    } else {
+      await createSingleTask(config)
+    }
+  }
+
+  const createSingleTask = async (config: Record<string, unknown>): Promise<void> => {
+    const finalConfig = injectAccountData(config)
     setCreating(true)
     try {
-      await taskApi.create({ scriptFolder: newScriptFolder, config })
+      await taskApi.create({ scriptFolder: newScriptFolder, config: finalConfig })
       setShowCreate(false)
-      setNewScriptFolder('')
-      setSelectedScript(null)
-      setFormFields([])
-      setFormValues({})
+      resetCreateForm()
       refresh()
     } catch (e: unknown) {
       showError(e instanceof Error ? e.message : String(e))
     } finally {
       setCreating(false)
     }
+  }
+
+  const createBatchTasks = async (accounts: Account[], config: Record<string, unknown>): Promise<void> => {
+    setCreating(true)
+    let created = 0
+    try {
+      for (const account of accounts) {
+        const accountConfig = {
+          ...config,
+          _account_id: account.id,
+          _account_data: account.data,
+          _account_pool: account.pool,
+        }
+        await taskApi.create({ scriptFolder: newScriptFolder, config: accountConfig })
+        created++
+      }
+      setShowCreate(false)
+      resetCreateForm()
+      refresh()
+      showSuccess(t('tasks.batchCreated', { count: created }))
+    } catch (e: unknown) {
+      if (created > 0) {
+        setShowCreate(false)
+        resetCreateForm()
+        refresh()
+        showSuccess(t('tasks.batchCreatedPartial', { created, total: accounts.length }))
+      } else {
+        showError(e instanceof Error ? e.message : String(e))
+      }
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  const injectAccountData = (config: Record<string, unknown>): Record<string, unknown> => {
+    if (requiredTemplates.length === 0) return config
+    const selected = availableAccounts.filter((a) => selectedAccountIds.has(a.id))
+    if (selected.length === 0) return config
+    return {
+      ...config,
+      _accounts: selected.map((a) => ({
+        id: a.id,
+        templateId: a.templateId,
+        data: a.data,
+        pool: a.pool,
+        labels: a.labels,
+        notes: a.notes,
+      })),
+    }
+  }
+
+  const resetCreateForm = (): void => {
+    setNewScriptFolder('')
+    setSelectedScript(null)
+    setFormFields([])
+    setFormValues({})
+    setRequiredTemplates([])
+    setAvailableAccounts([])
+    setAvailablePools([])
+    setSelectedAccountIds(new Set())
+    setBatchMode(false)
+    setAccountPoolFilter('')
+  }
+
+  const toggleAccountSelect = (id: string): void => {
+    setSelectedAccountIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const selectAllAccounts = (): void => {
+    const filtered = getFilteredAccounts()
+    if (selectedAccountIds.size === filtered.length && filtered.length > 0) {
+      setSelectedAccountIds(new Set())
+    } else {
+      setSelectedAccountIds(new Set(filtered.map((a) => a.id)))
+    }
+  }
+
+  const getFilteredAccounts = (): Account[] => {
+    if (!accountPoolFilter) return availableAccounts
+    return availableAccounts.filter((a) => a.pool === accountPoolFilter)
   }
 
   const handleOpenEdit = (task: Task): void => {
@@ -658,11 +794,11 @@ const Tasks: React.FC = () => {
                               onChange={(e) => setLogFilter(e.target.value)}
                               className="px-1.5 py-0.5 rounded text-xs border border-border-light bg-bg-card"
                             >
-                              <option value="all">全部</option>
-                              <option value="info">Info</option>
-                              <option value="warn">Warn</option>
-                              <option value="error">Error</option>
-                              <option value="debug">Debug</option>
+                              <option value="all">{t('tasks.logFilter.all')}</option>
+                              <option value="info">{t('tasks.logFilter.info')}</option>
+                              <option value="warn">{t('tasks.logFilter.warn')}</option>
+                              <option value="error">{t('tasks.logFilter.error')}</option>
+                              <option value="debug">{t('tasks.logFilter.debug')}</option>
                             </select>
                             <button
                               onClick={() => handleClearLogs(task.id)}
@@ -724,14 +860,14 @@ const Tasks: React.FC = () => {
       <Modal open={showCreate} onClose={() => setShowCreate(false)} title={t('tasks.createTask')} maxWidth="max-w-lg">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">选择脚本</label>
+            <label className="block text-sm font-medium mb-1">{t('tasks.selectScript')}</label>
             <div className="flex gap-2">
               <select
                 value={selectedScript?.id ?? ''}
                 onChange={(e) => handleScriptSelect(e.target.value)}
                 className="flex-1 px-3 py-2 rounded-lg border border-border-light bg-bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               >
-                <option value="">请选择已安装的脚本...</option>
+                <option value="">{t('tasks.selectScriptPlaceholder')}</option>
                 {installedScripts.map((s) => (
                   <option key={s.id} value={s.id}>{s.name} (v{s.version})</option>
                 ))}
@@ -741,13 +877,77 @@ const Tasks: React.FC = () => {
                 className="flex items-center gap-1 px-3 py-2 rounded-lg border border-border-light text-sm hover:bg-bg-card-hover transition-colors"
               >
                 <Globe size={14} />
-                浏览
+                {t('tasks.browseScripts')}
               </button>
             </div>
           </div>
           {!selectedScript && (
             <div className="text-sm text-text-muted py-2">
-              请从上方下拉列表选择已安装的脚本，或点击"浏览"从脚本市场安装新脚本
+              {t('tasks.selectScriptHint')}
+            </div>
+          )}
+          {availableAccounts.length > 0 && (
+            <div className="border border-border-light rounded-lg p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-text-secondary">{t('tasks.selectAccounts')}</span>
+                <label className="flex items-center gap-1.5 text-xs text-text-muted cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={batchMode}
+                    onChange={(e) => setBatchMode(e.target.checked)}
+                    className="rounded"
+                  />
+                  {t('tasks.batchMode')}
+                </label>
+              </div>
+              {availablePools.length > 1 && (
+                <select
+                  value={accountPoolFilter}
+                  onChange={(e) => setAccountPoolFilter(e.target.value)}
+                  className="w-full px-2 py-1.5 text-xs rounded border border-border-light bg-bg-card focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="">{t('accounts.pool')}: {t('tasks.allPools')}</option>
+                  {availablePools.map((p) => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              )}
+              <div className="max-h-40 overflow-y-auto space-y-0.5">
+                <div className="flex items-center gap-2 px-1 py-0.5">
+                  <input
+                    type="checkbox"
+                    checked={selectedAccountIds.size === getFilteredAccounts().length && getFilteredAccounts().length > 0}
+                    onChange={selectAllAccounts}
+                    className="rounded"
+                  />
+                  <span className="text-xs text-text-muted">
+                    {t('common.selectAll')} ({getFilteredAccounts().length})
+                  </span>
+                </div>
+                {getFilteredAccounts().map((a) => (
+                  <label key={a.id} className="flex items-center gap-2 px-1 py-1 rounded hover:bg-bg-card-hover cursor-pointer text-xs">
+                    <input
+                      type="checkbox"
+                      checked={selectedAccountIds.has(a.id)}
+                      onChange={() => toggleAccountSelect(a.id)}
+                      className="rounded"
+                    />
+                    <span className="text-text-primary truncate">
+                      {typeof a.data === 'object' && a.data
+                        ? Object.values(a.data as Record<string, unknown>).slice(0, 2).join(' / ')
+                        : a.id.slice(0, 8)}
+                    </span>
+                    <span className="text-text-muted shrink-0">{a.pool}</span>
+                  </label>
+                ))}
+              </div>
+              {selectedAccountIds.size > 0 && (
+                <div className="text-xs text-text-muted">
+                  {batchMode
+                    ? t('tasks.willCreateNTasks', { count: selectedAccountIds.size })
+                    : t('tasks.selectedAccounts', { count: selectedAccountIds.size })}
+                </div>
+              )}
             </div>
           )}
           {formFields.length > 0 && (
@@ -816,13 +1016,13 @@ const Tasks: React.FC = () => {
       <Modal
         open={showScriptBrowser}
         onClose={() => setShowScriptBrowser(false)}
-        title="浏览远程脚本"
+        title={t('tasks.browseRemoteTitle')}
         maxWidth="max-w-2xl"
       >
         <div className="space-y-4">
           {remoteScripts.length === 0 ? (
             <div className="text-center py-8 text-text-muted text-sm">
-              {loadingScripts ? '加载中...' : '暂无可用脚本'}
+              {loadingScripts ? t('common.loading') : t('tasks.noRemoteScripts')}
             </div>
           ) : (
             <div className="space-y-2 max-h-96 overflow-y-auto">
@@ -842,12 +1042,12 @@ const Tasks: React.FC = () => {
                         <span className="text-xs font-mono text-text-muted">v{script.version}</span>
                         {isInstalled && !needsUpdate && (
                           <span className="text-xs px-1.5 py-0.5 rounded bg-success-light text-success">
-                            已安装
+                            {t('templates.installed')}
                           </span>
                         )}
                         {needsUpdate && (
                           <span className="text-xs px-1.5 py-0.5 rounded bg-warning-light text-warning">
-                            可更新
+                            {t('templates.updatable')}
                           </span>
                         )}
                       </div>
@@ -860,12 +1060,12 @@ const Tasks: React.FC = () => {
                     >
                       <Download size={13} />
                       {downloadingScriptId === script.id
-                        ? '安装中...'
+                        ? t('templates.installing')
                         : needsUpdate
-                          ? '更新'
+                          ? t('templates.update')
                           : isInstalled
-                            ? '重装'
-                            : '安装'}
+                            ? t('templates.reinstall')
+                            : t('templates.install')}
                     </button>
                   </div>
                 )

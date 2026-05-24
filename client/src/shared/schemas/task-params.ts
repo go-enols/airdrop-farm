@@ -25,6 +25,60 @@ export function extractFieldMeta(schema: z.ZodObject<z.ZodRawShape>): FieldMeta[
   return fields
 }
 
+/**
+ * Convert a JSON Schema object to FieldMeta[].
+ * Handles the manifest.json schema format: { type: "object", properties: {...}, required: [...] }
+ */
+export function jsonSchemaToFieldMeta(jsonSchema: Record<string, unknown>): FieldMeta[] {
+  const fields: FieldMeta[] = []
+  if (jsonSchema.type !== 'object' || !jsonSchema.properties) return fields
+
+  const properties = jsonSchema.properties as Record<string, Record<string, unknown>>
+  const requiredList = (jsonSchema.required as string[]) ?? []
+
+  for (const [name, propSchema] of Object.entries(properties)) {
+    const enumValues = propSchema.enum as string[] | undefined
+    const meta: FieldMeta = {
+      name,
+      type: mapJsonSchemaType(propSchema.type as string, enumValues),
+      label: (propSchema.title as string) || (propSchema.description as string) || name,
+      required: requiredList.includes(name),
+      description: (propSchema.description as string) || undefined,
+      defaultValue: propSchema.default
+    }
+
+    if (enumValues) {
+      meta.options = enumValues.map((v) => ({ label: v, value: v }))
+    }
+
+    if (meta.type === 'number') {
+      if (propSchema.minimum !== undefined) meta.min = propSchema.minimum as number
+      if (propSchema.maximum !== undefined) meta.max = propSchema.maximum as number
+    }
+
+    if (propSchema.pattern) {
+      meta.pattern = propSchema.pattern as string
+    }
+
+    fields.push(meta)
+  }
+
+  return fields
+}
+
+function mapJsonSchemaType(
+  jsonType: string,
+  enumValues: string[] | undefined
+): FieldMeta['type'] {
+  if (enumValues?.length) return 'select'
+  switch (jsonType) {
+    case 'boolean': return 'boolean'
+    case 'integer':
+    case 'number': return 'number'
+    default: return 'string'
+  }
+}
+
 function parseZodField(name: string, schema: z.ZodTypeAny): FieldMeta {
   const meta: FieldMeta = {
     name,

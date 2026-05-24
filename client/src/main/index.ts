@@ -9,6 +9,7 @@ import { StoreService } from './services/store'
 import { WalletService } from './services/wallet'
 import { TaskService } from './services/task'
 import { ScriptFetcher } from './services/script-fetcher'
+import { SchedulerService } from './services/scheduler'
 import { HttpApiServer } from './httpapi/server'
 import { Logger, createLogger } from './utils/logger'
 
@@ -16,6 +17,7 @@ let store: StoreService
 let httpServer: HttpApiServer
 let taskService: TaskService
 let scriptFetcher: ScriptFetcher
+let schedulerService: SchedulerService
 let marketplaceServerProcess: ChildProcess | null = null
 
 // Auto-updater configuration
@@ -65,6 +67,7 @@ app.commandLine.appendSwitch(
 )
 
 function createWindow(httpPort: number): void {
+  const isDarwin = process.platform === 'darwin'
   const mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -72,6 +75,9 @@ function createWindow(httpPort: number): void {
     minHeight: 680,
     show: true,
     autoHideMenuBar: true,
+    ...(isDarwin
+      ? { titleBarStyle: 'hiddenInset' as const, trafficLightPosition: { x: 12, y: 12 } }
+      : { frame: false }),
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -84,6 +90,14 @@ function createWindow(httpPort: number): void {
     shell.openExternal(details.url)
     return { action: 'deny' }
   })
+
+  const broadcastMaximizedChanged = (maximized: boolean): void => {
+    for (const win of BrowserWindow.getAllWindows()) {
+      win.webContents.send('window:maximizedChanged', maximized)
+    }
+  }
+  mainWindow.on('maximize', () => broadcastMaximizedChanged(true))
+  mainWindow.on('unmaximize', () => broadcastMaximizedChanged(false))
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
@@ -103,10 +117,12 @@ function startMarketplaceServer(): void {
     ? ['tsx', 'src/index.ts']
     : ['dist/index.js']
 
+  const apiKey = store.getSetting('marketplace_api_key') || 'airdrop-farm-dev-key'
+
   try {
     marketplaceServerProcess = spawn(cmd, args, {
       cwd: serverDir,
-      env: { ...process.env, MARKETPLACE_API_KEY: 'airdrop-farm-dev-key', PORT: '3400' },
+      env: { ...process.env, MARKETPLACE_API_KEY: apiKey, PORT: '3400' },
       stdio: 'pipe',
       shell: true
     })
@@ -145,6 +161,8 @@ app.whenReady().then(async () => {
     }
   })
   scriptFetcher = new ScriptFetcher(store)
+  schedulerService = new SchedulerService(store, taskService)
+  schedulerService.start()
 
   registerIpcHandlers({
     store,
@@ -192,6 +210,7 @@ app.on('before-quit', (e) => {
   isQuitting = true
   Logger.shutdown()
   e.preventDefault()
+  schedulerService.stop()
   taskService.cleanup()
   // Kill marketplace server if running
   if (marketplaceServerProcess) {

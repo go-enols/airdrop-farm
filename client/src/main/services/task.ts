@@ -1,6 +1,6 @@
-import { spawn, ChildProcess } from 'child_process'
+import { spawn, ChildProcess, execSync } from 'child_process'
 import { join } from 'path'
-import { existsSync, readFileSync } from 'fs'
+import { existsSync, readFileSync, statSync } from 'fs'
 import { app } from 'electron'
 import { createLogger } from '../utils/logger'
 import { LogBuffer } from '../utils/log-buffer'
@@ -44,6 +44,26 @@ export class TaskService {
     this.scriptsDir = join(app.getPath('userData'), 'scripts')
   }
 
+  private installDependencies(cwd: string, running: RunningTask): void {
+    const pkgPath = join(cwd, 'package.json')
+    if (!existsSync(pkgPath)) return
+    const nmPath = join(cwd, 'node_modules')
+    if (existsSync(nmPath)) return
+
+    running.logBuffer.push('info', '检测到 package.json，正在安装依赖...')
+    try {
+      execSync('npm install --production --no-audit --no-fund', {
+        cwd,
+        timeout: 120000,
+        stdio: 'pipe'
+      })
+      running.logBuffer.push('info', '依赖安装完成')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      running.logBuffer.push('warn', `依赖安装失败: ${msg}`)
+    }
+  }
+
   async startTask(id: string): Promise<void> {
     const task = this.store.taskRepo.getTask(id)
     if (!task) throw new Error('Task not found')
@@ -78,7 +98,22 @@ export class TaskService {
       let entryPoint = scriptPath
       let cwd = scriptPath
 
-      if (!existsSync(scriptPath)) {
+      const isDirectory = existsSync(scriptPath) && statSync(scriptPath).isDirectory()
+
+      if (isDirectory) {
+        cwd = scriptPath
+        const metaPath = join(scriptPath, 'meta.json')
+        if (existsSync(metaPath)) {
+          const meta = JSON.parse(readFileSync(metaPath, 'utf-8'))
+          if (meta.entryPoint) {
+            entryPoint = join(scriptPath, meta.entryPoint)
+          } else {
+            entryPoint = join(scriptPath, 'index.js')
+          }
+        } else {
+          entryPoint = join(scriptPath, 'index.js')
+        }
+      } else if (!existsSync(scriptPath)) {
         const localPath = join(this.scriptsDir, scriptPath)
         if (existsSync(localPath)) {
           entryPoint = localPath
@@ -91,6 +126,8 @@ export class TaskService {
         }
       }
 
+      this.installDependencies(cwd, running)
+
       const env: Record<string, string> = { ...process.env as Record<string, string> }
       for (const [key, value] of Object.entries(task.config)) {
         if (value !== undefined && value !== null) {
@@ -102,6 +139,12 @@ export class TaskService {
 
       let command = entryPoint
       const args: string[] = []
+
+      if (entryPoint.endsWith('.js')) {
+        command = 'node'
+        args.push(entryPoint)
+      }
+
       if (task.config.args && Array.isArray(task.config.args)) {
         args.push(...(task.config.args as string[]))
       } else if (task.config._command) {

@@ -9,10 +9,10 @@ import { useDebounce } from '../hooks'
 const INITIAL_LIMIT = 50
 
 const levelColor: Record<string, string> = {
-  debug: 'bg-gray-100 text-gray-600 dark:bg-bg-tertiary dark:text-gray-400',
-  info: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
-  warn: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300',
-  error: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
+  debug: 'bg-bg-tertiary text-text-secondary',
+  info: 'bg-primary-light text-primary',
+  warn: 'bg-warning-light text-warning',
+  error: 'bg-danger-light text-danger'
 }
 
 const LEVELS = ['debug', 'info', 'warn', 'error'] as const
@@ -132,9 +132,9 @@ const Logs: React.FC = () => {
   return (
     <div className="space-y-4">
       {errorMsg && (
-        <div className="px-4 py-2 text-sm text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/30 rounded-lg flex items-center justify-between">
+        <div className="px-4 py-2 text-sm text-danger bg-danger-light rounded-lg flex items-center justify-between">
           <span>{errorMsg}</span>
-          <button onClick={() => setErrorMsg('')} className="text-red-500 hover:text-red-700">
+          <button onClick={() => setErrorMsg('')} className="text-danger hover:text-danger">
             &times;
           </button>
         </div>
@@ -174,14 +174,14 @@ const Logs: React.FC = () => {
             ))}
           </select>
           <div className="flex items-center gap-1">
-            <Calendar size={14} className="text-gray-400" />
+            <Calendar size={14} className="text-text-muted" />
             <input
               type="date"
               value={since}
               onChange={(e) => setSince(e.target.value)}
               className="px-2 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
             />
-            <span className="text-gray-400 text-xs">~</span>
+            <span className="text-text-muted text-xs">~</span>
             <input
               type="date"
               value={until}
@@ -192,21 +192,21 @@ const Logs: React.FC = () => {
           <button
             onClick={handleExportLogs}
             disabled={!data?.items.length}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-40"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-tertiary transition-colors disabled:opacity-40"
           >
             <Download size={16} />
             {t('logs.exportLogs')}
           </button>
           <button
             onClick={() => setShowClearConfirm(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-danger/30 text-danger rounded-lg hover:bg-danger-light transition-colors"
           >
             <Trash2 size={16} />
             {t('logs.clearLogs')}
           </button>
           <button
             onClick={handleRefresh}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-tertiary transition-colors"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
             {t('common.refresh')}
@@ -224,24 +224,24 @@ const Logs: React.FC = () => {
             <table className="w-full text-sm">
               <thead className="bg-bg-tertiary">
                 <tr>
-                  <th className="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-400 w-44">
+                  <th className="px-4 py-2.5 text-left font-medium text-text-secondary w-44">
                     {t('logs.timestamp')}
                   </th>
-                  <th className="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-400 w-20">
+                  <th className="px-4 py-2.5 text-left font-medium text-text-secondary w-20">
                     {t('logs.level')}
                   </th>
-                  <th className="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-400 w-32">
+                  <th className="px-4 py-2.5 text-left font-medium text-text-secondary w-32">
                     {t('common.type')}
                   </th>
-                  <th className="px-4 py-2.5 text-left font-medium text-gray-600 dark:text-gray-400">
+                  <th className="px-4 py-2.5 text-left font-medium text-text-secondary">
                     {t('logs.message')}
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="divide-y divide-border-light">
                 {data.items.map((log) => (
-                  <tr key={log.id} className="hover:bg-bg-tertiary dark:hover:bg-gray-800/50">
-                    <td className="px-4 py-2.5 font-mono text-xs text-text-muted dark:text-gray-400">
+                  <tr key={log.id} className="hover:bg-bg-tertiary">
+                    <td className="px-4 py-2.5 font-mono text-xs text-text-muted">
                       {formatTime(log.timestamp)}
                     </td>
                     <td className="px-4 py-2.5">
@@ -251,7 +251,7 @@ const Logs: React.FC = () => {
                         {t(levelLabelKey[log.level] || log.level)}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 text-xs text-gray-600 dark:text-gray-400">
+                    <td className="px-4 py-2.5 text-xs text-text-secondary">
                       {log.category}
                     </td>
                     <td className="px-4 py-2.5 text-xs font-mono break-all max-w-xl">
@@ -267,7 +267,7 @@ const Logs: React.FC = () => {
             <div className="flex justify-center">
               <button
                 onClick={loadMore}
-                className="px-4 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="px-4 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-tertiary transition-colors"
               >
                 {t('logs.loadMore')} ({data.items.length}/{data.total})
               </button>
@@ -278,28 +278,28 @@ const Logs: React.FC = () => {
 
       {showClearConfirm && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
           onClick={() => setShowClearConfirm(false)}
         >
           <div
-            className="dark:bg-bg-card dark:bg-bg-card rounded-xl shadow-xl w-full max-w-sm p-6"
+            className="bg-bg-card rounded-xl shadow-xl w-full max-w-sm p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-lg font-semibold mb-2">{t('logs.clearLogs')}</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+            <p className="text-sm text-text-secondary mb-6">
               {t('logs.confirmClearLogs')}
             </p>
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowClearConfirm(false)}
-                className="px-4 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="px-4 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-tertiary"
               >
                 {t('common.cancel')}
               </button>
               <button
                 onClick={handleClearLogs}
                 disabled={clearing}
-                className="px-4 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                className="px-4 py-1.5 text-sm bg-danger text-white rounded-lg hover:bg-danger-hover disabled:opacity-50"
               >
                 {clearing ? t('common.loading') : t('common.delete')}
               </button>
