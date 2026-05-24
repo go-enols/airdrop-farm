@@ -8,60 +8,77 @@
 
 | 目录 | 说明 | 独立运行 |
 |------|------|----------|
-| `./` (根) | Electron 客户端主体 | `npm run dev` |
-| `server/` | 脚本/模板市场服务端（新） | `cd server && npm run dev` |
-| `marketplace-server/` | 市场服务端（旧，计划废弃） | → 迁移到 `server/` |
+| `client/` | Electron 客户端主体 | `cd client && npm run dev` |
+| `server/` | 脚本/模板市场服务端 | `cd server && npm run dev` |
 
 ### 命令
 
-- 开发：`npm run dev`
-- 构建：`npm run build`（全平台 `build:win` / `build:mac` / `build:linux`）
-- Typecheck：`npx tsc --noEmit -p tsconfig.node.json`（主进程）、`tsconfig.web.json`（渲染进程）、`npm run typecheck`（全部）
-- Lint：`npm run lint`
-- 格式化：`npm run format`
+- 客户端开发：`cd client && npm run dev`
+- 客户端构建：`cd client && npm run build`（全平台 `build:win` / `build:mac` / `build:linux`）
+- 客户端 Typecheck：`cd client && npm run typecheck`
+- 客户端 Lint：`cd client && npm run lint`
+- 客户端格式化：`cd client && npm run format`
+- 服务端开发：`cd server && npm run dev`
+- 服务端构建：`cd server && npm run build`
 
 ---
 
 ## 1. 架构总览
 
 ```
-项目根/
-├── src/
-│   ├── main/                    # Electron 主进程 (Node.js)
-│   │   ├── index.ts             # App 入口、窗口管理、服务初始化
-│   │   ├── ipc/index.ts         # 统一 handler 注册表 (IPC + HTTP 共享)
-│   │   ├── httpapi/server.ts    # HTTP API 冗余传输层 (:34116)
-│   │   ├── services/            # 业务逻辑
-│   │   │   ├── store.ts         # SQLite 数据访问层
-│   │   │   ├── task.ts          # 任务执行引擎（子进程管理）
-│   │   │   ├── wallet.ts        # 钱包管理
-│   │   │   ├── script-fetcher.ts # 远程脚本下载器
-│   │   │   └── repositories/    # 数据仓库层
-│   │   └── utils/               # 日志等工具
-│   ├── preload/                  # Context bridge (electronAPI.invoke / .on)
-│   └── renderer/                # React 前端
-│       └── src/
-│           ├── api.ts           # 类型化 API 客户端
-│           ├── transport.ts     # 双传输层 (IPC → HTTP 自动降级)
-│           ├── components/      # 共享 UI 组件
-│           ├── pages/           # 路由页面
-│           ├── hooks/           # 自定义 hooks
-│           ├── i18n/            # 国际化 (zh-CN)
-│           ├── types/           # 前端类型定义
-│           └── utils/           # 前端工具函数
-├── shared/
-│   ├── types/index.ts           # 共享 TypeScript 接口
-│   └── schemas/                 # 共享数据校验 schema
-├── server/                      # Marketplace 服务端
+airdrop-farm/
+├── client/                    # Electron 客户端（原根目录全部内容）
+│   ├── package.json
+│   ├── electron.vite.config.ts
+│   ├── electron-builder.yml
+│   ├── tsconfig.{json,node.json,web.json,eslint.json}
+│   ├── vitest.config.ts
+│   ├── eslint.config.mjs
+│   ├── dev-app-update.yml
+│   ├── .editorconfig / .npmrc / .prettier*
 │   ├── src/
-│   │   ├── index.ts             # Express 入口，端口 3400
-│   │   ├── db/index.ts          # SQLite 数据库 + prepared statements
-│   │   ├── db/seed.ts           # 种子数据
-│   │   ├── routes/scripts.ts    # 脚本 CRUD + 上传/下载
-│   │   ├── routes/templates.ts  # 模板 CRUD
-│   │   └── middleware/auth.ts   # Bearer Token 认证
-│   └── data/uploads/            # 上传文件存储
-└── marketplace-server/          # 旧市场服务端 → 计划废弃
+│   │   ├── main/                    # Electron 主进程 (Node.js)
+│   │   │   ├── index.ts             # App 入口、窗口管理、服务初始化
+│   │   │   ├── ipc/index.ts         # 统一 handler 注册表 (IPC + HTTP 共享)
+│   │   │   ├── httpapi/server.ts    # HTTP API 冗余传输层 (:34116)
+│   │   │   ├── services/            # 业务逻辑
+│   │   │   │   ├── store.ts         # SQLite 数据访问层
+│   │   │   │   ├── task.ts          # 任务执行引擎（子进程管理）
+│   │   │   │   ├── wallet.ts        # 钱包管理
+│   │   │   │   ├── script-fetcher.ts # 远程脚本下载器
+│   │   │   │   └── repositories/    # 数据仓库层
+│   │   │   └── utils/               # 日志等工具
+│   │   ├── preload/                  # Context bridge (electronAPI.invoke / .on)
+│   │   └── renderer/                # React 前端
+│   │       └── src/
+│   │           ├── api.ts           # 类型化 API 客户端
+│   │           ├── transport.ts     # 双传输层 (IPC → HTTP 自动降级)
+│   │           ├── components/      # 共享 UI 组件
+│   │           ├── pages/           # 路由页面
+│   │           ├── hooks/           # 自定义 hooks
+│   │           ├── i18n/            # 国际化 (zh-CN)
+│   │           ├── types/           # 前端类型定义
+│   │           └── utils/           # 前端工具函数
+│   ├── shared/
+│   │   ├── types/index.ts           # 共享 TypeScript 接口
+│   │   └── schemas/                 # 共享数据校验 schema
+│   ├── resources/                   # 应用图标
+│   ├── build/                       # 构建资源 (entitlements, icons)
+│   └── tests/                       # 测试文件
+├── server/                      # Marketplace 服务端（唯一）
+│   ├── package.json
+│   ├── tsconfig.json
+│   ├── data/                        # 运行时数据（marketplace.db, uploads/）
+│   └── src/
+│       ├── index.ts             # Express 入口，端口 3400
+│       ├── db/index.ts          # SQLite 数据库 + prepared statements
+│       ├── db/seed.ts           # 种子数据
+│       ├── routes/scripts.ts    # 脚本 CRUD + 上传/下载
+│       ├── routes/templates.ts  # 模板 CRUD
+│       └── middleware/auth.ts   # Bearer Token 认证
+├── AGENTS.md / CLAUDE.md / README.md
+├── .github/workflows/             # PR check + Release
+└── .gitignore
 ```
 
 ---
@@ -92,8 +109,8 @@
 
 ### 2.3 新增 API 端点流程
 
-1. 在 `src/main/ipc/index.ts` 中 `register('channel:name', handler)`
-2. 在 `src/renderer/src/api.ts` 中添加类型化方法 `call<T>('channel:name', [args])`
+1. 在 `client/src/main/ipc/index.ts` 中 `register('channel:name', handler)`
+2. 在 `client/src/renderer/src/api.ts` 中添加类型化方法 `call<T>('channel:name', [args])`
 3. IPC 和 HTTP 自动支持新端点
 
 ---
@@ -597,7 +614,7 @@
 
 ## 8. 类型定义速查
 
-所有共享类型定义在 `src/shared/types/index.ts`。
+所有共享类型定义在 `client/src/shared/types/index.ts`。
 
 | 类型 | 说明 |
 |------|------|
@@ -665,5 +682,5 @@
 - [ ] 账号组下拉选择
 
 ### 服务端
-- [ ] 废弃 marketplace-server/，统一使用 server/
+- [x] 废弃 marketplace-server/，统一使用 server/
 - [ ] manifest.json 上传时自动校验格式

@@ -1,34 +1,52 @@
 # airdrop-farm
 
-An Electron application with React and TypeScript
+An Electron application with React and TypeScript, plus a marketplace server for scripts and account templates.
+
+## Project Layout
+
+- `client/` — Electron desktop app (main / preload / renderer)
+- `server/` — Marketplace server (Express + SQLite, port 3400)
 
 ## Recommended IDE Setup
 
 - [VSCode](https://code.visualstudio.com/) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) + [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
 
-## Project Setup
-
-### Install
+## Client (Electron app)
 
 ```bash
-$ npm install
+cd client
+npm install
+npm run dev          # development
+npm run typecheck    # tsc --noEmit for main + renderer
+npm run lint         # eslint --cache .
+npm test             # vitest run
+npm run build        # full build (typecheck + electron-vite)
+npm run build:win    # platform installers
+npm run build:mac
+npm run build:linux
 ```
 
-### Development
+## Server (marketplace)
 
 ```bash
-$ npm run dev
+cd server
+npm install
+npm run dev          # tsx watch, listens on http://localhost:3400
+npm run seed         # seed initial scripts/templates
+npm run build        # tsc to dist/
+npm start            # node dist/index.js
 ```
 
-### Build
+## End-to-end local development
+
+In two terminals:
 
 ```bash
-# For windows
-$ npm run build:win
+# terminal 1
+cd server && npm run dev
 
-# For macOS
-$ npm run build:mac
-
-# For Linux
-$ npm run build:linux
+# terminal 2
+cd client && npm run dev
 ```
+
+The client fetches scripts and templates from `http://127.0.0.1:3400` (configurable via Settings → `marketplace_server_url`).
