@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { settingApi, appApi, captchaKeyApi, proxyProviderApi, updateApi, getMarketplaceUrl, setMarketplaceUrl, getMarketplaceApiKey, setMarketplaceApiKey } from '../api'
+import { settingApi, appApi, captchaKeyApi, proxyProviderApi, updateApi, getMarketplaceUrl, setMarketplaceUrl, getMarketplaceApiKey, setMarketplaceApiKey, marketplaceApi } from '../api'
 import { logApi } from '../api'
 import type { AppInfo, CaptchaKey, ProxyProvider, ListResponse, UpdateInfo } from '../types'
-import { Save, Info, Plus, Trash2, Edit3, Key, Globe, Download, RefreshCw, Server } from 'lucide-react'
+import { Save, Info, Plus, Trash2, Edit3, Key, Globe, Download, RefreshCw, Server, LogIn, LogOut, User, Shield } from 'lucide-react'
 import ThemeToggle from '../components/ThemeToggle'
 import { Modal, ConfirmDialog } from '../components/common'
 
@@ -46,6 +46,16 @@ const Settings: React.FC = () => {
   const [marketplaceApiKey, setMarketplaceApiKeyLocal] = useState('')
   const [marketplaceApiKeySaving, setMarketplaceApiKeySaving] = useState(false)
   const [marketplaceApiKeyMsg, setMarketplaceApiKeyMsg] = useState('')
+
+  // Marketplace login
+  const [loginUsername, setLoginUsername] = useState('')
+  const [loginPassword, setLoginPassword] = useState('')
+  const [loginLoading, setLoginLoading] = useState(false)
+  const [loginMsg, setLoginMsg] = useState('')
+  const [loginMsgType, setLoginMsgType] = useState<'success' | 'error'>('success')
+  const [marketUser, setMarketUser] = useState<{
+    id: string; username: string; displayName: string; role: string
+  } | null>(null)
 
   // Auto-update state
   const [updateStatus, setUpdateStatus] = useState<
@@ -170,6 +180,7 @@ const Settings: React.FC = () => {
     fetchProxyProviders()
     loadMarketplaceUrl()
     loadMarketplaceApiKey()
+    marketplaceApi.getUser().then(u => { if (u) setMarketUser(u) }).catch(() => {})
   }, [fetchAppInfo, fetchLogLevel, fetchSettings, fetchCaptchaKeys, fetchProxyProviders])
 
   const loadMarketplaceUrl = async (): Promise<void> => {
@@ -214,6 +225,35 @@ const Settings: React.FC = () => {
     } finally {
       setMarketplaceSaving(false)
     }
+  }
+
+  const handleLogin = async (): Promise<void> => {
+    if (!loginUsername || !loginPassword) {
+      setLoginMsg('Username and password are required')
+      setLoginMsgType('error')
+      return
+    }
+    setLoginLoading(true)
+    setLoginMsg('')
+    try {
+      const result = await marketplaceApi.login(loginUsername, loginPassword)
+      setMarketUser(result.user)
+      setLoginMsg(`Logged in as ${result.user.displayName} (${result.user.role})`)
+      setLoginMsgType('success')
+      setLoginPassword('')
+    } catch (e) {
+      setLoginMsg(e instanceof Error ? e.message : 'Login failed')
+      setLoginMsgType('error')
+    } finally {
+      setLoginLoading(false)
+    }
+  }
+
+  const handleLogout = async (): Promise<void> => {
+    await marketplaceApi.logout()
+    setMarketUser(null)
+    setLoginMsg('Logged out')
+    setLoginMsgType('success')
   }
 
   const handleSaveLogLevel = async (): Promise<void> => {
@@ -727,6 +767,75 @@ const Settings: React.FC = () => {
             )}
           </div>
           <div className="text-xs text-text-muted">{t('settings.marketplaceApiKeyHint')}</div>
+
+          {/* Login form */}
+          <div className="pt-3 border-t border-border-light space-y-2">
+            <div className="flex items-center gap-2 text-sm font-medium text-text-primary">
+              <User size={16} />
+              Login to Marketplace
+            </div>
+            {marketUser ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-3 p-2 bg-bg-primary rounded-lg">
+                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold">
+                    {marketUser.displayName.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-text-primary">{marketUser.displayName}</div>
+                    <div className="text-xs text-text-muted">@{marketUser.username}</div>
+                  </div>
+                  <span className={`ml-auto px-2 py-0.5 rounded text-xs font-medium ${
+                    marketUser.role === 'admin' ? 'bg-purple-900/30 text-purple-300' :
+                    marketUser.role === 'developer' ? 'bg-blue-900/30 text-blue-300' :
+                    'bg-gray-700 text-gray-300'
+                  }`}>
+                    <Shield size={10} className="inline mr-1" />
+                    {marketUser.role}
+                  </span>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-danger hover:bg-danger/10 rounded-lg transition-colors"
+                >
+                  <LogOut size={14} />
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={loginUsername}
+                    onChange={e => setLoginUsername(e.target.value)}
+                    placeholder="Username"
+                    className="flex-1 px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <input
+                    type="password"
+                    value={loginPassword}
+                    onChange={e => setLoginPassword(e.target.value)}
+                    placeholder="Password"
+                    className="flex-1 px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+                    onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                  />
+                  <button
+                    onClick={handleLogin}
+                    disabled={loginLoading}
+                    className="flex items-center gap-1.5 px-4 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors whitespace-nowrap"
+                  >
+                    <LogIn size={14} />
+                    {loginLoading ? '...' : 'Login'}
+                  </button>
+                </div>
+                {loginMsg && (
+                  <div className={`text-xs ${loginMsgType === 'success' ? 'text-success' : 'text-danger'}`}>
+                    {loginMsg}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </section>
 

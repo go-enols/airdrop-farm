@@ -3,7 +3,11 @@ import { useTranslation } from 'react-i18next'
 import { schedulerApi, taskTemplateApi } from '../api'
 import type { ScheduledTask, TaskTemplate } from '../types'
 import type { FieldMeta } from '../../../shared/schemas/task-params'
-import { jsonSchemaToFieldMeta } from '../../../shared/schemas/task-params'
+import {
+  jsonSchemaToFieldMeta,
+  validateFormFields,
+  unflattenDotNotation
+} from '../../../shared/schemas/task-params'
 import { Plus, Trash2, Clock, Edit3, ToggleLeft, ToggleRight } from 'lucide-react'
 import { Modal, DynamicForm } from '../components/common'
 
@@ -15,7 +19,7 @@ const PRESETS: { label: string; cron: string }[] = [
   { label: 'scheduler.preset6hour', cron: '0 */6 * * *' },
   { label: 'scheduler.preset12hour', cron: '0 */12 * * *' },
   { label: 'scheduler.presetDaily', cron: '0 0 * * *' },
-  { label: 'scheduler.presetCustom', cron: '' },
+  { label: 'scheduler.presetCustom', cron: '' }
 ]
 
 function cronDescription(expr: string, t: (k: string) => string): string {
@@ -40,9 +44,12 @@ const Scheduler: React.FC = () => {
   const [taskTemplates, setTaskTemplates] = useState<TaskTemplate[]>([])
   const [formFields, setFormFields] = useState<FieldMeta[]>([])
   const [formValues, setFormValues] = useState<Record<string, unknown>>({})
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
-    taskTemplateApi.list(1, 999).then((res) => setTaskTemplates(res.items || []))
+    taskTemplateApi
+      .list(1, 999)
+      .then((res) => setTaskTemplates(res.items || []))
       .catch(() => setError(t('common.error')))
   }, [])
 
@@ -75,17 +82,29 @@ const Scheduler: React.FC = () => {
   const handleScriptChange = (id: string): void => {
     setForm((f) => ({ ...f, templateId: id }))
     setFormValues({})
-    if (!id) { setFormFields([]); return }
+    setFormErrors({})
+    if (!id) {
+      setFormFields([])
+      return
+    }
     const tt = taskTemplates.find((t) => t.id === id)
     if (tt?.manifest?.schema) {
       try {
         const schema = tt.manifest.schema as Record<string, unknown>
         if (schema.type === 'object' && schema.properties) {
-          setFormFields(jsonSchemaToFieldMeta(schema))
+          const fields = jsonSchemaToFieldMeta(schema)
+          setFormFields(fields)
+          const defaults: Record<string, unknown> = {}
+          for (const f of fields) {
+            if (f.defaultValue !== undefined) defaults[f.name] = f.defaultValue
+          }
+          setFormValues(defaults)
         } else {
           setFormFields([])
         }
-      } catch { setFormFields([]) }
+      } catch {
+        setFormFields([])
+      }
     } else {
       setFormFields([])
     }
@@ -94,12 +113,21 @@ const Scheduler: React.FC = () => {
   const handleCreate = async (): Promise<void> => {
     const cronExpr = getCronExpression(form.presetIdx, form.customCron)
     if (!form.templateId.trim() || !cronExpr) return
+    if (formFields.length > 0) {
+      const errors = validateFormFields(formFields, formValues)
+      if (Object.keys(errors).length > 0) {
+        setFormErrors(errors)
+        return
+      }
+    }
     setCreating(true)
     setError(null)
     try {
+      const rawConfig = formFields.length > 0 ? formValues : {}
+      const config = unflattenDotNotation(rawConfig)
       await schedulerApi.create({
         templateId: form.templateId.trim(),
-        config: formFields.length > 0 ? formValues : {},
+        config,
         cronExpression: cronExpr,
         enabled: true,
         lastRun: null,
@@ -109,6 +137,7 @@ const Scheduler: React.FC = () => {
       setForm({ templateId: '', presetIdx: 0, customCron: '' })
       setFormFields([])
       setFormValues({})
+      setFormErrors({})
       fetchData()
     } catch {
       setError(t('common.error'))
@@ -266,12 +295,8 @@ const Scheduler: React.FC = () => {
                       )}
                     </button>
                   </td>
-                  <td className="px-4 py-3 text-xs text-text-muted">
-                    {formatTime(item.lastRun)}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-text-muted">
-                    {formatTime(item.nextRun)}
-                  </td>
+                  <td className="px-4 py-3 text-xs text-text-muted">{formatTime(item.lastRun)}</td>
+                  <td className="px-4 py-3 text-xs text-text-muted">{formatTime(item.nextRun)}</td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-1">
                       <button
@@ -297,7 +322,13 @@ const Scheduler: React.FC = () => {
 
       <Modal
         open={showCreate}
-        onClose={() => { setShowCreate(false); setForm({ templateId: '', presetIdx: 0, customCron: '' }); setFormFields([]); setFormValues({}) }}
+        onClose={() => {
+          setShowCreate(false)
+          setForm({ templateId: '', presetIdx: 0, customCron: '' })
+          setFormFields([])
+          setFormValues({})
+          setFormErrors({})
+        }}
         title={t('scheduler.createSchedule')}
       >
         <div className="space-y-4">
@@ -356,7 +387,13 @@ const Scheduler: React.FC = () => {
               <label className="block text-sm font-medium text-text-secondary mb-2">
                 {t('tasks.config')}
               </label>
-              <DynamicForm fields={formFields} values={formValues} onChange={setFormValues} />
+              <DynamicForm
+                fields={formFields}
+                values={formValues}
+                onChange={setFormValues}
+                errors={formErrors}
+                onValidate={setFormErrors}
+              />
             </div>
           )}
         </div>
@@ -383,7 +420,11 @@ const Scheduler: React.FC = () => {
 
       <Modal
         open={!!editingItem}
-        onClose={() => { setEditingItem(null); setEditForm({ presetIdx: 0, customCron: '' }); setEditError(null) }}
+        onClose={() => {
+          setEditingItem(null)
+          setEditForm({ presetIdx: 0, customCron: '' })
+          setEditError(null)
+        }}
         title={t('scheduler.editSchedule')}
       >
         <div className="space-y-4">
@@ -446,9 +487,7 @@ const Scheduler: React.FC = () => {
           </button>
           <button
             onClick={handleEdit}
-            disabled={
-              saving || (isCustom(editForm.presetIdx) && !editForm.customCron.trim())
-            }
+            disabled={saving || (isCustom(editForm.presetIdx) && !editForm.customCron.trim())}
             className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {t('common.save')}
