@@ -1,9 +1,35 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { settingApi, appApi, captchaKeyApi, proxyProviderApi, updateApi, getMarketplaceUrl, setMarketplaceUrl, getMarketplaceApiKey, setMarketplaceApiKey, marketplaceApi } from '../api'
+import {
+  settingApi,
+  appApi,
+  captchaKeyApi,
+  proxyProviderApi,
+  updateApi,
+  getMarketplaceUrl,
+  setMarketplaceUrl,
+  getMarketplaceApiKey,
+  setMarketplaceApiKey,
+  marketplaceApi
+} from '../api'
 import { logApi } from '../api'
 import type { AppInfo, CaptchaKey, ProxyProvider, ListResponse, UpdateInfo } from '../types'
-import { Save, Info, Plus, Trash2, Edit3, Key, Globe, Download, RefreshCw, Server, LogIn, LogOut, User, Shield } from 'lucide-react'
+import {
+  Save,
+  Info,
+  Plus,
+  Trash2,
+  Edit3,
+  Key,
+  Globe,
+  Download,
+  RefreshCw,
+  Server,
+  LogIn,
+  LogOut,
+  User,
+  Shield
+} from 'lucide-react'
 import ThemeToggle from '../components/ThemeToggle'
 import { Modal, ConfirmDialog } from '../components/common'
 
@@ -54,7 +80,10 @@ const Settings: React.FC = () => {
   const [loginMsg, setLoginMsg] = useState('')
   const [loginMsgType, setLoginMsgType] = useState<'success' | 'error'>('success')
   const [marketUser, setMarketUser] = useState<{
-    id: string; username: string; displayName: string; role: string
+    id: string
+    username: string
+    displayName: string
+    role: string
   } | null>(null)
 
   // Auto-update state
@@ -180,7 +209,12 @@ const Settings: React.FC = () => {
     fetchProxyProviders()
     loadMarketplaceUrl()
     loadMarketplaceApiKey()
-    marketplaceApi.getUser().then(u => { if (u) setMarketUser(u) }).catch(() => {})
+    marketplaceApi
+      .getUser()
+      .then((u) => {
+        if (u) setMarketUser(u)
+      })
+      .catch(() => {})
   }, [fetchAppInfo, fetchLogLevel, fetchSettings, fetchCaptchaKeys, fetchProxyProviders])
 
   const loadMarketplaceUrl = async (): Promise<void> => {
@@ -268,8 +302,6 @@ const Settings: React.FC = () => {
       setLogLevelSaving(false)
     }
   }
-
-  
 
   const handleSaveSettings = async (): Promise<void> => {
     setSaving(true)
@@ -418,492 +450,496 @@ const Settings: React.FC = () => {
       <h1 className="text-2xl font-bold">{t('settings.title')}</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-      <section className="bg-bg-card rounded-xl border border-border-light shadow-sm p-5 flex flex-col gap-3 h-full xl:col-span-3 md:col-span-2">
-        <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary">
-          <Info size={18} />
-          {t('settings.about')}
-        </h2>
-        {appInfo ? (
-          <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
-            <div className="text-text-muted">Version</div>
-            <div className="font-mono text-text-primary">{appInfo.version}</div>
-            <div className="text-text-muted">Data Dir</div>
-            <div className="font-mono break-all text-text-primary">{appInfo.dataDir}</div>
-            <div className="text-text-muted">Database</div>
-            <div>
-              {appInfo.dbConnected ? (
-                <span className="text-success">Connected</span>
-              ) : (
-                <span className="text-danger">
-                  Disconnected{appInfo.dbError ? `: ${appInfo.dbError}` : ''}
-                </span>
-              )}
-            </div>
-            <div className="text-text-muted">{t('dashboard.stats.wallets')}</div>
-            <div className="text-text-primary">{appInfo.walletCount}</div>
-            <div className="text-text-muted">{t('dashboard.stats.accounts')}</div>
-            <div className="text-text-primary">{appInfo.accountCount}</div>
-            <div className="text-text-muted">{t('dashboard.stats.proxies')}</div>
-            <div className="text-text-primary">{appInfo.proxyCount}</div>
-            <div className="text-text-muted">{t('dashboard.stats.tasks')}</div>
-            <div className="text-text-primary">
-              {appInfo.taskCount} ({appInfo.runningTaskCount} running)
-            </div>
-          </div>
-        ) : (
-          <div className="text-sm text-text-muted">{t('common.loading')}</div>
-        )}
-      </section>
-
-      <section className="bg-bg-card rounded-xl border border-border-light shadow-sm p-5 flex flex-col gap-3 h-full xl:col-span-3 md:col-span-2">
-        <div className="flex items-center justify-between">
+        <section className="bg-bg-card rounded-xl border border-border-light shadow-sm p-5 flex flex-col gap-3 h-full xl:col-span-3 md:col-span-2">
           <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary">
-            <RefreshCw size={18} />
-            {t('settings.updates')}
+            <Info size={18} />
+            {t('settings.about')}
           </h2>
-          <button
-            onClick={checkForUpdates}
-            disabled={updateStatus === 'checking' || updateStatus === 'downloading'}
-            className="flex items-center gap-1.5 px-4 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors"
-          >
-            {updateStatus === 'checking' ? (
-              <>
-                <RefreshCw size={16} className="animate-spin" />
-                {t('updates.checking')}
-              </>
-            ) : (
-              <>
-                <RefreshCw size={16} />
-                {t('updates.checkNow')}
-              </>
-            )}
-          </button>
-        </div>
+          {appInfo ? (
+            <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+              <div className="text-text-muted">Version</div>
+              <div className="font-mono text-text-primary">{appInfo.version}</div>
+              <div className="text-text-muted">Data Dir</div>
+              <div className="font-mono break-all text-text-primary">{appInfo.dataDir}</div>
+              <div className="text-text-muted">Database</div>
+              <div>
+                {appInfo.dbConnected ? (
+                  <span className="text-success">Connected</span>
+                ) : (
+                  <span className="text-danger">
+                    Disconnected{appInfo.dbError ? `: ${appInfo.dbError}` : ''}
+                  </span>
+                )}
+              </div>
+              <div className="text-text-muted">{t('dashboard.stats.wallets')}</div>
+              <div className="text-text-primary">{appInfo.walletCount}</div>
+              <div className="text-text-muted">{t('dashboard.stats.accounts')}</div>
+              <div className="text-text-primary">{appInfo.accountCount}</div>
+              <div className="text-text-muted">{t('dashboard.stats.proxies')}</div>
+              <div className="text-text-primary">{appInfo.proxyCount}</div>
+              <div className="text-text-muted">{t('dashboard.stats.tasks')}</div>
+              <div className="text-text-primary">
+                {appInfo.taskCount} ({appInfo.runningTaskCount} running)
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm text-text-muted">{t('common.loading')}</div>
+          )}
+        </section>
 
-        {updateError && (
-          <div className="px-4 py-2 text-sm text-danger bg-danger-light rounded-lg">
-            {updateError}
-          </div>
-        )}
-
-        {(updateStatus === 'available' || updateStatus === 'downloading') && updateInfo && (
-          <div className="px-4 py-3 bg-primary-light border border-primary/30 rounded-lg space-y-2">
-            <p className="text-sm text-primary">
-              <strong>{t('updates.updateAvailable')}</strong>
-            </p>
-            <p className="text-sm text-primary">
-              {t('updates.version')}: <span className="font-mono">{updateInfo.version}</span>
-            </p>
-            <p className="text-sm text-primary">
-              {t('updates.releaseDate')}:{' '}
-              {updateInfo.pub_date ? new Date(updateInfo.pub_date).toLocaleDateString() : '-'}
-            </p>
+        <section className="bg-bg-card rounded-xl border border-border-light shadow-sm p-5 flex flex-col gap-3 h-full xl:col-span-3 md:col-span-2">
+          <div className="flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary">
+              <RefreshCw size={18} />
+              {t('settings.updates')}
+            </h2>
             <button
-              onClick={downloadUpdate}
-              disabled={(updateStatus as string) === 'downloading'}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors mt-2"
+              onClick={checkForUpdates}
+              disabled={updateStatus === 'checking' || updateStatus === 'downloading'}
+              className="flex items-center gap-1.5 px-4 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors"
             >
-              {(updateStatus as string) === 'downloading' ? (
+              {updateStatus === 'checking' ? (
                 <>
                   <RefreshCw size={16} className="animate-spin" />
-                  {t('updates.downloading')}
+                  {t('updates.checking')}
                 </>
               ) : (
                 <>
-                  <Download size={16} />
-                  {t('updates.downloadUpdate')}
+                  <RefreshCw size={16} />
+                  {t('updates.checkNow')}
                 </>
               )}
             </button>
-            {(updateStatus as string) === 'downloading' && downloadProgress.total > 0 && (
-              <div className="w-full bg-bg-tertiary rounded-full h-2.5 mt-2">
-                <div
-                  className="bg-primary h-2.5 rounded-full transition-width duration-300"
-                  style={{ width: `${downloadProgress.percent}%` }}
-                />
-                <p className="text-xs text-primary mt-1">
-                  {Math.round(downloadProgress.percent)}% -{' '}
-                  {(downloadProgress.transferred / 1024 / 1024).toFixed(1)}MB /{' '}
-                  {(downloadProgress.total / 1024 / 1024).toFixed(1)}MB
-                </p>
-              </div>
-            )}
           </div>
-        )}
 
-        {updateStatus === 'downloaded' && (
-          <div className="px-4 py-3 bg-success-light border border-success/30 rounded-lg">
-            <p className="text-sm text-success mb-2">
-              {t('updates.updateReady')}
-            </p>
-            <button
-              onClick={installUpdate}
-              className="px-3 py-1.5 text-sm bg-success text-white rounded-lg hover:bg-success-hover transition-colors"
+          {updateError && (
+            <div className="px-4 py-2 text-sm text-danger bg-danger-light rounded-lg">
+              {updateError}
+            </div>
+          )}
+
+          {(updateStatus === 'available' || updateStatus === 'downloading') && updateInfo && (
+            <div className="px-4 py-3 bg-primary-light border border-primary/30 rounded-lg space-y-2">
+              <p className="text-sm text-primary">
+                <strong>{t('updates.updateAvailable')}</strong>
+              </p>
+              <p className="text-sm text-primary">
+                {t('updates.version')}: <span className="font-mono">{updateInfo.version}</span>
+              </p>
+              <p className="text-sm text-primary">
+                {t('updates.releaseDate')}:{' '}
+                {updateInfo.pub_date ? new Date(updateInfo.pub_date).toLocaleDateString() : '-'}
+              </p>
+              <button
+                onClick={downloadUpdate}
+                disabled={(updateStatus as string) === 'downloading'}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors mt-2"
+              >
+                {(updateStatus as string) === 'downloading' ? (
+                  <>
+                    <RefreshCw size={16} className="animate-spin" />
+                    {t('updates.downloading')}
+                  </>
+                ) : (
+                  <>
+                    <Download size={16} />
+                    {t('updates.downloadUpdate')}
+                  </>
+                )}
+              </button>
+              {(updateStatus as string) === 'downloading' && downloadProgress.total > 0 && (
+                <div className="w-full bg-bg-tertiary rounded-full h-2.5 mt-2">
+                  <div
+                    className="bg-primary h-2.5 rounded-full transition-width duration-300"
+                    style={{ width: `${downloadProgress.percent}%` }}
+                  />
+                  <p className="text-xs text-primary mt-1">
+                    {Math.round(downloadProgress.percent)}% -{' '}
+                    {(downloadProgress.transferred / 1024 / 1024).toFixed(1)}MB /{' '}
+                    {(downloadProgress.total / 1024 / 1024).toFixed(1)}MB
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {updateStatus === 'downloaded' && (
+            <div className="px-4 py-3 bg-success-light border border-success/30 rounded-lg">
+              <p className="text-sm text-success mb-2">{t('updates.updateReady')}</p>
+              <button
+                onClick={installUpdate}
+                className="px-3 py-1.5 text-sm bg-success text-white rounded-lg hover:bg-success-hover transition-colors"
+              >
+                {t('updates.restartInstall')}
+              </button>
+            </div>
+          )}
+
+          {updateStatus === 'not-available' && (
+            <p className="text-sm text-text-muted">{t('updates.noUpdates')}</p>
+          )}
+        </section>
+
+        {/* 外观 / Theme */}
+        <section className="bg-bg-card rounded-xl border border-border-light shadow-sm p-5 flex flex-col gap-3 h-full">
+          <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary">
+            <RefreshCw size={18} />
+            {t('settings.theme')}
+          </h2>
+          <div className="flex-1 flex items-center">
+            <ThemeToggle />
+          </div>
+        </section>
+
+        {/* 日志级别 / Log Level */}
+        <section className="bg-bg-card rounded-xl border border-border-light shadow-sm p-5 flex flex-col gap-3 h-full">
+          <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary">
+            <Save size={18} />
+            {t('logs.level')}
+          </h2>
+          <div className="flex items-center gap-3 flex-wrap">
+            <select
+              value={logLevel}
+              onChange={(e) => setLogLevel(e.target.value)}
+              className="px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
             >
-              {t('updates.restartInstall')}
-            </button>
-          </div>
-        )}
-
-        {updateStatus === 'not-available' && (
-          <p className="text-sm text-text-muted">{t('updates.noUpdates')}</p>
-        )}
-      </section>
-
-      {/* 外观 / Theme */}
-      <section className="bg-bg-card rounded-xl border border-border-light shadow-sm p-5 flex flex-col gap-3 h-full">
-        <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary">
-          <RefreshCw size={18} />
-          {t('settings.theme')}
-        </h2>
-        <div className="flex-1 flex items-center">
-          <ThemeToggle />
-        </div>
-      </section>
-
-      {/* 日志级别 / Log Level */}
-      <section className="bg-bg-card rounded-xl border border-border-light shadow-sm p-5 flex flex-col gap-3 h-full">
-        <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary">
-          <Save size={18} />
-          {t('logs.level')}
-        </h2>
-        <div className="flex items-center gap-3 flex-wrap">
-          <select
-            value={logLevel}
-            onChange={(e) => setLogLevel(e.target.value)}
-            className="px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            {LOG_LEVELS.map((l) => (
-              <option key={l} value={l}>
-                {l.toUpperCase()}
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={handleSaveLogLevel}
-            disabled={logLevelSaving}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors"
-          >
-            <Save size={16} />
-            {logLevelSaving ? t('common.loading') : t('common.save')}
-          </button>
-          {logLevelMsg && <span className="text-sm text-success">{logLevelMsg}</span>}
-        </div>
-      </section>
-
-      {/* 验证码密钥 / Captcha Keys */}
-      <section className="bg-bg-card rounded-xl border border-border-light shadow-sm p-5 flex flex-col gap-3 h-full">
-        <div className="flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary">
-            <Key size={18} />
-            {t('settings.captchaKeys')}
-          </h2>
-          <button
-            onClick={openCaptchaKeyAdd}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
-          >
-            <Plus size={16} />
-            {t('settings.addCaptchaKey')}
-          </button>
-        </div>
-        <div className="flex-1 overflow-auto min-h-0">
-          {!(captchaKeys?.items || []).length ? (
-            <div className="text-sm text-text-muted">{t('settings.noCaptchaKeys')}</div>
-          ) : (
-            <div className="border border-border-light rounded-lg overflow-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-bg-tertiary">
-                  <tr>
-                    <th className="px-4 py-2.5 text-left font-medium text-text-muted">
-                      {t('settings.provider')}
-                    </th>
-                    <th className="px-4 py-2.5 text-left font-medium text-text-muted">
-                      {t('settings.apiKey')}
-                    </th>
-                    <th className="px-4 py-2.5 text-left font-medium text-text-muted">
-                      {t('settings.balance')}
-                    </th>
-                    <th className="px-4 py-2.5 text-right font-medium text-text-muted">
-                      {t('common.actions')}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border-light/50">
-                  {(captchaKeys?.items || []).map((item) => (
-                    <tr key={item.id} className="hover:bg-bg-card-hover transition-colors">
-                      <td className="px-4 py-2.5">{item.provider}</td>
-                      <td className="px-4 py-2.5 font-mono text-xs">{item.apiKey.slice(0, 8)}...</td>
-                      <td className="px-4 py-2.5">{item.balance}</td>
-                      <td className="px-4 py-2.5 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => openCaptchaKeyEdit(item)}
-                            className="p-1 text-text-muted hover:text-primary hover:bg-primary-light rounded transition-colors"
-                          >
-                            <Edit3 size={16} />
-                          </button>
-                          <button
-                            onClick={() => setDeleteCaptchaKeyId(item.id)}
-                            className="p-1 text-danger hover:bg-danger-light rounded transition-colors"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* 代理提供商 / Proxy Providers */}
-      <section className="bg-bg-card rounded-xl border border-border-light shadow-sm p-5 flex flex-col gap-3 h-full">
-        <div className="flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary">
-            <Globe size={18} />
-            {t('settings.proxyProviders')}
-          </h2>
-        </div>
-        <p className="text-xs text-text-muted">
-          {t('settings.proxyProvidersReadonly')}
-        </p>
-        <div className="flex-1 overflow-auto min-h-0">
-          {!(proxyProviders?.items || []).length ? (
-            <div className="text-sm text-text-muted">{t('settings.noProxyProviders')}</div>
-          ) : (
-            <div className="border border-border-light rounded-lg overflow-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-bg-tertiary">
-                  <tr>
-                    <th className="px-4 py-2.5 text-left font-medium text-text-muted">
-                      {t('settings.providerName')}
-                    </th>
-                    <th className="px-4 py-2.5 text-left font-medium text-text-muted">
-                      {t('settings.apiUrl')}
-                    </th>
-                    <th className="px-4 py-2.5 text-left font-medium text-text-muted">
-                      {t('proxies.protocol')}
-                    </th>
-                    <th className="px-4 py-2.5 text-left font-medium text-text-muted">
-                      {t('settings.refreshInterval')}
-                    </th>
-                    <th className="px-4 py-2.5 text-right font-medium text-text-muted">
-                      {t('common.actions')}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border-light/50">
-                  {(proxyProviders?.items || []).map((item) => (
-                    <tr key={item.id} className="hover:bg-bg-card-hover transition-colors">
-                      <td className="px-4 py-2.5">{item.name}</td>
-                      <td className="px-4 py-2.5 font-mono text-xs">{item.apiUrl}</td>
-                      <td className="px-4 py-2.5 text-xs uppercase">{item.protocol}</td>
-                      <td className="px-4 py-2.5">{item.refreshInterval}s</td>
-                      <td className="px-4 py-2.5 text-right">
-                        <span className="text-xs text-text-muted">{t('common.readonly')}</span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* 脚本/模板市场 / Marketplace */}
-      <section className="bg-bg-card rounded-xl border border-border-light shadow-sm p-5 flex flex-col gap-3 h-full xl:col-span-2 md:col-span-2">
-        <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary">
-          <Server size={18} />
-          {t('settings.marketplaceSection')}
-        </h2>
-        <div className="flex items-center gap-3">
-          <input
-            type="text"
-            value={marketplaceUrl}
-            onChange={(e) => setMarketplaceUrlLocal(e.target.value)}
-            placeholder="http://localhost:3400"
-            className="flex-1 px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
-          />
-          <button
-            onClick={handleSaveMarketplaceUrl}
-            disabled={marketplaceSaving}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors"
-          >
-            <Save size={16} />
-            {marketplaceSaving ? t('common.loading') : t('common.save')}
-          </button>
-          {marketplaceMsg && <span className="text-sm text-success">{marketplaceMsg}</span>}
-        </div>
-        <div className="text-xs text-text-muted">
-          {t('settings.marketplaceUrlHint')}
-        </div>
-        <div className="pt-3 border-t border-border-light space-y-2">
-          <div className="flex items-center gap-2 text-sm font-medium text-text-primary">
-            <Key size={16} />
-            {t('settings.marketplaceApiKey')}
-          </div>
-          <div className="flex items-center gap-3">
-            <input
-              type="password"
-              value={marketplaceApiKey}
-              onChange={(e) => setMarketplaceApiKeyLocal(e.target.value)}
-              placeholder="airdrop-farm-dev-key"
-              className="flex-1 px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
-            />
+              {LOG_LEVELS.map((l) => (
+                <option key={l} value={l}>
+                  {l.toUpperCase()}
+                </option>
+              ))}
+            </select>
             <button
-              onClick={handleSaveMarketplaceApiKey}
-              disabled={marketplaceApiKeySaving}
+              onClick={handleSaveLogLevel}
+              disabled={logLevelSaving}
               className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors"
             >
               <Save size={16} />
-              {marketplaceApiKeySaving ? t('common.loading') : t('common.save')}
+              {logLevelSaving ? t('common.loading') : t('common.save')}
             </button>
-            {marketplaceApiKeyMsg && (
-              <span className="text-sm text-success">{marketplaceApiKeyMsg}</span>
-            )}
+            {logLevelMsg && <span className="text-sm text-success">{logLevelMsg}</span>}
           </div>
-          <div className="text-xs text-text-muted">{t('settings.marketplaceApiKeyHint')}</div>
+        </section>
 
-          {/* Login form */}
-          <div className="pt-3 border-t border-border-light space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium text-text-primary">
-              <User size={16} />
-              Login to Marketplace
-            </div>
-            {marketUser ? (
-              <div className="space-y-2">
-                <div className="flex items-center gap-3 p-2 bg-bg-primary rounded-lg">
-                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold">
-                    {marketUser.displayName.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-text-primary">{marketUser.displayName}</div>
-                    <div className="text-xs text-text-muted">@{marketUser.username}</div>
-                  </div>
-                  <span className={`ml-auto px-2 py-0.5 rounded text-xs font-medium ${
-                    marketUser.role === 'admin' ? 'bg-purple-900/30 text-purple-300' :
-                    marketUser.role === 'developer' ? 'bg-blue-900/30 text-blue-300' :
-                    'bg-gray-700 text-gray-300'
-                  }`}>
-                    <Shield size={10} className="inline mr-1" />
-                    {marketUser.role}
-                  </span>
-                </div>
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-danger hover:bg-danger/10 rounded-lg transition-colors"
-                >
-                  <LogOut size={14} />
-                  Logout
-                </button>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={loginUsername}
-                    onChange={e => setLoginUsername(e.target.value)}
-                    placeholder="Username"
-                    className="flex-1 px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                  <input
-                    type="password"
-                    value={loginPassword}
-                    onChange={e => setLoginPassword(e.target.value)}
-                    placeholder="Password"
-                    className="flex-1 px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
-                    onKeyDown={e => e.key === 'Enter' && handleLogin()}
-                  />
-                  <button
-                    onClick={handleLogin}
-                    disabled={loginLoading}
-                    className="flex items-center gap-1.5 px-4 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors whitespace-nowrap"
-                  >
-                    <LogIn size={14} />
-                    {loginLoading ? '...' : 'Login'}
-                  </button>
-                </div>
-                {loginMsg && (
-                  <div className={`text-xs ${loginMsgType === 'success' ? 'text-success' : 'text-danger'}`}>
-                    {loginMsg}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* 通用设置 / General Settings */}
-      <section className="bg-bg-card rounded-xl border border-border-light shadow-sm p-5 flex flex-col gap-3 h-full xl:col-span-3 md:col-span-2">
-        <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary">
-          <Key size={18} />
-          {t('settings.general')}
-        </h2>
-        <div className="flex-1 min-h-0">
-          {Object.keys(edited).length === 0 && Object.keys(settings).length === 0 ? (
-            <div className="text-sm text-text-muted">{t('common.noData')}</div>
-          ) : (
-            <div className="space-y-3">
-              {Object.entries(edited).map(([key, value]) => (
-                <div key={key} className="flex items-center gap-3">
-                  <label className="w-48 text-sm font-mono text-text-muted shrink-0">{key}</label>
-                  <input
-                    type="text"
-                    value={value}
-                    onChange={(e) => setEdited((prev) => ({ ...prev, [key]: e.target.value }))}
-                    className="flex-1 px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                  <button
-                    onClick={() => setDeleteSettingKey(key)}
-                    className="p-1 text-danger hover:bg-danger-light rounded shrink-0 transition-colors"
-                    title={t('common.deleteSetting')}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-          <div className="flex items-center gap-3 pt-2 border-t border-border-light mt-3">
-            <input
-              type="text"
-              value={newSettingKey}
-              onChange={(e) => setNewSettingKey(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleAddSetting()
-              }}
-              placeholder={t('common.newKey') + '...'}
-              className="w-48 px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
-            />
+        {/* 验证码密钥 / Captcha Keys */}
+        <section className="bg-bg-card rounded-xl border border-border-light shadow-sm p-5 flex flex-col gap-3 h-full">
+          <div className="flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary">
+              <Key size={18} />
+              {t('settings.captchaKeys')}
+            </h2>
             <button
-              onClick={handleAddSetting}
-              disabled={!newSettingKey.trim()}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-bg-tertiary border border-border-light rounded-lg hover:bg-bg-card-hover disabled:opacity-40 transition-colors"
+              onClick={openCaptchaKeyAdd}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
             >
               <Plus size={16} />
-              {t('common.addSetting')}
+              {t('settings.addCaptchaKey')}
             </button>
           </div>
-        </div>
-        {hasChanges && (
-          <div className="flex justify-end pt-2">
+          <div className="flex-1 overflow-auto min-h-0">
+            {!(captchaKeys?.items || []).length ? (
+              <div className="text-sm text-text-muted">{t('settings.noCaptchaKeys')}</div>
+            ) : (
+              <div className="border border-border-light rounded-lg overflow-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-bg-tertiary">
+                    <tr>
+                      <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                        {t('settings.provider')}
+                      </th>
+                      <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                        {t('settings.apiKey')}
+                      </th>
+                      <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                        {t('settings.balance')}
+                      </th>
+                      <th className="px-4 py-2.5 text-right font-medium text-text-muted">
+                        {t('common.actions')}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border-light/50">
+                    {(captchaKeys?.items || []).map((item) => (
+                      <tr key={item.id} className="hover:bg-bg-card-hover transition-colors">
+                        <td className="px-4 py-2.5">{item.provider}</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">
+                          {item.apiKey.slice(0, 8)}...
+                        </td>
+                        <td className="px-4 py-2.5">{item.balance}</td>
+                        <td className="px-4 py-2.5 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={() => openCaptchaKeyEdit(item)}
+                              className="p-1 text-text-muted hover:text-primary hover:bg-primary-light rounded transition-colors"
+                            >
+                              <Edit3 size={16} />
+                            </button>
+                            <button
+                              onClick={() => setDeleteCaptchaKeyId(item.id)}
+                              className="p-1 text-danger hover:bg-danger-light rounded transition-colors"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* 代理提供商 / Proxy Providers */}
+        <section className="bg-bg-card rounded-xl border border-border-light shadow-sm p-5 flex flex-col gap-3 h-full">
+          <div className="flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary">
+              <Globe size={18} />
+              {t('settings.proxyProviders')}
+            </h2>
+          </div>
+          <p className="text-xs text-text-muted">{t('settings.proxyProvidersReadonly')}</p>
+          <div className="flex-1 overflow-auto min-h-0">
+            {!(proxyProviders?.items || []).length ? (
+              <div className="text-sm text-text-muted">{t('settings.noProxyProviders')}</div>
+            ) : (
+              <div className="border border-border-light rounded-lg overflow-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-bg-tertiary">
+                    <tr>
+                      <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                        {t('settings.providerName')}
+                      </th>
+                      <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                        {t('settings.apiUrl')}
+                      </th>
+                      <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                        {t('proxies.protocol')}
+                      </th>
+                      <th className="px-4 py-2.5 text-left font-medium text-text-muted">
+                        {t('settings.refreshInterval')}
+                      </th>
+                      <th className="px-4 py-2.5 text-right font-medium text-text-muted">
+                        {t('common.actions')}
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border-light/50">
+                    {(proxyProviders?.items || []).map((item) => (
+                      <tr key={item.id} className="hover:bg-bg-card-hover transition-colors">
+                        <td className="px-4 py-2.5">{item.name}</td>
+                        <td className="px-4 py-2.5 font-mono text-xs">{item.apiUrl}</td>
+                        <td className="px-4 py-2.5 text-xs uppercase">{item.protocol}</td>
+                        <td className="px-4 py-2.5">{item.refreshInterval}s</td>
+                        <td className="px-4 py-2.5 text-right">
+                          <span className="text-xs text-text-muted">{t('common.readonly')}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* 脚本/模板市场 / Marketplace */}
+        <section className="bg-bg-card rounded-xl border border-border-light shadow-sm p-5 flex flex-col gap-3 h-full xl:col-span-2 md:col-span-2">
+          <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary">
+            <Server size={18} />
+            {t('settings.marketplaceSection')}
+          </h2>
+          <div className="flex items-center gap-3">
+            <input
+              type="text"
+              value={marketplaceUrl}
+              onChange={(e) => setMarketplaceUrlLocal(e.target.value)}
+              placeholder="http://localhost:3400"
+              className="flex-1 px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+            />
             <button
-              onClick={handleSaveSettings}
-              disabled={saving}
-              className="flex items-center gap-1.5 px-4 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors"
+              onClick={handleSaveMarketplaceUrl}
+              disabled={marketplaceSaving}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors"
             >
               <Save size={16} />
-              {saving ? t('common.loading') : t('common.save')}
+              {marketplaceSaving ? t('common.loading') : t('common.save')}
             </button>
+            {marketplaceMsg && <span className="text-sm text-success">{marketplaceMsg}</span>}
           </div>
-        )}
-      </section>
+          <div className="text-xs text-text-muted">{t('settings.marketplaceUrlHint')}</div>
+          <div className="pt-3 border-t border-border-light space-y-2">
+            <div className="flex items-center gap-2 text-sm font-medium text-text-primary">
+              <Key size={16} />
+              {t('settings.marketplaceApiKey')}
+            </div>
+            <div className="flex items-center gap-3">
+              <input
+                type="password"
+                value={marketplaceApiKey}
+                onChange={(e) => setMarketplaceApiKeyLocal(e.target.value)}
+                placeholder="Auto-generated for local server"
+                className="flex-1 px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <button
+                onClick={handleSaveMarketplaceApiKey}
+                disabled={marketplaceApiKeySaving}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors"
+              >
+                <Save size={16} />
+                {marketplaceApiKeySaving ? t('common.loading') : t('common.save')}
+              </button>
+              {marketplaceApiKeyMsg && (
+                <span className="text-sm text-success">{marketplaceApiKeyMsg}</span>
+              )}
+            </div>
+            <div className="text-xs text-text-muted">{t('settings.marketplaceApiKeyHint')}</div>
+
+            {/* Login form */}
+            <div className="pt-3 border-t border-border-light space-y-2">
+              <div className="flex items-center gap-2 text-sm font-medium text-text-primary">
+                <User size={16} />
+                Login to Marketplace
+              </div>
+              {marketUser ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3 p-2 bg-bg-primary rounded-lg">
+                    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold">
+                      {marketUser.displayName.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-text-primary">
+                        {marketUser.displayName}
+                      </div>
+                      <div className="text-xs text-text-muted">@{marketUser.username}</div>
+                    </div>
+                    <span
+                      className={`ml-auto px-2 py-0.5 rounded text-xs font-medium ${
+                        marketUser.role === 'admin'
+                          ? 'bg-purple-900/30 text-purple-300'
+                          : marketUser.role === 'developer'
+                            ? 'bg-blue-900/30 text-blue-300'
+                            : 'bg-gray-700 text-gray-300'
+                      }`}
+                    >
+                      <Shield size={10} className="inline mr-1" />
+                      {marketUser.role}
+                    </span>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-danger hover:bg-danger/10 rounded-lg transition-colors"
+                  >
+                    <LogOut size={14} />
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={loginUsername}
+                      onChange={(e) => setLoginUsername(e.target.value)}
+                      placeholder="Username"
+                      className="flex-1 px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <input
+                      type="password"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      placeholder="Password"
+                      className="flex-1 px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+                      onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                    />
+                    <button
+                      onClick={handleLogin}
+                      disabled={loginLoading}
+                      className="flex items-center gap-1.5 px-4 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors whitespace-nowrap"
+                    >
+                      <LogIn size={14} />
+                      {loginLoading ? '...' : 'Login'}
+                    </button>
+                  </div>
+                  {loginMsg && (
+                    <div
+                      className={`text-xs ${loginMsgType === 'success' ? 'text-success' : 'text-danger'}`}
+                    >
+                      {loginMsg}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* 通用设置 / General Settings */}
+        <section className="bg-bg-card rounded-xl border border-border-light shadow-sm p-5 flex flex-col gap-3 h-full xl:col-span-3 md:col-span-2">
+          <h2 className="flex items-center gap-2 text-base font-semibold text-text-primary">
+            <Key size={18} />
+            {t('settings.general')}
+          </h2>
+          <div className="flex-1 min-h-0">
+            {Object.keys(edited).length === 0 && Object.keys(settings).length === 0 ? (
+              <div className="text-sm text-text-muted">{t('common.noData')}</div>
+            ) : (
+              <div className="space-y-3">
+                {Object.entries(edited).map(([key, value]) => (
+                  <div key={key} className="flex items-center gap-3">
+                    <label className="w-48 text-sm font-mono text-text-muted shrink-0">{key}</label>
+                    <input
+                      type="text"
+                      value={value}
+                      onChange={(e) => setEdited((prev) => ({ ...prev, [key]: e.target.value }))}
+                      className="flex-1 px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <button
+                      onClick={() => setDeleteSettingKey(key)}
+                      className="p-1 text-danger hover:bg-danger-light rounded shrink-0 transition-colors"
+                      title={t('common.deleteSetting')}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex items-center gap-3 pt-2 border-t border-border-light mt-3">
+              <input
+                type="text"
+                value={newSettingKey}
+                onChange={(e) => setNewSettingKey(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleAddSetting()
+                }}
+                placeholder={t('common.newKey') + '...'}
+                className="w-48 px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <button
+                onClick={handleAddSetting}
+                disabled={!newSettingKey.trim()}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-bg-tertiary border border-border-light rounded-lg hover:bg-bg-card-hover disabled:opacity-40 transition-colors"
+              >
+                <Plus size={16} />
+                {t('common.addSetting')}
+              </button>
+            </div>
+          </div>
+          {hasChanges && (
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={handleSaveSettings}
+                disabled={saving}
+                className="flex items-center gap-1.5 px-4 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors"
+              >
+                <Save size={16} />
+                {saving ? t('common.loading') : t('common.save')}
+              </button>
+            </div>
+          )}
+        </section>
       </div>
 
       {/* Sticky save bar */}
@@ -972,7 +1008,9 @@ const Settings: React.FC = () => {
       <Modal
         open={showProxyProviderForm}
         onClose={() => setShowProxyProviderForm(false)}
-        title={editingProxyProvider ? t('settings.editProxyProvider') : t('settings.addProxyProvider')}
+        title={
+          editingProxyProvider ? t('settings.editProxyProvider') : t('settings.addProxyProvider')
+        }
       >
         <div className="space-y-3">
           <div>

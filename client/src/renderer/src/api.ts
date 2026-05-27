@@ -92,8 +92,7 @@ export const taskApi = {
 
 export const scriptApi = {
   listRemote: () => call<RemoteScript[]>('script:listRemote'),
-  download: (scriptId: string) =>
-    call<InstalledScript>('script:download', [scriptId]),
+  download: (scriptId: string) => call<InstalledScript>('script:download', [scriptId]),
   checkUpdate: () => call<RemoteScript[]>('script:checkUpdate'),
   listInstalled: () => call<InstalledScript[]>('script:listInstalled'),
   remove: (scriptId: string) => call<void>('script:remove', [scriptId])
@@ -103,7 +102,8 @@ export const templateApi = {
   list: (page?: number, pageSize?: number, search?: string) =>
     call<ListResponse<Template>>('template:list', [page, pageSize, search]),
   get: (id: string) => call<Template | null>('template:get', [id]),
-  create: (data: Omit<Template, 'id' | 'updatedAt'> & { id?: string }) => call<Template>('template:create', [data]),
+  create: (data: Omit<Template, 'id' | 'updatedAt'> & { id?: string }) =>
+    call<Template>('template:create', [data]),
   update: (id: string, data: Partial<Template>) => call<Template>('template:update', [id, data]),
   delete: (id: string) => call<void>('template:delete', [id])
 }
@@ -196,16 +196,12 @@ export const dialogApi = {
       [filters]
     ),
   saveFile: (defaultName: string, content: string) =>
-    call<{ canceled: boolean; filePath: string | null }>('dialog:saveFile', [
-      defaultName,
-      content
-    ])
+    call<{ canceled: boolean; filePath: string | null }>('dialog:saveFile', [defaultName, content])
 }
 
 const MARKETPLACE_URL_KEY = 'marketplace_server_url'
 const MARKETPLACE_API_KEY_KEY = 'marketplace_api_key'
 const DEFAULT_MARKETPLACE_URL = 'http://localhost:3400'
-const DEFAULT_MARKETPLACE_API_KEY = 'airdrop-farm-dev-key'
 
 export async function getMarketplaceUrl(): Promise<string> {
   try {
@@ -228,7 +224,7 @@ export async function getMarketplaceApiKey(): Promise<string> {
   } catch {
     /* ignore */
   }
-  return DEFAULT_MARKETPLACE_API_KEY
+  return ''
 }
 
 export async function setMarketplaceApiKey(key: string): Promise<void> {
@@ -240,7 +236,9 @@ export async function getMarketplaceHeaders(): Promise<Record<string, string>> {
   try {
     const jwt = await settingApi.get('marketplace_jwt')
     if (jwt) return { Authorization: `Bearer ${jwt}` }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   const key = await getMarketplaceApiKey()
   return key ? { Authorization: `Bearer ${key}` } : {}
 }
@@ -252,14 +250,15 @@ export const marketplaceApi = {
   setApiKey: setMarketplaceApiKey,
 
   login: (username: string, password: string) =>
-    call<{ token: string; user: { id: string; username: string; displayName: string; role: string } }>(
-      'market:login',
-      [username, password]
-    ),
+    call<{
+      token: string
+      user: { id: string; username: string; displayName: string; role: string }
+    }>('market:login', [username, password]),
 
-  getUser: () => call<{ id: string; username: string; displayName: string; role: string } | null>(
-    'market:getUser'
-  ),
+  getUser: () =>
+    call<{ id: string; username: string; displayName: string; role: string } | null>(
+      'market:getUser'
+    ),
 
   logout: () => call<null>('market:logout'),
 
@@ -270,7 +269,13 @@ export const marketplaceApi = {
     if (!resp.ok) throw new Error(`Failed to fetch scripts: ${resp.status}`)
     const json = await resp.json()
     const data = json.data ?? json
-    return { items: data.items ?? [], total: data.total ?? 0, page: data.page ?? 1, pageSize: data.items?.length ?? data.total ?? 0, totalPages: data.totalPages ?? 1 } as ListResponse<RemoteScript>
+    return {
+      items: data.items ?? [],
+      total: data.total ?? 0,
+      page: data.page ?? 1,
+      pageSize: data.items?.length ?? data.total ?? 0,
+      totalPages: data.totalPages ?? 1
+    } as ListResponse<RemoteScript>
   },
 
   listTemplates: async (serverUrl?: string) => {
@@ -280,7 +285,13 @@ export const marketplaceApi = {
     if (!resp.ok) throw new Error(`Failed to fetch templates: ${resp.status}`)
     const json = await resp.json()
     const data = json.data ?? json
-    return { items: data.items ?? [], total: data.total ?? 0, page: data.page ?? 1, pageSize: data.items?.length ?? data.total ?? 0, totalPages: data.totalPages ?? 1 } as ListResponse<RemoteTemplate>
+    return {
+      items: data.items ?? [],
+      total: data.total ?? 0,
+      page: data.page ?? 1,
+      pageSize: data.items?.length ?? data.total ?? 0,
+      totalPages: data.totalPages ?? 1
+    } as ListResponse<RemoteTemplate>
   },
 
   installTemplate: async (_serverUrl: string, template: RemoteTemplate) => {

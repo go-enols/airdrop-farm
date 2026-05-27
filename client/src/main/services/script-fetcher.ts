@@ -32,7 +32,7 @@ export class ScriptFetcher {
     // Prefer JWT over API key
     const jwt = this.store.getSetting('marketplace_jwt')
     if (jwt) return { Authorization: `Bearer ${jwt}` }
-    const key = this.store.getSetting('marketplace_api_key') || 'airdrop-farm-dev-key'
+    const key = this.store.getSetting('marketplace_api_key')
     return key ? { Authorization: `Bearer ${key}` } : {}
   }
 
@@ -43,7 +43,7 @@ export class ScriptFetcher {
     if (!response.ok) {
       throw new Error(`Failed to fetch script list: ${response.status} ${response.statusText}`)
     }
-    const json = await response.json() as Record<string, unknown>
+    const json = (await response.json()) as Record<string, unknown>
     // Server returns { data: { items, total } }; unwrap if data envelope present
     const data = json.data as Record<string, unknown> | undefined
     return (data?.items ?? json) as RemoteScript[]
@@ -69,7 +69,9 @@ export class ScriptFetcher {
     const checksum = this.calculateChecksum(tmpPath)
     if (checksum !== script.checksum) {
       rmSync(tmpPath, { force: true })
-      throw new Error(`Checksum mismatch for ${scriptId}: expected ${script.checksum}, got ${checksum}`)
+      throw new Error(
+        `Checksum mismatch for ${scriptId}: expected ${script.checksum}, got ${checksum}`
+      )
     }
 
     const ext = this.getArchiveExtension(downloadUrl)
@@ -111,9 +113,15 @@ export class ScriptFetcher {
           `INSERT INTO task_templates (id, name, version, description, install_path, manifest, remote_url, is_installed, downloaded_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`
         )
         stmt.run(
-          installed.id, installed.name, installed.version, installed.description,
-          installed.installPath, JSON.stringify(manifest), installed.remoteUrl,
-          installed.downloadedAt, installed.updatedAt
+          installed.id,
+          installed.name,
+          installed.version,
+          installed.description,
+          installed.installPath,
+          JSON.stringify(manifest),
+          installed.remoteUrl,
+          installed.downloadedAt,
+          installed.updatedAt
         )
       } catch {
         // ignore duplicate
@@ -137,8 +145,8 @@ export class ScriptFetcher {
   getInstalledScripts(): InstalledScript[] {
     if (!existsSync(this.scriptsDir)) return []
 
-    const dirs = readdirSync(this.scriptsDir, { withFileTypes: true }).filter(
-      (d) => d.isDirectory()
+    const dirs = readdirSync(this.scriptsDir, { withFileTypes: true }).filter((d) =>
+      d.isDirectory()
     )
 
     const scripts: InstalledScript[] = []
@@ -244,18 +252,17 @@ export class ScriptFetcher {
   }
 
   private async extractArchive(archivePath: string, destDir: string, ext: string): Promise<void> {
-    const { execSync } = await import('child_process')
+    const { execFileSync } = await import('child_process')
     if (ext === 'tar.gz' || ext === 'tar') {
-      execSync(`tar xf "${archivePath}" -C "${destDir}"`, { timeout: 60000 })
+      execFileSync('tar', ['xf', archivePath, '-C', destDir], { timeout: 60000 })
+    } else if (process.platform === 'win32') {
+      execFileSync(
+        'powershell',
+        ['-command', 'Expand-Archive', '-Path', archivePath, '-DestinationPath', destDir, '-Force'],
+        { timeout: 60000 }
+      )
     } else {
-      if (process.platform === 'win32') {
-        execSync(
-          `powershell -command "Expand-Archive -Path '${archivePath}' -DestinationPath '${destDir}' -Force"`,
-          { timeout: 60000 }
-        )
-      } else {
-        execSync(`unzip -o "${archivePath}" -d "${destDir}"`, { timeout: 60000 })
-      }
+      execFileSync('unzip', ['-o', archivePath, '-d', destDir], { timeout: 60000 })
     }
   }
 }

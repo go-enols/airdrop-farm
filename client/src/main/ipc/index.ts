@@ -369,7 +369,7 @@ export function registerIpcHandlers(services: Services): void {
   // Marketplace user system
   register('market:login', async (username, password) => {
     const serverUrl = store.getSetting('marketplace_server_url') || 'http://localhost:3400'
-    const apiKey = store.getSetting('marketplace_api_key') || 'airdrop-farm-dev-key'
+    const apiKey = store.getSetting('marketplace_api_key')
     const resp = await fetch(`${serverUrl}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },

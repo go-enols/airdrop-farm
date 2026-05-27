@@ -17,7 +17,7 @@ function matchesCron(expr: string, now: Date): boolean {
     hour: now.getHours(),
     dom: now.getDate(),
     month: now.getMonth() + 1,
-    dow: now.getDay(),
+    dow: now.getDay()
   }
 
   return (
@@ -67,7 +67,6 @@ export class SchedulerService {
   private taskService: TaskService
   private timer: ReturnType<typeof setInterval> | null = null
 
-
   constructor(store: StoreService, taskService: TaskService) {
     this.store = store
     this.taskService = taskService
@@ -100,22 +99,33 @@ export class SchedulerService {
         const lastMs = st.lastRun ? new Date(st.lastRun).getTime() : 0
         if (now.getTime() - lastMs < 55000) continue
 
-        this.fire(st, now)
+        const nextRun = nextCronTime(st.cronExpression, now)
+        this.store.updateScheduledTask(st.id, {
+          lastRun: now.toISOString(),
+          nextRun: nextRun?.toISOString() ?? null
+        })
+        this.fire(st)
       }
     } catch (err) {
       logger.warn('Scheduler tick error', { error: String(err) })
     }
   }
 
-  private async fire(st: ScheduledTask, now: Date): Promise<void> {
+  private async fire(st: ScheduledTask): Promise<void> {
     try {
       const tpl = this.store.getTaskTemplate(st.templateId)
       if (!tpl || !tpl.isInstalled) {
-        logger.warn('Scheduled task has no installed script', { id: st.id, templateId: st.templateId })
+        logger.warn('Scheduled task has no installed script', {
+          id: st.id,
+          templateId: st.templateId
+        })
         return
       }
       if (!existsSync(tpl.installPath)) {
-        logger.warn('Scheduled task script directory missing on disk', { id: st.id, path: tpl.installPath })
+        logger.warn('Scheduled task script directory missing on disk', {
+          id: st.id,
+          path: tpl.installPath
+        })
         return
       }
       let entryFile = join(tpl.installPath, 'index.js')
@@ -126,7 +136,9 @@ export class SchedulerService {
           if (meta.entryPoint && typeof meta.entryPoint === 'string') {
             entryFile = join(tpl.installPath, meta.entryPoint)
           }
-        } catch { /* ignore */ }
+        } catch {
+          /* ignore */
+        }
       }
       if (!existsSync(entryFile)) {
         logger.warn('Scheduled task entry point missing on disk', { id: st.id, path: entryFile })
@@ -139,14 +151,9 @@ export class SchedulerService {
         workerId: null,
         startedAt: null,
         endedAt: null,
-        isSandbox: false,
+        isSandbox: false
       })
       await this.taskService.startTask(task.id)
-      const nextRun = nextCronTime(st.cronExpression, now)
-      this.store.updateScheduledTask(st.id, {
-        lastRun: now.toISOString(),
-        nextRun: nextRun?.toISOString() ?? null,
-      })
       logger.info('Scheduled task fired', { id: st.id, taskId: task.id })
     } catch (err) {
       logger.warn('Failed to fire scheduled task', { id: st.id, error: String(err) })

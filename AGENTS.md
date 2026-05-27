@@ -6,8 +6,8 @@
 
 ### 子项目
 
-| 目录 | 说明 | 独立运行 |
-|------|------|----------|
+| 目录      | 说明                | 独立运行                   |
+| --------- | ------------------- | -------------------------- |
 | `client/` | Electron 客户端主体 | `cd client && npm run dev` |
 | `server/` | 脚本/模板市场服务端 | `cd server && npm run dev` |
 
@@ -95,6 +95,7 @@ airdrop-farm/
 两个传输层共享 `src/main/ipc/index.ts` 中的 `handlerMap`。`executeHandler()` 是所有 API 调用的唯一入口，无论走哪种传输层。
 
 传输层选择逻辑（`transport.ts`）：
+
 - 强制模式：URL 参数 `?transport=http` 或 `localStorage['app-transport']`
 - 自动模式：IPC 优先 → HTTP 降级 → 记住可用传输层
 
@@ -139,178 +140,178 @@ airdrop-farm/
 
 #### wallets — 钱包
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | TEXT PK | UUID v4 |
-| address | TEXT NOT NULL | 地址 |
-| private_key | TEXT | 私钥（可空） |
-| mnemonic | TEXT | 助记词（可空） |
+| 字段        | 类型          | 说明                         |
+| ----------- | ------------- | ---------------------------- |
+| id          | TEXT PK       | UUID v4                      |
+| address     | TEXT NOT NULL | 地址                         |
+| private_key | TEXT          | 私钥（可空）                 |
+| mnemonic    | TEXT          | 助记词（可空）               |
 | wallet_type | TEXT NOT NULL | evm / solana / sui / bitcoin |
-| labels | TEXT → JSON | 标签数组 |
-| created_at | TEXT NOT NULL | ISO 8601 |
+| labels      | TEXT → JSON   | 标签数组                     |
+| created_at  | TEXT NOT NULL | ISO 8601                     |
 
 #### accounts — 账户（账号池中的账户）
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | TEXT PK | UUID v4 |
-| template_id | TEXT NOT NULL | 关联的模板 ID |
-| data | TEXT → JSON | 账户数据（由模板 schema 定义结构） |
-| pool | TEXT NOT NULL | 账号池名称（分组标识） |
-| labels | TEXT → JSON | 标签数组 |
-| notes | TEXT | 备注 |
-| created_at | TEXT NOT NULL | ISO 8601 |
-| updated_at | TEXT NOT NULL | ISO 8601 |
+| 字段        | 类型          | 说明                               |
+| ----------- | ------------- | ---------------------------------- |
+| id          | TEXT PK       | UUID v4                            |
+| template_id | TEXT NOT NULL | 关联的模板 ID                      |
+| data        | TEXT → JSON   | 账户数据（由模板 schema 定义结构） |
+| pool        | TEXT NOT NULL | 账号池名称（分组标识）             |
+| labels      | TEXT → JSON   | 标签数组                           |
+| notes       | TEXT          | 备注                               |
+| created_at  | TEXT NOT NULL | ISO 8601                           |
+| updated_at  | TEXT NOT NULL | ISO 8601                           |
 
 索引：`idx_accounts_pool ON accounts(pool)`
 
 #### proxies — 代理
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | TEXT PK | UUID v4 |
-| protocol | TEXT NOT NULL | http / https / socks5 |
-| host | TEXT NOT NULL | 主机地址 |
-| port | INTEGER NOT NULL | 端口 |
-| username | TEXT | 用户名（可空） |
-| password | TEXT | 密码（可空） |
-| status | TEXT NOT NULL | active / inactive / expired |
-| labels | TEXT → JSON | 标签数组 |
-| created_at | TEXT NOT NULL | ISO 8601 |
+| 字段       | 类型             | 说明                        |
+| ---------- | ---------------- | --------------------------- |
+| id         | TEXT PK          | UUID v4                     |
+| protocol   | TEXT NOT NULL    | http / https / socks5       |
+| host       | TEXT NOT NULL    | 主机地址                    |
+| port       | INTEGER NOT NULL | 端口                        |
+| username   | TEXT             | 用户名（可空）              |
+| password   | TEXT             | 密码（可空）                |
+| status     | TEXT NOT NULL    | active / inactive / expired |
+| labels     | TEXT → JSON      | 标签数组                    |
+| created_at | TEXT NOT NULL    | ISO 8601                    |
 
 索引：`idx_proxies_status ON proxies(status)`
 
 #### proxy_providers — 代理提供商（从 API 自动拉取代理）
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | TEXT PK | UUID v4 |
-| name | TEXT NOT NULL | 提供商名称 |
-| api_url | TEXT NOT NULL | API 地址 |
-| api_key | TEXT | API 密钥 |
-| protocol | TEXT | http / https / socks5 |
-| refresh_interval | INTEGER | 刷新间隔（秒） |
-| last_sync | TEXT | 最后同步时间 |
-| labels | TEXT → JSON | 标签数组 |
-| created_at | TEXT NOT NULL | ISO 8601 |
+| 字段             | 类型          | 说明                  |
+| ---------------- | ------------- | --------------------- |
+| id               | TEXT PK       | UUID v4               |
+| name             | TEXT NOT NULL | 提供商名称            |
+| api_url          | TEXT NOT NULL | API 地址              |
+| api_key          | TEXT          | API 密钥              |
+| protocol         | TEXT          | http / https / socks5 |
+| refresh_interval | INTEGER       | 刷新间隔（秒）        |
+| last_sync        | TEXT          | 最后同步时间          |
+| labels           | TEXT → JSON   | 标签数组              |
+| created_at       | TEXT NOT NULL | ISO 8601              |
 
 #### tasks — 任务
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | TEXT PK | UUID v4 |
+| 字段          | 类型          | 说明                                                       |
+| ------------- | ------------- | ---------------------------------------------------------- |
+| id            | TEXT PK       | UUID v4                                                    |
 | script_folder | TEXT NOT NULL | 已安装脚本的文件夹路径（即 `InstalledScript.installPath`） |
-| config | TEXT → JSON | 任务配置（由脚本 manifest 定义） |
-| status | TEXT NOT NULL | idle / running / paused / stopped / complete / error |
-| worker_id | TEXT | 子进程 worker ID（可空） |
-| started_at | TEXT | 启动时间 |
-| ended_at | TEXT | 结束时间 |
-| is_sandbox | INTEGER | 是否沙箱模式 |
+| config        | TEXT → JSON   | 任务配置（由脚本 manifest 定义）                           |
+| status        | TEXT NOT NULL | idle / running / paused / stopped / complete / error       |
+| worker_id     | TEXT          | 子进程 worker ID（可空）                                   |
+| started_at    | TEXT          | 启动时间                                                   |
+| ended_at      | TEXT          | 结束时间                                                   |
+| is_sandbox    | INTEGER       | 是否沙箱模式                                               |
 
 索引：`idx_tasks_status ON tasks(status)`
 
 #### task_logs — 任务日志
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | INTEGER PK | 自增 |
-| task_id | TEXT NOT NULL | 关联任务 ID |
-| timestamp | TEXT NOT NULL | ISO 8601 |
-| level | TEXT NOT NULL | info / warn / error / debug |
-| message | TEXT NOT NULL | 日志内容 |
+| 字段      | 类型          | 说明                        |
+| --------- | ------------- | --------------------------- |
+| id        | INTEGER PK    | 自增                        |
+| task_id   | TEXT NOT NULL | 关联任务 ID                 |
+| timestamp | TEXT NOT NULL | ISO 8601                    |
+| level     | TEXT NOT NULL | info / warn / error / debug |
+| message   | TEXT NOT NULL | 日志内容                    |
 
 索引：`idx_task_logs_task_id ON task_logs(task_id)`
 
 #### templates — 账户模板
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | TEXT PK | UUID v4 |
-| type | TEXT NOT NULL | 模板类型（如 evm-wallet, solana-wallet） |
-| name | TEXT NOT NULL | 模板名称 |
-| schema | TEXT → JSON | JSON Schema（定义账户数据字段） |
-| version | TEXT | 版本号 |
-| is_local | INTEGER | 是否本地模板（0=远程下载, 1=本地创建） |
-| updated_at | TEXT NOT NULL | ISO 8601 |
+| 字段       | 类型          | 说明                                     |
+| ---------- | ------------- | ---------------------------------------- |
+| id         | TEXT PK       | UUID v4                                  |
+| type       | TEXT NOT NULL | 模板类型（如 evm-wallet, solana-wallet） |
+| name       | TEXT NOT NULL | 模板名称                                 |
+| schema     | TEXT → JSON   | JSON Schema（定义账户数据字段）          |
+| version    | TEXT          | 版本号                                   |
+| is_local   | INTEGER       | 是否本地模板（0=远程下载, 1=本地创建）   |
+| updated_at | TEXT NOT NULL | ISO 8601                                 |
 
 #### task_templates — 任务脚本模板（已安装的任务脚本元数据）
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | TEXT PK | UUID v4（与 `InstalledScript.id` 相同） |
-| name | TEXT NOT NULL | 脚本名称 |
-| version | TEXT | 版本号 |
-| description | TEXT | 描述 |
-| install_path | TEXT | 安装路径 |
-| manifest | TEXT → JSON | 脚本 manifest（见 §6.1） |
-| remote_url | TEXT | 远程服务器 URL |
-| is_installed | INTEGER | 是否已安装（0/1） |
-| downloaded_at | TEXT NOT NULL | ISO 8601 |
-| updated_at | TEXT NOT NULL | ISO 8601 |
+| 字段          | 类型          | 说明                                    |
+| ------------- | ------------- | --------------------------------------- |
+| id            | TEXT PK       | UUID v4（与 `InstalledScript.id` 相同） |
+| name          | TEXT NOT NULL | 脚本名称                                |
+| version       | TEXT          | 版本号                                  |
+| description   | TEXT          | 描述                                    |
+| install_path  | TEXT          | 安装路径                                |
+| manifest      | TEXT → JSON   | 脚本 manifest（见 §6.1）                |
+| remote_url    | TEXT          | 远程服务器 URL                          |
+| is_installed  | INTEGER       | 是否已安装（0/1）                       |
+| downloaded_at | TEXT NOT NULL | ISO 8601                                |
+| updated_at    | TEXT NOT NULL | ISO 8601                                |
 
 #### scheduled_tasks — 定时任务
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | TEXT PK | UUID v4 |
-| template_id | TEXT NOT NULL | 关联的任务脚本模板 ID |
-| config | TEXT → JSON | 任务配置 |
-| cron_expression | TEXT NOT NULL | Cron 表达式 |
-| enabled | INTEGER | 是否启用 |
-| last_run | TEXT | 最后运行时间 |
-| next_run | TEXT | 下次运行时间 |
-| created_at | TEXT NOT NULL | ISO 8601 |
+| 字段            | 类型          | 说明                  |
+| --------------- | ------------- | --------------------- |
+| id              | TEXT PK       | UUID v4               |
+| template_id     | TEXT NOT NULL | 关联的任务脚本模板 ID |
+| config          | TEXT → JSON   | 任务配置              |
+| cron_expression | TEXT NOT NULL | Cron 表达式           |
+| enabled         | INTEGER       | 是否启用              |
+| last_run        | TEXT          | 最后运行时间          |
+| next_run        | TEXT          | 下次运行时间          |
+| created_at      | TEXT NOT NULL | ISO 8601              |
 
 索引：`idx_scheduled_tasks_enabled ON scheduled_tasks(enabled)`
 
 #### airdrop_projects — 空投项目
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | TEXT PK | UUID v4 |
-| name | TEXT NOT NULL | 项目名称 |
-| chain | TEXT | 所属链（默认空） |
-| status | TEXT NOT NULL | ongoing / completed / cancelled / claimed |
-| project_type | TEXT NOT NULL | testnet / mainnet / galxe / quest / social / other |
-| description | TEXT | 项目描述（**应支持 Markdown**） |
-| links | TEXT → JSON | `[{label, url}]` 链接数组 |
-| eligibility_criteria | TEXT → JSON | 资格条件数组 |
-| tasks | TEXT → JSON | 空投任务项数组 |
-| earnings | TEXT → JSON | 收益数组 |
-| tags | TEXT → JSON | 标签数组 |
-| labels | TEXT → JSON | 标签数组 |
-| created_at | TEXT NOT NULL | ISO 8601 |
-| updated_at | TEXT NOT NULL | ISO 8601 |
+| 字段                 | 类型          | 说明                                               |
+| -------------------- | ------------- | -------------------------------------------------- |
+| id                   | TEXT PK       | UUID v4                                            |
+| name                 | TEXT NOT NULL | 项目名称                                           |
+| chain                | TEXT          | 所属链（默认空）                                   |
+| status               | TEXT NOT NULL | ongoing / completed / cancelled / claimed          |
+| project_type         | TEXT NOT NULL | testnet / mainnet / galxe / quest / social / other |
+| description          | TEXT          | 项目描述（**应支持 Markdown**）                    |
+| links                | TEXT → JSON   | `[{label, url}]` 链接数组                          |
+| eligibility_criteria | TEXT → JSON   | 资格条件数组                                       |
+| tasks                | TEXT → JSON   | 空投任务项数组                                     |
+| earnings             | TEXT → JSON   | 收益数组                                           |
+| tags                 | TEXT → JSON   | 标签数组                                           |
+| labels               | TEXT → JSON   | 标签数组                                           |
+| created_at           | TEXT NOT NULL | ISO 8601                                           |
+| updated_at           | TEXT NOT NULL | ISO 8601                                           |
 
 索引：`idx_airdrop_projects_status ON airdrop_projects(status)`
 
 #### settings — 键值设置
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| key | TEXT PK | 设置键名 |
-| value | TEXT NOT NULL | 设置值 |
+| 字段  | 类型          | 说明     |
+| ----- | ------------- | -------- |
+| key   | TEXT PK       | 设置键名 |
+| value | TEXT NOT NULL | 设置值   |
 
 #### captcha_keys — 验证码 API 密钥
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | TEXT PK | UUID v4 |
-| provider | TEXT NOT NULL | 提供商名称 |
-| api_key | TEXT NOT NULL | API 密钥 |
-| balance | REAL | 余额 |
-| created_at | TEXT NOT NULL | ISO 8601 |
+| 字段       | 类型          | 说明       |
+| ---------- | ------------- | ---------- |
+| id         | TEXT PK       | UUID v4    |
+| provider   | TEXT NOT NULL | 提供商名称 |
+| api_key    | TEXT NOT NULL | API 密钥   |
+| balance    | REAL          | 余额       |
+| created_at | TEXT NOT NULL | ISO 8601   |
 
 #### app_logs — 应用日志
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | INTEGER PK | 自增 |
-| timestamp | TEXT NOT NULL | ISO 8601 |
-| level | TEXT NOT NULL | 日志级别 |
-| category | TEXT NOT NULL | 分类 |
-| message | TEXT NOT NULL | 日志内容 |
-| fields | TEXT | 附加字段 JSON |
+| 字段      | 类型          | 说明          |
+| --------- | ------------- | ------------- |
+| id        | INTEGER PK    | 自增          |
+| timestamp | TEXT NOT NULL | ISO 8601      |
+| level     | TEXT NOT NULL | 日志级别      |
+| category  | TEXT NOT NULL | 分类          |
+| message   | TEXT NOT NULL | 日志内容      |
+| fields    | TEXT          | 附加字段 JSON |
 
 索引：`idx_app_logs_category ON app_logs(category)`
 
@@ -320,78 +321,78 @@ airdrop-farm/
 
 ### 5.1 配置
 
-| 项目 | 值 |
-|------|-----|
-| 默认端口 | 3400 |
-| 监听地址 | 0.0.0.0 |
-| 数据库 | `server/data/marketplace.db` (SQLite, WAL) |
+| 项目     | 值                                                               |
+| -------- | ---------------------------------------------------------------- |
+| 默认端口 | 3400                                                             |
+| 监听地址 | 127.0.0.1（可用 `HOST` 环境变量覆盖）                            |
+| 数据库   | `server/data/marketplace.db` (SQLite, WAL)                       |
 | 上传目录 | `server/data/uploads/scripts/`、`server/data/uploads/templates/` |
-| 认证 | Bearer Token `MARKETPLACE_API_KEY`（环境变量，默认 `airdrop-farm-dev-key`） |
-| GET 请求 | 公开，无需认证 |
-| 写请求 | 需要 `Authorization: Bearer <token>` |
+| 认证     | Bearer Token `MARKETPLACE_API_KEY`（环境变量或首次启动自动生成） |
+| GET 请求 | 公开，无需认证                                                   |
+| 写请求   | 需要 `Authorization: Bearer <token>`                             |
 
 ### 5.2 API 端点
 
 #### Scripts（`/api/scripts`）
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/` | 列出所有脚本。返回 `{data: {items: ScriptItem[], total}}` |
-| GET | `/:id` | 获取脚本详情 |
-| GET | `/:id/download` | 下载脚本 zip 包（自增下载计数） |
-| POST | `/` | 上传脚本（multipart，字段见 §5.3） |
-| PUT | `/:id` | 更新脚本信息 |
-| DELETE | `/:id` | 删除脚本（含文件） |
+| 方法   | 路径            | 说明                                                      |
+| ------ | --------------- | --------------------------------------------------------- |
+| GET    | `/`             | 列出所有脚本。返回 `{data: {items: ScriptItem[], total}}` |
+| GET    | `/:id`          | 获取脚本详情                                              |
+| GET    | `/:id/download` | 下载脚本 zip 包（自增下载计数）                           |
+| POST   | `/`             | 上传脚本（multipart，字段见 §5.3）                        |
+| PUT    | `/:id`          | 更新脚本信息                                              |
+| DELETE | `/:id`          | 删除脚本（含文件）                                        |
 
 #### Templates（`/api/templates`）
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/` | 列出所有模板 |
-| GET | `/:id` | 获取模板详情 |
-| POST | `/` | 创建模板（JSON body） |
-| PUT | `/:id` | 更新模板 |
-| DELETE | `/:id` | 删除模板 |
+| 方法   | 路径   | 说明                  |
+| ------ | ------ | --------------------- |
+| GET    | `/`    | 列出所有模板          |
+| GET    | `/:id` | 获取模板详情          |
+| POST   | `/`    | 创建模板（JSON body） |
+| PUT    | `/:id` | 更新模板              |
+| DELETE | `/:id` | 删除模板              |
 
 #### Health
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/api/health` | 健康检查。返回 `{status: "ok", timestamp}` |
+| 方法 | 路径          | 说明                                       |
+| ---- | ------------- | ------------------------------------------ |
+| GET  | `/api/health` | 健康检查。返回 `{status: "ok", timestamp}` |
 
 ### 5.3 ScriptItem 数据结构（服务端）
 
 上传脚本时服务端存储的字段：
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | TEXT | UUID v4 |
-| name | TEXT | 脚本名称 |
-| version | TEXT | 语义化版本 |
-| description | TEXT | 描述 |
-| schema | TEXT → JSON | 参数 schema（定义脚本需要的表单字段） |
-| entry_point | TEXT | 入口文件（如 `index.js`） |
-| checksum | TEXT | sha256 |
-| downloadUrl | TEXT(生成) | `/api/scripts/:id/download` |
-| tags | TEXT → JSON | 标签数组 |
-| changelog | TEXT | 更新日志 |
-| downloads | INTEGER | 下载次数 |
-| updated_at | TEXT | ISO 8601 |
+| 字段        | 类型        | 说明                                  |
+| ----------- | ----------- | ------------------------------------- |
+| id          | TEXT        | UUID v4                               |
+| name        | TEXT        | 脚本名称                              |
+| version     | TEXT        | 语义化版本                            |
+| description | TEXT        | 描述                                  |
+| schema      | TEXT → JSON | 参数 schema（定义脚本需要的表单字段） |
+| entry_point | TEXT        | 入口文件（如 `index.js`）             |
+| checksum    | TEXT        | sha256                                |
+| downloadUrl | TEXT(生成)  | `/api/scripts/:id/download`           |
+| tags        | TEXT → JSON | 标签数组                              |
+| changelog   | TEXT        | 更新日志                              |
+| downloads   | INTEGER     | 下载次数                              |
+| updated_at  | TEXT        | ISO 8601                              |
 
 ### 5.4 TemplateItem 数据结构（服务端）
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| id | TEXT | UUID v4 |
-| name | TEXT | 模板名称 |
-| type | TEXT | 模板类型 |
-| version | TEXT | 语义化版本 |
-| description | TEXT | 描述 |
-| checksum | TEXT | sha256 |
-| schema | TEXT → JSON | JSON Schema |
-| downloadUrl | TEXT(可选) | 下载链接 |
-| downloadCount | INTEGER | 下载次数 |
-| updated_at | TEXT | ISO 8601 |
+| 字段          | 类型        | 说明        |
+| ------------- | ----------- | ----------- |
+| id            | TEXT        | UUID v4     |
+| name          | TEXT        | 模板名称    |
+| type          | TEXT        | 模板类型    |
+| version       | TEXT        | 语义化版本  |
+| description   | TEXT        | 描述        |
+| checksum      | TEXT        | sha256      |
+| schema        | TEXT → JSON | JSON Schema |
+| downloadUrl   | TEXT(可选)  | 下载链接    |
+| downloadCount | INTEGER     | 下载次数    |
+| updated_at    | TEXT        | ISO 8601    |
 
 ---
 
@@ -415,7 +416,12 @@ airdrop-farm/
     "properties": {
       "targetUrl": { "type": "string", "title": "目标 URL", "required": true },
       "threadCount": { "type": "number", "title": "线程数", "default": 1 },
-      "proxyMode": { "type": "string", "title": "代理模式", "enum": ["none", "per_account", "pool"], "default": "none" }
+      "proxyMode": {
+        "type": "string",
+        "title": "代理模式",
+        "enum": ["none", "per_account", "pool"],
+        "default": "none"
+      }
     },
     "required": ["targetUrl"]
   },
@@ -428,20 +434,20 @@ airdrop-farm/
 
 **字段说明：**
 
-| 字段 | 必填 | 说明 |
-|------|------|------|
-| id | ✅ | 脚本唯一标识 |
-| name | ✅ | 显示名称 |
-| version | ✅ | 语义化版本 |
-| description | ✅ | 用途描述 |
-| entryPoint | ✅ | 入口文件名（相对脚本目录） |
-| runtime | ✅ | 运行时：`"node"` |
-| requiredAccountTemplateIds | ❌ | 需要的账户模板 ID 列表。如填写，安装脚本前必须已安装对应模板 |
-| schema | ✅ | 任务配置表单的 JSON Schema。用于 `DynamicForm` 组件自动渲染 |
-| permissions | ❌ | 权限声明：`["network", "filesystem"]` |
-| checksum | ❌ | 服务端填充 |
-| tags | ❌ | 分类标签 |
-| changelog | ❌ | 更新日志 |
+| 字段                       | 必填 | 说明                                                         |
+| -------------------------- | ---- | ------------------------------------------------------------ |
+| id                         | ✅   | 脚本唯一标识                                                 |
+| name                       | ✅   | 显示名称                                                     |
+| version                    | ✅   | 语义化版本                                                   |
+| description                | ✅   | 用途描述                                                     |
+| entryPoint                 | ✅   | 入口文件名（相对脚本目录）                                   |
+| runtime                    | ✅   | 运行时：`"node"`                                             |
+| requiredAccountTemplateIds | ❌   | 需要的账户模板 ID 列表。如填写，安装脚本前必须已安装对应模板 |
+| schema                     | ✅   | 任务配置表单的 JSON Schema。用于 `DynamicForm` 组件自动渲染  |
+| permissions                | ❌   | 权限声明：`["network", "filesystem"]`                        |
+| checksum                   | ❌   | 服务端填充                                                   |
+| tags                       | ❌   | 分类标签                                                     |
+| changelog                  | ❌   | 更新日志                                                     |
 
 ### 6.2 脚本执行环境
 
@@ -493,6 +499,7 @@ airdrop-farm/
 **页面**：`src/renderer/src/pages/Accounts.tsx`
 
 **当前状态**：
+
 - 创建账户：选择模板 (`templates` 下拉) → 手动填写 `pool`（账号池）、`labels`、`notes`、`data`（手写 JSON textarea）
 - 支持编辑、删除
 - 列表展示：模板、账号池、标签、备注、data 字段
@@ -505,6 +512,7 @@ airdrop-farm/
 4. **字段移除**：创建表单中移除手动 `data` JSON textarea（由 DynamicForm 替代）
 
 **账户模板流程**：
+
 - 用户必须先从 Marketplace 下载账户模板（`templates` 表）
 - 下载的模板包含 `schema`（JSON Schema），前端用此 schema 渲染 DynamicForm
 - 如果用户还没有任何模板，点击「创建账户」时应提示「请先从模板市场下载账户模板」
@@ -516,6 +524,7 @@ airdrop-farm/
 **页面**：`src/renderer/src/pages/Proxies.tsx`
 
 **当前状态**：
+
 - Proxies 页面：手动添加/编辑/删除代理（`proxies` 表）
 - Settings 页面：可配置代理提供商（`proxy_providers` 表），从 API 自动拉取代理
 
@@ -537,6 +546,7 @@ airdrop-farm/
 **页面**：`src/renderer/src/pages/Tasks.tsx`
 
 **当前状态**：
+
 - 创建任务：选择已安装脚本（下拉列表）→ 通过 `DynamicForm` 渲染 `InstalledScript.schema.fields` → 填写表单 → 创建任务
 - 任务操作：启动、暂停、恢复、停止、删除
 - 脚本执行：`child_process.spawn` 子进程
@@ -556,6 +566,7 @@ airdrop-farm/
 **页面**：`src/renderer/src/pages/Airdrops.tsx`
 
 **当前状态**：
+
 - 创建空投：name、chain、status、projectType、description（普通 textarea）
 - 编辑时可添加 links、eligibilityCriteria、tasks、earnings、tags、labels
 - 无 Markdown 支持、无脚本模板关联、无账号组关联、无官网字段
@@ -577,6 +588,7 @@ airdrop-farm/
    - 账号组（下拉，从 `SELECT DISTINCT pool FROM accounts` 获取）
 
 **airdropprojects 表需新增字段**：
+
 - `website` TEXT — 官网 URL
 - `script_template_id` TEXT — 关联的任务脚本模板 ID（可空）
 - `account_pool` TEXT — 关联的账号池名称（可空）
@@ -595,9 +607,9 @@ airdrop-farm/
   {
     "type": "object",
     "properties": {
-      "address": {"type": "string", "title": "钱包地址"},
-      "privateKey": {"type": "string", "title": "私钥"},
-      "mnemonic": {"type": "string", "title": "助记词"}
+      "address": { "type": "string", "title": "钱包地址" },
+      "privateKey": { "type": "string", "title": "私钥" },
+      "mnemonic": { "type": "string", "title": "助记词" }
     },
     "required": ["address", "privateKey"]
   }
@@ -616,31 +628,31 @@ airdrop-farm/
 
 所有共享类型定义在 `client/src/shared/types/index.ts`。
 
-| 类型 | 说明 |
-|------|------|
-| `Wallet` | EVM/Solana/SUI/Bitcoin 钱包 |
-| `Account` | 账号池中的账户（关联 Template） |
-| `Proxy` | 代理配置 |
-| `ProxyProvider` | 代理提供商 API 配置 |
-| `Task` | 任务（关联脚本文件夹） |
-| `TaskLog` | 任务日志 |
-| `TaskStatus` | `idle \| running \| paused \| stopped \| complete \| error` |
-| `Template` | 账户模板 |
-| `TaskTemplate` | 任务脚本模板（已安装的任务脚本） |
-| `ScheduledTask` | 定时任务 |
-| `AirdropProject` | 空投项目 |
-| `AirdropStatus` | `ongoing \| completed \| cancelled \| claimed` |
-| `AirdropProjectType` | `testnet \| mainnet \| galxe \| quest \| social \| other` |
-| `RemoteScript` | 服务端脚本元数据 |
-| `InstalledScript` | 已安装到本地的脚本 |
-| `RemoteTemplate` | 服务端模板元数据 |
-| `AirdropLink` | `{label, url}` |
-| `AirdropTaskItem` | 空投任务项 |
-| `Earning` | 收益记录 |
-| `StatsAggregate` | Dashboard 统计聚合 |
-| `AppInfo` | 应用信息 |
-| `ApiResult<T>` | `{data?: T, error?: ApiError}` |
-| `ListResponse<T>` | `{items: T[], total, page, pageSize, totalPages}` |
+| 类型                 | 说明                                                        |
+| -------------------- | ----------------------------------------------------------- |
+| `Wallet`             | EVM/Solana/SUI/Bitcoin 钱包                                 |
+| `Account`            | 账号池中的账户（关联 Template）                             |
+| `Proxy`              | 代理配置                                                    |
+| `ProxyProvider`      | 代理提供商 API 配置                                         |
+| `Task`               | 任务（关联脚本文件夹）                                      |
+| `TaskLog`            | 任务日志                                                    |
+| `TaskStatus`         | `idle \| running \| paused \| stopped \| complete \| error` |
+| `Template`           | 账户模板                                                    |
+| `TaskTemplate`       | 任务脚本模板（已安装的任务脚本）                            |
+| `ScheduledTask`      | 定时任务                                                    |
+| `AirdropProject`     | 空投项目                                                    |
+| `AirdropStatus`      | `ongoing \| completed \| cancelled \| claimed`              |
+| `AirdropProjectType` | `testnet \| mainnet \| galxe \| quest \| social \| other`   |
+| `RemoteScript`       | 服务端脚本元数据                                            |
+| `InstalledScript`    | 已安装到本地的脚本                                          |
+| `RemoteTemplate`     | 服务端模板元数据                                            |
+| `AirdropLink`        | `{label, url}`                                              |
+| `AirdropTaskItem`    | 空投任务项                                                  |
+| `Earning`            | 收益记录                                                    |
+| `StatsAggregate`     | Dashboard 统计聚合                                          |
+| `AppInfo`            | 应用信息                                                    |
+| `ApiResult<T>`       | `{data?: T, error?: ApiError}`                              |
+| `ListResponse<T>`    | `{items: T[], total, page, pageSize, totalPages}`           |
 
 ---
 
@@ -662,25 +674,30 @@ airdrop-farm/
 ## 10. 待实现功能清单（TODO）
 
 ### 账户管理
+
 - [ ] DynamicForm 根据模板 schema 自动渲染表单（替代手写 JSON）
 - [ ] JSON 批量导入账户
 - [ ] 创建账户时检查账号池是否存在
 
 ### 代理管理
+
 - [ ] 统一代理管理入口到 Proxies 页面
 - [ ] 支持代理格式：api / ip / ws / manual
 - [ ] ProxyProvider 自动同步到 Proxies 列表
 
 ### 任务系统
+
 - [ ] 通过任务模板（而非脚本路径）选择脚本
 - [ ] 脚本 SDK：stdin/stdout JSON-RPC 通信协议
 - [ ] requiredAccountTemplateIds 校验
 
 ### 空投管理
+
 - [ ] 新增字段：website、scriptTemplateId、accountPool
 - [ ] Markdown 编辑器 + 渲染器
 - [ ] 账号组下拉选择
 
 ### 服务端
+
 - [x] 废弃 marketplace-server/，统一使用 server/
 - [ ] manifest.json 上传时自动校验格式
