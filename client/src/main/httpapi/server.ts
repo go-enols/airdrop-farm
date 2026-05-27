@@ -13,7 +13,10 @@ export class HttpApiServer {
   private server: ReturnType<typeof createServer> | null = null
   private actualPort: number | null = null
 
-  constructor(private port = 34116) {}
+  constructor(
+    private port = 34116,
+    private authToken: string = ''
+  ) {}
 
   start(): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -63,11 +66,9 @@ export class HttpApiServer {
 
   private async handleRequest(req: IncomingMessage, res: ServerResponse): Promise<void> {
     res.setHeader('Content-Type', 'application/json')
-    // Allow all CORS since this is a local-only 127.0.0.1 fallback server
-    // for renderer communication - no external clients can access it
     res.setHeader('Access-Control-Allow-Origin', '*')
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 
     if (req.method === 'OPTIONS') {
       res.writeHead(204)
@@ -79,6 +80,15 @@ export class HttpApiServer {
       res.writeHead(200)
       res.end(JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }))
       return
+    }
+
+    if (this.authToken) {
+      const auth = req.headers.authorization
+      if (!auth || auth !== `Bearer ${this.authToken}`) {
+        res.writeHead(401)
+        res.end(JSON.stringify({ error: { message: 'Unauthorized', code: 'UNAUTHORIZED' } }))
+        return
+      }
     }
 
     if (req.method === 'POST' && req.url === '/api/call') {

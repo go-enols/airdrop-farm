@@ -1,11 +1,13 @@
 import { app, shell, BrowserWindow } from 'electron'
 import { join } from 'path'
+import { randomBytes } from 'crypto'
 import { spawn, type ChildProcess } from 'child_process'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { autoUpdater } from 'electron-updater'
 import icon from '../../resources/icon.png?asset'
 import { registerIpcHandlers } from './ipc'
 import { StoreService } from './services/store'
+import { EncryptionService } from './services/encryption'
 import { WalletService } from './services/wallet'
 import { TaskService } from './services/task'
 import { ScriptFetcher } from './services/script-fetcher'
@@ -66,7 +68,7 @@ app.commandLine.appendSwitch(
   'VaapiVideoDecoder,VaapiVideoEncoder,VaapiVideoDecodeLinuxGL'
 )
 
-function createWindow(httpPort: number): void {
+function createWindow(httpPort: number, httpApiToken: string): void {
   const isDarwin = process.platform === 'darwin'
   const mainWindow = new BrowserWindow({
     width: 1280,
@@ -82,7 +84,7 @@ function createWindow(httpPort: number): void {
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
-      additionalArguments: [`--http-port=${httpPort}`]
+      additionalArguments: [`--http-port=${httpPort}`, `--http-token=${httpApiToken}`]
     }
   })
 
@@ -108,23 +110,35 @@ function createWindow(httpPort: number): void {
 
 function startMarketplaceServer(): void {
   const logger = createLogger('marketplace-server')
-  const serverDir = join(app.getAppPath(), 'server')
-
-  // In dev mode, use tsx to run TypeScript directly
-  // In production, use the compiled JS
+  const serverDir = is.dev
+    ? join(app.getAppPath(), '..', 'server')
+    : join(process.resourcesPath, 'server')
   const cmd = is.dev ? 'npx' : process.execPath
-  const args = is.dev
-    ? ['tsx', 'src/index.ts']
-    : ['dist/index.js']
+  const args = is.dev ? ['tsx', 'src/index.ts'] : [join(serverDir, 'dist', 'index.js')]
 
-  const apiKey = store.getSetting('marketplace_api_key') || 'airdrop-farm-dev-key'
+  let apiKey = store.getSetting('marketplace_api_key')
+  if (!apiKey) {
+    apiKey = randomBytes(32).toString('hex')
+    store.setSetting('marketplace_api_key', apiKey)
+  }
+  let jwtSecret = store.getSetting('marketplace_jwt_secret')
+  if (!jwtSecret) {
+    jwtSecret = randomBytes(32).toString('hex')
+    store.setSetting('marketplace_jwt_secret', jwtSecret)
+  }
 
   try {
     marketplaceServerProcess = spawn(cmd, args, {
       cwd: serverDir,
-      env: { ...process.env, MARKETPLACE_API_KEY: apiKey, PORT: '3400' },
+      env: {
+        ...process.env,
+        JWT_SECRET: jwtSecret,
+        MARKETPLACE_API_KEY: apiKey,
+        PORT: '3400',
+        HOST: '127.0.0.1'
+      },
       stdio: 'pipe',
-      shell: true
+      shell: false
     })
 
     marketplaceServerProcess.stdout?.on('data', (data: Buffer) => {
@@ -151,7 +165,8 @@ app.whenReady().then(async () => {
   const dataDir = app.getPath('userData')
   const dbPath = join(dataDir, 'airdrop-farm.db')
 
-  store = new StoreService(dbPath)
+  const encryption = new EncryptionService()
+  store = new StoreService(dbPath, encryption)
   const walletService = new WalletService(store)
   taskService = new TaskService(store, {
     rendererSender: (channel, data) => {
@@ -175,10 +190,10 @@ app.whenReady().then(async () => {
     taskRepo: store.taskRepo
   })
 
-  // Start marketplace server (scripts / templates backend)
   startMarketplaceServer()
 
-  httpServer = new HttpApiServer(34116)
+  const httpApiToken = randomBytes(32).toString('hex')
+  httpServer = new HttpApiServer(34116, httpApiToken)
   await httpServer.start()
   const httpPort = httpServer.getPort()
 
@@ -186,15 +201,14 @@ app.whenReady().then(async () => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  createWindow(httpPort)
+  createWindow(httpPort, httpApiToken)
 
-  // Auto-check for updates on startup (after window is ready)
   setTimeout(() => {
     autoUpdater.checkForUpdates()
   }, 3000)
 
   app.on('activate', function () {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow(httpPort)
+    if (BrowserWindow.getAllWindows().length === 0) createWindow(httpPort, httpApiToken)
   })
 })
 

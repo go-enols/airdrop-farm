@@ -67,14 +67,29 @@ async function callIPC<T>(channel: string, args: unknown[]): Promise<T> {
   return result.data as T
 }
 
+function getHttpToken(): string {
+  try {
+    const ep = window.electronAPI
+    if (ep?.httpToken && typeof ep.httpToken === 'string') return ep.httpToken
+  } catch {
+    // Ignore access errors
+  }
+  return ''
+}
+
 async function tryHttpPort<T>(port: number, channel: string, args: unknown[]): Promise<T | null> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 1500)
   try {
     const url = `http://127.0.0.1:${port}/api/call`
+    const token = getHttpToken()
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`
+    }
     const response = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ channel, args }),
       signal: controller.signal
     })
