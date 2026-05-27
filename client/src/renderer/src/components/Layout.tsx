@@ -79,7 +79,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             })}
           </nav>
         </aside>
-        <main className="flex-1 overflow-auto p-6 bg-bg-page">{children}</main>
+        <main key={location.pathname} className="flex-1 overflow-auto p-6 bg-bg-page animate-fade-in">
+          {children}
+        </main>
       </div>
     </div>
   )
