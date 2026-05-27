@@ -29,6 +29,9 @@ export class ScriptFetcher {
   }
 
   private getAuthHeaders(): Record<string, string> {
+    // Prefer JWT over API key
+    const jwt = this.store.getSetting('marketplace_jwt')
+    if (jwt) return { Authorization: `Bearer ${jwt}` }
     const key = this.store.getSetting('marketplace_api_key') || 'airdrop-farm-dev-key'
     return key ? { Authorization: `Bearer ${key}` } : {}
   }
@@ -80,6 +83,7 @@ export class ScriptFetcher {
       name: (manifest.name as string) || script.name,
       version: (manifest.version as string) || script.version,
       description: (manifest.description as string) || script.description,
+      entryPoint: (manifest.entryPoint as string) || 'index.js',
       schema: (manifest.schema as Record<string, unknown>) || script.schema,
       installPath: scriptDir,
       checksum: script.checksum,
@@ -99,8 +103,7 @@ export class ScriptFetcher {
         installPath: installed.installPath,
         manifest: manifest,
         remoteUrl: installed.remoteUrl,
-        isInstalled: true,
-        updatedAt: installed.updatedAt
+        isInstalled: true
       })
     } else {
       try {
@@ -154,6 +157,24 @@ export class ScriptFetcher {
 
   removeScript(scriptId: string): void {
     const scriptDir = join(this.scriptsDir, scriptId)
+    const tmpl = this.store.getTaskTemplate(scriptId)
+    if (tmpl) {
+      const installPath = tmpl.installPath
+      const tasks = this.store.taskRepo.listTasks(1, 99999)
+      for (const task of tasks.items) {
+        if (task.scriptFolder === installPath || task.scriptFolder === scriptId) {
+          this.store.taskRepo.clearTaskLogs(task.id)
+          this.store.taskRepo.deleteTask(task.id)
+        }
+      }
+      const scheduled = this.store.listScheduledTasks(1, 99999)
+      for (const st of scheduled.items) {
+        if (st.templateId === scriptId) {
+          this.store.deleteScheduledTask(st.id)
+        }
+      }
+      this.store.deleteTaskTemplate(scriptId)
+    }
     if (existsSync(scriptDir)) {
       rmSync(scriptDir, { recursive: true, force: true })
       logger.info('Script removed', { scriptId })

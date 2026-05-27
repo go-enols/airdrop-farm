@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from 'fs'
+import { join } from 'path'
 import { StoreService } from './store'
 import { TaskService } from './task'
 import { createLogger } from '../utils/logger'
@@ -64,7 +66,7 @@ export class SchedulerService {
   private store: StoreService
   private taskService: TaskService
   private timer: ReturnType<typeof setInterval> | null = null
-  private lastFired = new Map<string, number>()
+
 
   constructor(store: StoreService, taskService: TaskService) {
     this.store = store
@@ -94,10 +96,10 @@ export class SchedulerService {
       for (const st of res.items) {
         if (!st.enabled) continue
         if (!matchesCron(st.cronExpression, now)) continue
-        const lastMs = this.lastFired.get(st.id) || 0
+        // Use persisted lastRun for dedup so restarts don't re-fire already-executed schedules
+        const lastMs = st.lastRun ? new Date(st.lastRun).getTime() : 0
         if (now.getTime() - lastMs < 55000) continue
 
-        this.lastFired.set(st.id, now.getTime())
         this.fire(st, now)
       }
     } catch (err) {
@@ -110,6 +112,24 @@ export class SchedulerService {
       const tpl = this.store.getTaskTemplate(st.templateId)
       if (!tpl || !tpl.isInstalled) {
         logger.warn('Scheduled task has no installed script', { id: st.id, templateId: st.templateId })
+        return
+      }
+      if (!existsSync(tpl.installPath)) {
+        logger.warn('Scheduled task script directory missing on disk', { id: st.id, path: tpl.installPath })
+        return
+      }
+      let entryFile = join(tpl.installPath, 'index.js')
+      const metaPath = join(tpl.installPath, 'meta.json')
+      if (existsSync(metaPath)) {
+        try {
+          const meta = JSON.parse(readFileSync(metaPath, 'utf-8')) as Record<string, unknown>
+          if (meta.entryPoint && typeof meta.entryPoint === 'string') {
+            entryFile = join(tpl.installPath, meta.entryPoint)
+          }
+        } catch { /* ignore */ }
+      }
+      if (!existsSync(entryFile)) {
+        logger.warn('Scheduled task entry point missing on disk', { id: st.id, path: entryFile })
         return
       }
       const task = this.store.taskRepo.createTask({

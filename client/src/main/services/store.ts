@@ -631,8 +631,8 @@ export class StoreService {
     return rows.map((r) => r.pool)
   }
 
-  createTemplate(data: Omit<Template, 'id' | 'updatedAt'>): Template {
-    const id = uuidv4()
+  createTemplate(data: Omit<Template, 'id' | 'updatedAt'> & { id?: string }): Template {
+    const id = data.id ?? uuidv4()
     const updatedAt = nowISO()
     this.stmt('template.insert').run(
       id,

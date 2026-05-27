@@ -51,19 +51,62 @@ export class TaskService {
   private async installDependencies(cwd: string, running: RunningTask): Promise<void> {
     const pkgPath = join(cwd, 'package.json')
     if (!existsSync(pkgPath)) return
-    const nmPath = join(cwd, 'node_modules')
-    if (existsSync(nmPath)) return
 
-    running.logBuffer.push('info', '检测到 package.json，正在安装依赖...')
+    const nmPath = join(cwd, 'node_modules')
+    const nmExists = existsSync(nmPath)
+
+    if (nmExists) {
+      const pkgStat = statSync(pkgPath)
+      const nmStat = statSync(nmPath)
+
+      // If node_modules is newer than package.json AND all declared
+      // dependencies actually exist on disk, skip install.
+      if (pkgStat.mtimeMs < nmStat.mtimeMs) {
+        if (this.areAllDepsInstalled(pkgPath, nmPath)) return
+        running.logBuffer.push(
+          'warn',
+          'node_modules 不完整（部分依赖缺失），将重新安装…'
+        )
+      } else {
+        running.logBuffer.push('info', 'package.json 已更新，重新安装依赖...')
+      }
+    } else {
+      running.logBuffer.push('info', '检测到 package.json，正在安装依赖...')
+    }
+
     try {
-      await execAsync('npm install --production --no-audit --no-fund', {
+      await execAsync('npm install --omit=dev --no-audit --no-fund', {
         cwd,
-        timeout: 120000,
+        timeout: 180000,
       })
       running.logBuffer.push('info', '依赖安装完成')
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
-      running.logBuffer.push('warn', `依赖安装失败: ${msg}`)
+      throw new Error(`依赖安装失败: ${msg}`)
+    }
+  }
+
+  /**
+   * Verify that every dependency declared in package.json's "dependencies"
+   * has a corresponding directory inside node_modules.
+   * Returns false if any declared package is missing, true otherwise.
+   */
+  private areAllDepsInstalled(pkgPath: string, nmPath: string): boolean {
+    try {
+      const raw = readFileSync(pkgPath, 'utf-8')
+      const pkg = JSON.parse(raw) as Record<string, unknown>
+      const deps = pkg.dependencies as Record<string, string> | undefined
+      if (!deps || Object.keys(deps).length === 0) return true
+
+      for (const name of Object.keys(deps)) {
+        // Scoped packages like "@scope/name" need a directory at node_modules/@scope/name
+        const depDir = join(nmPath, name)
+        if (!existsSync(depDir)) return false
+      }
+      return true
+    } catch {
+      // If we can't read/parse package.json, assume deps are missing (safer)
+      return false
     }
   }
 
@@ -98,54 +141,67 @@ export class TaskService {
 
     try {
       const scriptPath = task.scriptFolder
-      let entryPoint = scriptPath
-      let cwd = scriptPath
+      if (!existsSync(scriptPath)) {
+        const localPath = join(this.scriptsDir, scriptPath)
+        if (!existsSync(localPath)) {
+          throw new Error(`Script not found: ${scriptPath}. The script may have been removed.`)
+        }
+      }
 
-      const isDirectory = existsSync(scriptPath) && statSync(scriptPath).isDirectory()
+      const resolvedPath = existsSync(scriptPath) ? scriptPath : join(this.scriptsDir, scriptPath)
+      const isDirectory = statSync(resolvedPath).isDirectory()
+      let entryPoint = resolvedPath
+      let cwd = resolvedPath
 
       if (isDirectory) {
-        cwd = scriptPath
-        const metaPath = join(scriptPath, 'meta.json')
+        cwd = resolvedPath
+        const metaPath = join(resolvedPath, 'meta.json')
         if (existsSync(metaPath)) {
           const meta = JSON.parse(readFileSync(metaPath, 'utf-8'))
-          if (meta.entryPoint) {
-            entryPoint = join(scriptPath, meta.entryPoint)
-          } else {
-            entryPoint = join(scriptPath, 'index.js')
-          }
+          entryPoint = meta.entryPoint
+            ? join(resolvedPath, meta.entryPoint)
+            : join(resolvedPath, 'index.js')
         } else {
-          entryPoint = join(scriptPath, 'index.js')
+          entryPoint = join(resolvedPath, 'index.js')
         }
-      } else if (!existsSync(scriptPath)) {
-        const localPath = join(this.scriptsDir, scriptPath)
-        if (existsSync(localPath)) {
-          entryPoint = localPath
-          cwd = localPath
-          const metaPath = join(localPath, 'meta.json')
-          if (existsSync(metaPath)) {
-            const meta = JSON.parse(readFileSync(metaPath, 'utf-8'))
-            if (meta.entryPoint) entryPoint = join(localPath, meta.entryPoint)
-          }
-        }
+      }
+
+      if (!existsSync(entryPoint)) {
+        throw new Error(`Entry point not found: ${entryPoint}. The script may be corrupted or incompletely installed.`)
       }
 
       await this.installDependencies(cwd, running)
 
-      const env: Record<string, string> = { ...process.env as Record<string, string> }
+      const env: Record<string, string> = {}
       for (const [key, value] of Object.entries(task.config)) {
         if (value !== undefined && value !== null) {
           env[`TASK_${key.toUpperCase()}`] = String(value)
         }
       }
+      env['PATH'] = process.env.PATH ?? ''
+      env['HOME'] = process.env.HOME ?? ''
+      env['USERPROFILE'] = process.env.USERPROFILE ?? ''
+      env['APPDATA'] = process.env.APPDATA ?? ''
+      env['TEMP'] = process.env.TEMP ?? ''
+      env['TMP'] = process.env.TMP ?? ''
+      env['NODE_PATH'] = join(cwd, 'node_modules')
       env['TASK_ID'] = id
       env['TASK_CONFIG'] = JSON.stringify(task.config)
 
       let command = entryPoint
       const args: string[] = []
 
-      if (entryPoint.endsWith('.js')) {
+      const isNodeFile =
+        entryPoint.endsWith('.js') ||
+        entryPoint.endsWith('.mjs') ||
+        entryPoint.endsWith('.cjs')
+
+      if (isNodeFile) {
         command = 'node'
         args.push(entryPoint)
+      } else if (entryPoint.endsWith('.ts')) {
+        command = 'npx'
+        args.push('tsx', entryPoint)
       }
 
       if (task.config.args && Array.isArray(task.config.args)) {
@@ -157,7 +213,6 @@ export class TaskService {
       const proc = spawn(command, args, {
         cwd,
         env,
-        shell: true,
         stdio: ['pipe', 'pipe', 'pipe'],
       })
 
@@ -309,11 +364,40 @@ export class TaskService {
       if (task.status === 'running' || task.status === 'paused') {
         this.store.taskRepo.updateTask(task.id, { status: 'stopped' })
         cleaned++
+        continue
+      }
+      if (task.status === 'idle' && task.scriptFolder) {
+        const resolvedPath = existsSync(task.scriptFolder)
+          ? task.scriptFolder
+          : join(this.scriptsDir, task.scriptFolder)
+        if (!existsSync(resolvedPath)) {
+          this.store.taskRepo.updateTask(task.id, { status: 'error' })
+          cleaned++
+          continue
+        }
+        const isDir = existsSync(resolvedPath) && statSync(resolvedPath).isDirectory()
+        if (isDir) {
+          const metaPath = join(resolvedPath, 'meta.json')
+          let entryFile = join(resolvedPath, 'index.js')
+          if (existsSync(metaPath)) {
+            try {
+              const meta = JSON.parse(readFileSync(metaPath, 'utf-8'))
+              if (meta.entryPoint) entryFile = join(resolvedPath, meta.entryPoint)
+            } catch { /* ignore */ }
+          }
+          if (!existsSync(entryFile)) {
+            this.store.taskRepo.updateTask(task.id, { status: 'error' })
+            cleaned++
+          }
+        } else if (!existsSync(resolvedPath)) {
+          this.store.taskRepo.updateTask(task.id, { status: 'error' })
+          cleaned++
+        }
       }
     }
     this.runningTasks.clear()
     if (cleaned > 0) {
-      createLogger('task').info(`Cleaned ${cleaned} orphan tasks`)
+      createLogger('task').info(`Cleaned ${cleaned} orphan/broken tasks`)
     }
   }
 
