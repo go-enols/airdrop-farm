@@ -63,10 +63,7 @@ export class TaskService {
       // dependencies actually exist on disk, skip install.
       if (pkgStat.mtimeMs < nmStat.mtimeMs) {
         if (this.areAllDepsInstalled(pkgPath, nmPath)) return
-        running.logBuffer.push(
-          'warn',
-          'node_modules 不完整（部分依赖缺失），将重新安装…'
-        )
+        running.logBuffer.push('warn', 'node_modules 不完整（部分依赖缺失），将重新安装…')
       } else {
         running.logBuffer.push('info', 'package.json 已更新，重新安装依赖...')
       }
@@ -77,7 +74,7 @@ export class TaskService {
     try {
       await execAsync('npm install --omit=dev --no-audit --no-fund', {
         cwd,
-        timeout: 180000,
+        timeout: 180000
       })
       running.logBuffer.push('info', '依赖安装完成')
     } catch (err) {
@@ -134,7 +131,7 @@ export class TaskService {
       isSoftPaused: false,
       startedAt: Date.now(),
       stdout: '',
-      stderr: '',
+      stderr: ''
     }
 
     this.runningTasks.set(id, running)
@@ -167,16 +164,42 @@ export class TaskService {
       }
 
       if (!existsSync(entryPoint)) {
-        throw new Error(`Entry point not found: ${entryPoint}. The script may be corrupted or incompletely installed.`)
+        throw new Error(
+          `Entry point not found: ${entryPoint}. The script may be corrupted or incompletely installed.`
+        )
       }
 
       await this.installDependencies(cwd, running)
 
+      const BLOCKED_ENV_KEYS = new Set([
+        'PATH',
+        'HOME',
+        'USERPROFILE',
+        'APPDATA',
+        'TEMP',
+        'TMP',
+        'NODE_PATH',
+        'TASK_ID',
+        'TASK_CONFIG',
+        'SHELL',
+        'USER',
+        'LOGNAME',
+        'LANG',
+        'TERM',
+        'LD_LIBRARY_PATH',
+        'LD_PRELOAD',
+        'DYLD_LIBRARY_PATH',
+        'PYTHONPATH',
+        'CLASSPATH'
+      ])
+
       const env: Record<string, string> = {}
       for (const [key, value] of Object.entries(task.config)) {
-        if (value !== undefined && value !== null) {
-          env[`TASK_${key.toUpperCase()}`] = String(value)
-        }
+        if (value === undefined || value === null) continue
+        if (key === 'args' || key === '_command') continue
+        const envKey = `TASK_${key.toUpperCase()}`
+        if (BLOCKED_ENV_KEYS.has(envKey)) continue
+        env[envKey] = String(value)
       }
       env['PATH'] = process.env.PATH ?? ''
       env['HOME'] = process.env.HOME ?? ''
@@ -192,9 +215,7 @@ export class TaskService {
       const args: string[] = []
 
       const isNodeFile =
-        entryPoint.endsWith('.js') ||
-        entryPoint.endsWith('.mjs') ||
-        entryPoint.endsWith('.cjs')
+        entryPoint.endsWith('.js') || entryPoint.endsWith('.mjs') || entryPoint.endsWith('.cjs')
 
       if (isNodeFile) {
         command = 'node'
@@ -213,7 +234,7 @@ export class TaskService {
       const proc = spawn(command, args, {
         cwd,
         env,
-        stdio: ['pipe', 'pipe', 'pipe'],
+        stdio: ['pipe', 'pipe', 'pipe']
       })
 
       running.process = proc
@@ -237,6 +258,7 @@ export class TaskService {
       })
 
       proc.on('exit', (code) => {
+        if (!this.runningTasks.has(id)) return
         logBuffer.destroy()
         const status = code === 0 ? 'complete' : 'error'
         const output: TaskOutput = {
@@ -244,7 +266,7 @@ export class TaskService {
           exitCode: code,
           stdout: running.stdout.slice(-10000),
           stderr: running.stderr.slice(-10000),
-          durationMs: Date.now() - running.startedAt,
+          durationMs: Date.now() - running.startedAt
         }
         this.store.taskRepo.updateTask(id, { status, endedAt: new Date().toISOString() })
         this.store.taskRepo.addTaskLog(id, 'info', `Process exited with code ${code ?? 'null'}`)
@@ -353,7 +375,7 @@ export class TaskService {
       exitCode: null,
       stdout: running.stdout.slice(-10000),
       stderr: running.stderr.slice(-10000),
-      durationMs: Date.now() - running.startedAt,
+      durationMs: Date.now() - running.startedAt
     }
   }
 
@@ -383,7 +405,9 @@ export class TaskService {
             try {
               const meta = JSON.parse(readFileSync(metaPath, 'utf-8'))
               if (meta.entryPoint) entryFile = join(resolvedPath, meta.entryPoint)
-            } catch { /* ignore */ }
+            } catch {
+              /* ignore */
+            }
           }
           if (!existsSync(entryFile)) {
             this.store.taskRepo.updateTask(task.id, { status: 'error' })
