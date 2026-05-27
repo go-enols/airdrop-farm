@@ -103,7 +103,7 @@ export const templateApi = {
   list: (page?: number, pageSize?: number, search?: string) =>
     call<ListResponse<Template>>('template:list', [page, pageSize, search]),
   get: (id: string) => call<Template | null>('template:get', [id]),
-  create: (data: Omit<Template, 'id' | 'updatedAt'>) => call<Template>('template:create', [data]),
+  create: (data: Omit<Template, 'id' | 'updatedAt'> & { id?: string }) => call<Template>('template:create', [data]),
   update: (id: string, data: Partial<Template>) => call<Template>('template:update', [id, data]),
   delete: (id: string) => call<void>('template:delete', [id])
 }
@@ -236,6 +236,11 @@ export async function setMarketplaceApiKey(key: string): Promise<void> {
 }
 
 export async function getMarketplaceHeaders(): Promise<Record<string, string>> {
+  // Prefer JWT over API key
+  try {
+    const jwt = await settingApi.get('marketplace_jwt')
+    if (jwt) return { Authorization: `Bearer ${jwt}` }
+  } catch { /* ignore */ }
   const key = await getMarketplaceApiKey()
   return key ? { Authorization: `Bearer ${key}` } : {}
 }
@@ -246,7 +251,19 @@ export const marketplaceApi = {
   getApiKey: getMarketplaceApiKey,
   setApiKey: setMarketplaceApiKey,
 
-listScripts: async (serverUrl?: string) => {
+  login: (username: string, password: string) =>
+    call<{ token: string; user: { id: string; username: string; displayName: string; role: string } }>(
+      'market:login',
+      [username, password]
+    ),
+
+  getUser: () => call<{ id: string; username: string; displayName: string; role: string } | null>(
+    'market:getUser'
+  ),
+
+  logout: () => call<null>('market:logout'),
+
+  listScripts: async (serverUrl?: string) => {
     const base = serverUrl || (await getMarketplaceUrl())
     const headers = await getMarketplaceHeaders()
     const resp = await fetch(`${base}/api/scripts`, { headers })

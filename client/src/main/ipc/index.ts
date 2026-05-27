@@ -366,5 +366,40 @@ export function registerIpcHandlers(services: Services): void {
   register('window:isMaximized', () => BrowserWindow.getFocusedWindow()?.isMaximized() ?? false)
   register('window:platform', () => process.platform)
 
+  // Marketplace user system
+  register('market:login', async (username, password) => {
+    const serverUrl = store.getSetting('marketplace_server_url') || 'http://localhost:3400'
+    const apiKey = store.getSetting('marketplace_api_key') || 'airdrop-farm-dev-key'
+    const resp = await fetch(`${serverUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({ username, password })
+    })
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}))
+      throw new Error((err as { error?: { message?: string } }).error?.message || `HTTP ${resp.status}`)
+    }
+    const data = (await resp.json()) as {
+      data?: { token?: string; user?: { id: string; username: string; displayName: string; role: string } }
+    }
+    if (data.data?.token) {
+      store.setSetting('marketplace_jwt', data.data.token)
+      store.setSetting('marketplace_user', JSON.stringify(data.data.user))
+    }
+    return data.data
+  })
+
+  register('market:getUser', () => {
+    const raw = store.getSetting('marketplace_user')
+    if (!raw) return null
+    try { return JSON.parse(raw) } catch { return null }
+  })
+
+  register('market:logout', () => {
+    store.deleteSetting('marketplace_jwt')
+    store.deleteSetting('marketplace_user')
+    return null
+  })
+
   logger.info('All handlers registered', { count: handlerMap.size })
 }

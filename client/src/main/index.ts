@@ -160,6 +160,7 @@ app.whenReady().then(async () => {
       }
     }
   })
+  taskService.cleanOrphanTasks()
   scriptFetcher = new ScriptFetcher(store)
   schedulerService = new SchedulerService(store, taskService)
   schedulerService.start()
