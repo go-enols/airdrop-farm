@@ -324,6 +324,63 @@ export function unflattenDotNotation(values: Record<string, unknown>): Record<st
   return result
 }
 
+export function fieldMetaToZodSchema(fields: FieldMeta[]): z.ZodObject<Record<string, z.ZodTypeAny>> {
+  const shape: Record<string, z.ZodTypeAny> = {}
+
+  for (const field of fields) {
+    let schema: z.ZodTypeAny
+
+    switch (field.type) {
+      case 'number': {
+        let numSchema = z.number()
+        if (field.min !== undefined) numSchema = numSchema.min(field.min)
+        if (field.max !== undefined) numSchema = numSchema.max(field.max)
+        schema = numSchema
+        break
+      }
+      case 'boolean':
+        schema = z.boolean()
+        break
+      case 'select':
+        if (field.options?.length) {
+          const values = field.options.map((o) => o.value) as [string, ...string[]]
+          schema = z.enum(values)
+        } else {
+          schema = z.string()
+        }
+        break
+      case 'multiselect':
+        schema = z.array(z.string())
+        break
+      case 'string':
+      default: {
+        let strSchema = z.string()
+        if (field.pattern) {
+          try {
+            strSchema = strSchema.regex(new RegExp(field.pattern))
+          } catch {
+            // Invalid regex pattern, skip
+          }
+        }
+        schema = strSchema
+        break
+      }
+    }
+
+    if (!field.required) {
+      schema = schema.optional()
+    }
+
+    if (field.defaultValue !== undefined) {
+      schema = schema.default(field.defaultValue)
+    }
+
+    shape[field.name] = schema
+  }
+
+  return z.object(shape)
+}
+
 export const commonTaskParams = z.object({
   proxyEnabled: z.boolean().default(false).describe('使用代理'),
   headless: z.boolean().default(true).describe('无头模式'),

@@ -459,8 +459,9 @@ const Accounts: React.FC = () => {
                   </label>
                   <DynamicForm
                     fields={fields}
-                    values={form.dynamicFormValues}
-                    onChange={(values) => setForm((f) => ({ ...f, dynamicFormValues: values }))}
+                    defaultValues={form.dynamicFormValues}
+                    onSubmit={(values) => setForm((f) => ({ ...f, dynamicFormValues: values }))}
+                    submitLabel="更新"
                   />
                 </div>
               )

@@ -1,13 +1,15 @@
-import React, { useRef, useCallback, useEffect } from 'react'
+import React from 'react'
+import { useForm, Controller } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import type { FieldMeta } from '../../../shared/schemas/task-params'
-import { validateFormFields } from '../../../shared/schemas/task-params'
+import { fieldMetaToZodSchema } from '../../../shared/schemas/task-params'
 
 interface DynamicFormProps {
   fields: FieldMeta[]
-  values: Record<string, unknown>
-  onChange: (values: Record<string, unknown>) => void
-  errors?: Record<string, string>
-  onValidate?: (errors: Record<string, string>) => void
+  defaultValues?: Record<string, unknown>
+  onSubmit: (values: Record<string, unknown>) => void | Promise<void>
+  submitLabel?: string
+  onCancel?: () => void
 }
 
 const inputBase =
@@ -15,69 +17,123 @@ const inputBase =
 
 const DynamicForm: React.FC<DynamicFormProps> = ({
   fields,
-  values,
-  onChange,
-  errors,
-  onValidate
+  defaultValues = {},
+  onSubmit,
+  submitLabel = '提交',
+  onCancel
 }) => {
-  const valuesRef = useRef(values)
-  valuesRef.current = values
-  const handleChange = useCallback(
-    (name: string, value: unknown): void => {
-      onChange({ ...valuesRef.current, [name]: value })
-    },
-    [onChange]
-  )
+  const schema = fieldMetaToZodSchema(fields)
 
-  useEffect(() => {
-    if (!onValidate) return
-    onValidate(validateFormFields(fields, values))
-  }, [fields, values, onValidate])
+  const {
+    control,
+    handleSubmit,
+    formState: { errors, isSubmitting }
+  } = useForm({
+    resolver: zodResolver(schema),
+    defaultValues: buildDefaultValues(fields, defaultValues)
+  })
 
   return (
-    <div className="space-y-4">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {fields.map((field) => (
         <div key={field.name}>
           <label className="block text-sm font-medium text-text-primary mb-1">
             {field.label}
             {!field.required && <span className="text-text-muted ml-1">(可选)</span>}
           </label>
-          {renderField(field, values[field.name], handleChange, errors?.[field.name])}
+          <Controller
+            name={field.name}
+            control={control}
+            render={({ field: rhfField }) => (
+              <>
+                {renderField(field, rhfField, getNestedError(errors, field.name))}
+              </>
+            )}
+          />
           {field.description && field.description !== field.label && (
             <p className="text-xs text-text-muted mt-1">{field.description}</p>
           )}
         </div>
       ))}
-    </div>
+      <div className="flex justify-end gap-2 pt-4">
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-4 py-2 text-sm border border-border-light hover:bg-bg-card-hover rounded-lg transition-colors"
+          >
+            取消
+          </button>
+        )}
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors"
+        >
+          {isSubmitting ? '提交中...' : submitLabel}
+        </button>
+      </div>
+    </form>
   )
+}
+
+function buildDefaultValues(
+  fields: FieldMeta[],
+  overrides: Record<string, unknown>
+): Record<string, unknown> {
+  const defaults: Record<string, unknown> = {}
+  for (const field of fields) {
+    if (overrides[field.name] !== undefined) {
+      defaults[field.name] = overrides[field.name]
+    } else if (field.defaultValue !== undefined) {
+      defaults[field.name] = field.defaultValue
+    } else if (field.type === 'boolean') {
+      defaults[field.name] = false
+    } else if (field.type === 'multiselect') {
+      defaults[field.name] = []
+    }
+  }
+  return defaults
+}
+
+function getNestedError(
+  errors: Record<string, unknown>,
+  name: string
+): string | undefined {
+  const parts = name.split('.')
+  let current: unknown = errors
+  for (const part of parts) {
+    if (!current || typeof current !== 'object') return undefined
+    current = (current as Record<string, unknown>)[part]
+  }
+  if (current && typeof current === 'object' && 'message' in current) {
+    return (current as { message?: string }).message
+  }
+  return undefined
 }
 
 function renderField(
   field: FieldMeta,
-  value: unknown,
-  onChange: (name: string, value: unknown) => void,
+  rhfField: { value: unknown; onChange: (...args: unknown[]) => void; onBlur: () => void },
   error?: string
 ): React.ReactNode {
-  const hasValue = value !== undefined && value !== null
-  const defaultStr =
-    field.defaultValue !== undefined && field.defaultValue !== null
-      ? String(field.defaultValue)
-      : ''
-  const strValue = hasValue ? String(value) : defaultStr
+  const { value, onChange, onBlur } = rhfField
 
   switch (field.type) {
     case 'boolean': {
-      const rawBool = value !== undefined && value !== null ? value : field.defaultValue
-      const checked = typeof rawBool === 'string' ? rawBool === 'true' : Boolean(rawBool ?? false)
+      const checked = Boolean(value ?? false)
       return (
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={checked}
-            onChange={(e) => onChange(field.name, e.target.checked)}
-            className="w-4 h-4 rounded border-border-light text-primary focus:ring-primary"
-          />
-          {error && <span className="text-xs text-danger">{error}</span>}
+        <div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={checked}
+              onChange={(e) => onChange(e.target.checked)}
+              onBlur={onBlur}
+              className="w-4 h-4 rounded border-border-light text-primary focus:ring-primary"
+            />
+          </div>
+          {error && <span className="text-xs text-danger mt-1 block">{error}</span>}
         </div>
       )
     }
@@ -87,20 +143,20 @@ function renderField(
         <div>
           <input
             type="number"
-            value={strValue}
+            value={value !== undefined && value !== null ? String(value) : ''}
             onChange={(e) => {
               const raw = e.target.value
               if (raw === '') {
-                onChange(field.name, undefined)
+                onChange(undefined)
                 return
               }
               const num = Number(raw)
-              if (!isNaN(num)) onChange(field.name, num)
+              if (!isNaN(num)) onChange(num)
             }}
+            onBlur={onBlur}
             min={field.min}
             max={field.max}
             className={`${inputBase} ${error ? 'border-danger' : ''}`}
-            placeholder={defaultStr}
           />
           {error && <span className="text-xs text-danger mt-1 block">{error}</span>}
         </div>
@@ -111,8 +167,9 @@ function renderField(
       return (
         <div>
           <select
-            value={strValue}
-            onChange={(e) => onChange(field.name, e.target.value)}
+            value={value !== undefined && value !== null ? String(value) : ''}
+            onChange={(e) => onChange(e.target.value)}
+            onBlur={onBlur}
             className={`${inputBase} ${error ? 'border-danger' : ''}`}
             disabled={!opts}
           >
@@ -135,10 +192,7 @@ function renderField(
     }
 
     case 'multiselect': {
-      const defaultArr = Array.isArray(field.defaultValue)
-        ? (field.defaultValue as string[])
-        : undefined
-      const selected = (value as string[] | undefined) ?? defaultArr ?? []
+      const selected = Array.isArray(value) ? (value as string[]) : []
       return (
         <div>
           <select
@@ -146,8 +200,9 @@ function renderField(
             value={selected}
             onChange={(e) => {
               const vals = Array.from(e.target.selectedOptions, (o) => o.value)
-              onChange(field.name, vals)
+              onChange(vals)
             }}
+            onBlur={onBlur}
             className={`${inputBase} min-h-[80px] ${error ? 'border-danger' : ''}`}
           >
             {field.options?.map((opt) => (
@@ -167,10 +222,10 @@ function renderField(
         <div>
           <input
             type="text"
-            value={strValue}
-            onChange={(e) => onChange(field.name, e.target.value)}
+            value={value !== undefined && value !== null ? String(value) : ''}
+            onChange={(e) => onChange(e.target.value)}
+            onBlur={onBlur}
             className={`${inputBase} ${error ? 'border-danger' : ''}`}
-            placeholder={defaultStr}
           />
           {error && <span className="text-xs text-danger mt-1 block">{error}</span>}
         </div>

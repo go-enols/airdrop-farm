@@ -44,7 +44,6 @@ const Scheduler: React.FC = () => {
   const [taskTemplates, setTaskTemplates] = useState<TaskTemplate[]>([])
   const [formFields, setFormFields] = useState<FieldMeta[]>([])
   const [formValues, setFormValues] = useState<Record<string, unknown>>({})
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
     taskTemplateApi
@@ -82,7 +81,6 @@ const Scheduler: React.FC = () => {
   const handleScriptChange = (id: string): void => {
     setForm((f) => ({ ...f, templateId: id }))
     setFormValues({})
-    setFormErrors({})
     if (!id) {
       setFormFields([])
       return
@@ -116,7 +114,6 @@ const Scheduler: React.FC = () => {
     if (formFields.length > 0) {
       const errors = validateFormFields(formFields, formValues)
       if (Object.keys(errors).length > 0) {
-        setFormErrors(errors)
         return
       }
     }
@@ -137,7 +134,6 @@ const Scheduler: React.FC = () => {
       setForm({ templateId: '', presetIdx: 0, customCron: '' })
       setFormFields([])
       setFormValues({})
-      setFormErrors({})
       fetchData()
     } catch {
       setError(t('common.error'))
@@ -327,7 +323,6 @@ const Scheduler: React.FC = () => {
           setForm({ templateId: '', presetIdx: 0, customCron: '' })
           setFormFields([])
           setFormValues({})
-          setFormErrors({})
         }}
         title={t('scheduler.createSchedule')}
       >
@@ -389,10 +384,11 @@ const Scheduler: React.FC = () => {
               </label>
               <DynamicForm
                 fields={formFields}
-                values={formValues}
-                onChange={setFormValues}
-                errors={formErrors}
-                onValidate={setFormErrors}
+                defaultValues={formValues}
+                onSubmit={(values) => {
+                  setFormValues(values)
+                }}
+                submitLabel="验证"
               />
             </div>
           )}

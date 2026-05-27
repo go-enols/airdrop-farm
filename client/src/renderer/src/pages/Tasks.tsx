@@ -68,7 +68,6 @@ const Tasks: React.FC = () => {
   const [selectedScript, setSelectedScript] = useState<InstalledScript | null>(null)
   const [formFields, setFormFields] = useState<FieldMeta[]>([])
   const [formValues, setFormValues] = useState<Record<string, unknown>>({})
-  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
   const [showScriptBrowser, setShowScriptBrowser] = useState(false)
   const [remoteScripts, setRemoteScripts] = useState<RemoteScript[]>([])
   const [loadingScripts, setLoadingScripts] = useState(false)
@@ -310,13 +309,11 @@ const Tasks: React.FC = () => {
         setFormFields([])
         setFormValues({})
       }
-      setFormErrors({})
       loadAccountsForScript(script)
     } else {
       setSelectedScript(null)
       setFormFields([])
       setFormValues({})
-      setFormErrors({})
       setNewScriptFolder('')
       setRequiredTemplates([])
       setAvailableAccounts([])
@@ -366,7 +363,6 @@ const Tasks: React.FC = () => {
     if (formFields.length > 0) {
       const errors = validateFormFields(formFields, formValues)
       if (Object.keys(errors).length > 0) {
-        setFormErrors(errors)
         return
       }
     }
@@ -471,7 +467,6 @@ const Tasks: React.FC = () => {
     setSelectedScript(null)
     setFormFields([])
     setFormValues({})
-    setFormErrors({})
     setRequiredTemplates([])
     setAvailableAccounts([])
     setAvailablePools([])
@@ -1045,10 +1040,11 @@ const Tasks: React.FC = () => {
           {formFields.length > 0 && (
             <DynamicForm
               fields={formFields}
-              values={formValues}
-              onChange={setFormValues}
-              errors={formErrors}
-              onValidate={setFormErrors}
+              defaultValues={formValues}
+              onSubmit={(values) => {
+                setFormValues(values)
+              }}
+              submitLabel="验证"
             />
           )}
         </div>
