@@ -267,9 +267,9 @@ export class StoreService {
   }
 
   private migrateAirdropProjects(): void {
-    const cols = this.db
-      .prepare("PRAGMA table_info('airdrop_projects')")
-      .all() as Array<{ name: string }>
+    const cols = this.db.prepare("PRAGMA table_info('airdrop_projects')").all() as Array<{
+      name: string
+    }>
     const names = new Set(cols.map((c) => c.name))
     const migrations: Record<string, string> = {
       website: "ALTER TABLE airdrop_projects ADD COLUMN website TEXT NOT NULL DEFAULT ''",
@@ -284,9 +284,7 @@ export class StoreService {
   }
 
   private migrateProxies(): void {
-    const cols = this.db
-      .prepare("PRAGMA table_info('proxies')")
-      .all() as Array<{ name: string }>
+    const cols = this.db.prepare("PRAGMA table_info('proxies')").all() as Array<{ name: string }>
     const names = new Set(cols.map((c) => c.name))
     if (!names.has('format')) {
       this.db.exec("ALTER TABLE proxies ADD COLUMN format TEXT NOT NULL DEFAULT 'manual'")
@@ -626,7 +624,9 @@ export class StoreService {
 
   listAccountPools(): string[] {
     const rows = this.db
-      .prepare('SELECT DISTINCT pool FROM accounts WHERE pool IS NOT NULL AND pool != \'\' ORDER BY pool')
+      .prepare(
+        "SELECT DISTINCT pool FROM accounts WHERE pool IS NOT NULL AND pool != '' ORDER BY pool"
+      )
       .all() as Array<{ pool: string }>
     return rows.map((r) => r.pool)
   }

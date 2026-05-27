@@ -79,7 +79,8 @@ function register(channel: string, handler: ApiHandler): void {
 }
 
 export function registerIpcHandlers(services: Services): void {
-  const { store, walletService, taskService, scriptFetcher, walletRepo, proxyRepo, taskRepo } = services
+  const { store, walletService, taskService, scriptFetcher, walletRepo, proxyRepo, taskRepo } =
+    services
 
   register('app:getInfo', () => store.getAppInfo(app.getVersion(), app.getPath('userData')))
   register('app:getStats', () => store.getStats())
@@ -162,7 +163,7 @@ export function registerIpcHandlers(services: Services): void {
       workerId: input.workerId ?? null,
       startedAt: input.startedAt ?? null,
       endedAt: input.endedAt ?? null,
-      isSandbox: input.isSandbox ?? false,
+      isSandbox: input.isSandbox ?? false
     })
   })
   register('task:update', (id, data) =>
@@ -181,9 +182,7 @@ export function registerIpcHandlers(services: Services): void {
   register('task:getOutput', (taskId) => taskService.getTaskOutput(taskId as string))
 
   register('script:listRemote', () => scriptFetcher.fetchScriptList())
-  register('script:download', (scriptId) =>
-    scriptFetcher.downloadScript(scriptId as string)
-  )
+  register('script:download', (scriptId) => scriptFetcher.downloadScript(scriptId as string))
   register('script:checkUpdate', () => scriptFetcher.checkUpdates())
   register('script:listInstalled', () => scriptFetcher.getInstalledScripts())
   register('script:remove', (scriptId) => scriptFetcher.removeScript(scriptId as string))
@@ -377,10 +376,15 @@ export function registerIpcHandlers(services: Services): void {
     })
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({}))
-      throw new Error((err as { error?: { message?: string } }).error?.message || `HTTP ${resp.status}`)
+      throw new Error(
+        (err as { error?: { message?: string } }).error?.message || `HTTP ${resp.status}`
+      )
     }
     const data = (await resp.json()) as {
-      data?: { token?: string; user?: { id: string; username: string; displayName: string; role: string } }
+      data?: {
+        token?: string
+        user?: { id: string; username: string; displayName: string; role: string }
+      }
     }
     if (data.data?.token) {
       store.setSetting('marketplace_jwt', data.data.token)
@@ -392,7 +396,11 @@ export function registerIpcHandlers(services: Services): void {
   register('market:getUser', () => {
     const raw = store.getSetting('marketplace_user')
     if (!raw) return null
-    try { return JSON.parse(raw) } catch { return null }
+    try {
+      return JSON.parse(raw)
+    } catch {
+      return null
+    }
   })
 
   register('market:logout', () => {

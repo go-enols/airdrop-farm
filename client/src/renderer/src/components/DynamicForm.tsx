@@ -45,9 +45,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
             name={field.name}
             control={control}
             render={({ field: rhfField }) => (
-              <>
-                {renderField(field, rhfField, getNestedError(errors, field.name))}
-              </>
+              <>{renderField(field, rhfField, getNestedError(errors, field.name))}</>
             )}
           />
           {field.description && field.description !== field.label && (
@@ -96,10 +94,7 @@ function buildDefaultValues(
   return defaults
 }
 
-function getNestedError(
-  errors: Record<string, unknown>,
-  name: string
-): string | undefined {
+function getNestedError(errors: Record<string, unknown>, name: string): string | undefined {
   const parts = name.split('.')
   let current: unknown = errors
   for (const part of parts) {

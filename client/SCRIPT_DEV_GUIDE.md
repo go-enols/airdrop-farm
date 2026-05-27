@@ -23,19 +23,19 @@ my-script/
 
 ### Field Reference
 
-| Field | Required | Type | Description |
-|-------|----------|------|-------------|
-| `id` | yes | string | Unique identifier. Use a reverse-domain style string (e.g. `com.example.my-script`). |
-| `name` | yes | string | Human-readable display name. |
-| `version` | yes | string | Semantic version (e.g. `"1.0.0"`). |
-| `description` | yes | string | Short description of what the script does. |
-| `entryPoint` | yes | string | Filename of the entry point relative to the script directory (e.g. `"index.js"`). |
-| `runtime` | yes | string | Must be `"node"`. No other runtimes are supported. |
-| `schema` | yes | object | JSON Schema describing the configuration form. Must be `{ "type": "object", "properties": {...} }`. |
-| `requiredAccountTemplateIds` | no | string[] | Account template IDs that must be installed before this script can be used. |
-| `permissions` | no | string[] | Declared permissions: `"network"`, `"filesystem"`. Informational only. |
-| `tags` | no | string[] | Category tags for marketplace discovery. |
-| `changelog` | no | string | Release notes for this version. |
+| Field                        | Required | Type     | Description                                                                                         |
+| ---------------------------- | -------- | -------- | --------------------------------------------------------------------------------------------------- |
+| `id`                         | yes      | string   | Unique identifier. Use a reverse-domain style string (e.g. `com.example.my-script`).                |
+| `name`                       | yes      | string   | Human-readable display name.                                                                        |
+| `version`                    | yes      | string   | Semantic version (e.g. `"1.0.0"`).                                                                  |
+| `description`                | yes      | string   | Short description of what the script does.                                                          |
+| `entryPoint`                 | yes      | string   | Filename of the entry point relative to the script directory (e.g. `"index.js"`).                   |
+| `runtime`                    | yes      | string   | Must be `"node"`. No other runtimes are supported.                                                  |
+| `schema`                     | yes      | object   | JSON Schema describing the configuration form. Must be `{ "type": "object", "properties": {...} }`. |
+| `requiredAccountTemplateIds` | no       | string[] | Account template IDs that must be installed before this script can be used.                         |
+| `permissions`                | no       | string[] | Declared permissions: `"network"`, `"filesystem"`. Informational only.                              |
+| `tags`                       | no       | string[] | Category tags for marketplace discovery.                                                            |
+| `changelog`                  | no       | string   | Release notes for this version.                                                                     |
 
 ### How Schema Becomes a Form
 
@@ -160,20 +160,20 @@ The app injects task configuration through environment variables when spawning y
 
 ### Environment Variables
 
-| Variable | Description |
-|----------|-------------|
-| `TASK_CONFIG` | Full config object as a JSON string. **Always use this.** |
-| `TASK_{KEY}` | Individual config keys, uppercased. Values are always strings. |
-| `TASK_ID` | The unique task ID assigned by the app. |
+| Variable      | Description                                                    |
+| ------------- | -------------------------------------------------------------- |
+| `TASK_CONFIG` | Full config object as a JSON string. **Always use this.**      |
+| `TASK_{KEY}`  | Individual config keys, uppercased. Values are always strings. |
+| `TASK_ID`     | The unique task ID assigned by the app.                        |
 
 ### Reading Config
 
 ```javascript
 // Preferred: parse TASK_CONFIG for typed values
 const config = JSON.parse(process.env.TASK_CONFIG || '{}')
-console.log(config.targetUrl)          // string
-console.log(config.threadCount)        // number (not a string)
-console.log(config.useProxy)           // boolean (not a string)
+console.log(config.targetUrl) // string
+console.log(config.threadCount) // number (not a string)
+console.log(config.useProxy) // boolean (not a string)
 
 // Avoid: individual env vars lose type information
 const url = process.env.TASK_TARGETURL // string (ok for strings)
@@ -216,12 +216,12 @@ process.exit(0)
 
 ### State Transitions
 
-| Action | What Happens |
-|--------|-------------|
-| Start | `node <entryPoint>` spawned in the script directory with config env vars. |
-| Pause | SIGSTOP sent (Linux/macOS). On Windows, stdout/stderr streams are paused (soft pause). |
-| Resume | SIGCONT sent (Linux/macOS). On Windows, streams are resumed. |
-| Stop | SIGTERM sent. After 5 seconds, SIGKILL is sent if the process hasn't exited. |
+| Action | What Happens                                                                           |
+| ------ | -------------------------------------------------------------------------------------- |
+| Start  | `node <entryPoint>` spawned in the script directory with config env vars.              |
+| Pause  | SIGSTOP sent (Linux/macOS). On Windows, stdout/stderr streams are paused (soft pause). |
+| Resume | SIGCONT sent (Linux/macOS). On Windows, streams are resumed.                           |
+| Stop   | SIGTERM sent. After 5 seconds, SIGKILL is sent if the process hasn't exited.           |
 
 ### Graceful Shutdown
 
@@ -283,14 +283,14 @@ for (const account of accounts) {
 
 Each account object has:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | string | Account UUID. |
-| `templateId` | string | Template this account belongs to. |
-| `data` | object | Account fields as defined by the template schema. |
-| `pool` | string | Account pool name. |
-| `labels` | string[] | Labels attached to this account. |
-| `notes` | string | Freeform notes. |
+| Field        | Type     | Description                                       |
+| ------------ | -------- | ------------------------------------------------- |
+| `id`         | string   | Account UUID.                                     |
+| `templateId` | string   | Template this account belongs to.                 |
+| `data`       | object   | Account fields as defined by the template schema. |
+| `pool`       | string   | Account pool name.                                |
+| `labels`     | string[] | Labels attached to this account.                  |
+| `notes`      | string   | Freeform notes.                                   |
 
 **Batch mode** (one task per account): each task gets individual account fields.
 
@@ -448,7 +448,7 @@ async function runWithRetry(fn) {
     } catch (err) {
       console.log(`Attempt ${attempt}/${maxRetries} failed: ${err.message}`)
       if (attempt === maxRetries) throw err
-      await new Promise(r => setTimeout(r, 2000 * attempt))
+      await new Promise((r) => setTimeout(r, 2000 * attempt))
     }
   }
 }

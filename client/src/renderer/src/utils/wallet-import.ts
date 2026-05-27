@@ -2,12 +2,7 @@ import type { Wallet } from '../types'
 
 export type ParsedWallet = Omit<Wallet, 'id' | 'createdAt'>
 
-const VALID_WALLET_TYPES: ReadonlyArray<Wallet['walletType']> = [
-  'evm',
-  'solana',
-  'sui',
-  'bitcoin'
-]
+const VALID_WALLET_TYPES: ReadonlyArray<Wallet['walletType']> = ['evm', 'solana', 'sui', 'bitcoin']
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)

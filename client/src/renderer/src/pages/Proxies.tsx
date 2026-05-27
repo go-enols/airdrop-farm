@@ -241,9 +241,7 @@ const Proxies: React.FC = () => {
         <label className="block text-sm font-medium mb-1">{t('proxies.format')}</label>
         <select
           value={form.format}
-          onChange={(e) =>
-            setForm((f) => ({ ...f, format: e.target.value as ProxyFormat }))
-          }
+          onChange={(e) => setForm((f) => ({ ...f, format: e.target.value as ProxyFormat }))}
           className="w-full px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
         >
           <option value="manual">{t('proxies.formatManual')}</option>

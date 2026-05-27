@@ -104,13 +104,7 @@ function QuickActionButton({
   )
 }
 
-function AirdropCard({
-  airdrop,
-  t
-}: {
-  airdrop: AirdropProject
-  t: TFunction
-}): React.JSX.Element {
+function AirdropCard({ airdrop, t }: { airdrop: AirdropProject; t: TFunction }): React.JSX.Element {
   const statusColors: Record<string, string> = {
     ongoing: 'bg-primary',
     completed: 'bg-success',

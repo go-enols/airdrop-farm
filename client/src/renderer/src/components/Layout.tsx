@@ -36,7 +36,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
-  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('sidebar-collapsed') === 'true')
+  const [collapsed, setCollapsed] = useState(
+    () => localStorage.getItem('sidebar-collapsed') === 'true'
+  )
 
   return (
     <div className="flex flex-col h-screen bg-bg-page">
@@ -60,7 +62,9 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </div>
           <nav className="flex-1 py-2 space-y-0.5 px-2 overflow-y-auto">
             {NAV_ITEMS.map(({ path, icon: Icon, key }) => {
-              const active = location.pathname.startsWith(path) && (path === '/' ? location.pathname === '/' : true)
+              const active =
+                location.pathname.startsWith(path) &&
+                (path === '/' ? location.pathname === '/' : true)
               return (
                 <button
                   key={path}
@@ -79,7 +83,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             })}
           </nav>
         </aside>
-        <main key={location.pathname} className="flex-1 overflow-auto p-6 bg-bg-page animate-fade-in">
+        <main
+          key={location.pathname}
+          className="flex-1 overflow-auto p-6 bg-bg-page animate-fade-in"
+        >
           {children}
         </main>
       </div>

@@ -11,7 +11,11 @@ const ThemeToggle: React.FC<Props> = ({ collapsed = false }) => {
   const { t } = useTranslation()
   const { pref, setPref } = useTheme()
 
-  const options: Array<{ value: ThemePref; icon: React.ComponentType<{ size?: number }>; label: string }> = [
+  const options: Array<{
+    value: ThemePref
+    icon: React.ComponentType<{ size?: number }>
+    label: string
+  }> = [
     { value: 'auto', icon: Monitor, label: t('settings.themeAuto') },
     { value: 'light', icon: Sun, label: t('settings.themeLight') },
     { value: 'dark', icon: Moon, label: t('settings.themeDark') }

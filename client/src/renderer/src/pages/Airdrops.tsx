@@ -98,7 +98,16 @@ const Airdrops: React.FC = () => {
     status: AirdropStatus
     projectType: AirdropProjectType
     description: string
-  }>({ name: '', chain: '', website: '', scriptTemplateId: '', accountPool: '', status: 'ongoing', projectType: 'testnet', description: '' })
+  }>({
+    name: '',
+    chain: '',
+    website: '',
+    scriptTemplateId: '',
+    accountPool: '',
+    status: 'ongoing',
+    projectType: 'testnet',
+    description: ''
+  })
   const [creating, setCreating] = useState(false)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [editingItem, setEditingItem] = useState<AirdropProject | null>(null)
@@ -125,24 +134,34 @@ const Airdrops: React.FC = () => {
 
   // Load task templates and account pools
   useEffect(() => {
-    scriptApi.listInstalled().then((scripts) => {
-      // Convert InstalledScript[] to TaskTemplate-like list
-      setTaskTemplates(
-        scripts.map((s) => ({
-          id: s.id,
-          name: s.name,
-          version: s.version,
-          description: s.description,
-          installPath: s.installPath,
-          manifest: s.schema as Record<string, unknown>,
-          remoteUrl: s.remoteUrl,
-          isInstalled: true,
-          downloadedAt: s.downloadedAt,
-          updatedAt: s.updatedAt
-        }))
-      )
-    }).catch(() => { /* ignore */ })
-    accountApi.listPools().then(setAccountPools).catch(() => { /* ignore */ })
+    scriptApi
+      .listInstalled()
+      .then((scripts) => {
+        // Convert InstalledScript[] to TaskTemplate-like list
+        setTaskTemplates(
+          scripts.map((s) => ({
+            id: s.id,
+            name: s.name,
+            version: s.version,
+            description: s.description,
+            installPath: s.installPath,
+            manifest: s.schema as Record<string, unknown>,
+            remoteUrl: s.remoteUrl,
+            isInstalled: true,
+            downloadedAt: s.downloadedAt,
+            updatedAt: s.updatedAt
+          }))
+        )
+      })
+      .catch(() => {
+        /* ignore */
+      })
+    accountApi
+      .listPools()
+      .then(setAccountPools)
+      .catch(() => {
+        /* ignore */
+      })
   }, [])
 
   const handleCreate = useCallback(async () => {
@@ -167,7 +186,16 @@ const Airdrops: React.FC = () => {
         labels: []
       })
       setShowCreate(false)
-      setForm({ name: '', chain: '', website: '', scriptTemplateId: '', accountPool: '', status: 'ongoing', projectType: 'testnet', description: '' })
+      setForm({
+        name: '',
+        chain: '',
+        website: '',
+        scriptTemplateId: '',
+        accountPool: '',
+        status: 'ongoing',
+        projectType: 'testnet',
+        description: ''
+      })
       refresh()
     } catch {
       setCreateError(t('common.error'))
@@ -395,7 +423,9 @@ const Airdrops: React.FC = () => {
                 </div>
                 <div className="text-sm text-text-muted mb-2">{item.chain}</div>
                 {item.description && (
-                  <p className="text-sm text-text-secondary mb-3 line-clamp-2">{item.description}</p>
+                  <p className="text-sm text-text-secondary mb-3 line-clamp-2">
+                    {item.description}
+                  </p>
                 )}
                 {item.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1">
@@ -605,7 +635,8 @@ const Airdrops: React.FC = () => {
           {/* 描述（支持 Markdown） */}
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-1">
-              {t('airdrops.description')}{t('airdrops.descriptionMarkdownHint')}
+              {t('airdrops.description')}
+              {t('airdrops.descriptionMarkdownHint')}
             </label>
             <textarea
               value={form.description}
@@ -632,9 +663,7 @@ const Airdrops: React.FC = () => {
               ))}
             </select>
             {accountPools.length === 0 && (
-              <p className="text-xs text-text-muted mt-1">
-                {t('airdrops.noAccountPoolHint')}
-              </p>
+              <p className="text-xs text-text-muted mt-1">{t('airdrops.noAccountPoolHint')}</p>
             )}
           </div>
         </div>
@@ -648,7 +677,9 @@ const Airdrops: React.FC = () => {
           </button>
           <button
             onClick={handleCreate}
-            disabled={creating || !form.name.trim() || !form.website.trim() || !form.accountPool.trim()}
+            disabled={
+              creating || !form.name.trim() || !form.website.trim() || !form.accountPool.trim()
+            }
             className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {t('common.create')}

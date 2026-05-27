@@ -73,7 +73,13 @@ const Accounts: React.FC = () => {
 
   const handleBatchImport = useCallback(async () => {
     setBatchError(null)
-    let parsed: Array<{ templateId?: string; data?: Record<string, unknown>; pool?: string; labels?: string[]; notes?: string }>
+    let parsed: Array<{
+      templateId?: string
+      data?: Record<string, unknown>
+      pool?: string
+      labels?: string[]
+      notes?: string
+    }>
     try {
       parsed = JSON.parse(batchJson)
       if (!Array.isArray(parsed)) {
@@ -177,7 +183,14 @@ const Accounts: React.FC = () => {
         notes: form.notes.trim()
       })
       setShowCreate(false)
-      setForm({ templateId: '', pool: '', notes: '', labels: '', data: '{}', dynamicFormValues: {} })
+      setForm({
+        templateId: '',
+        pool: '',
+        notes: '',
+        labels: '',
+        data: '{}',
+        dynamicFormValues: {}
+      })
       fetchData()
     } catch {
       setCreateError(t('common.error'))
@@ -675,20 +688,13 @@ const Accounts: React.FC = () => {
                   </thead>
                   <tbody>
                     {importValid.slice(0, 5).map((item, i) => (
-                      <tr
-                        key={i}
-                        className="border-b border-border-light last:border-b-0"
-                      >
+                      <tr key={i} className="border-b border-border-light last:border-b-0">
                         <td className="px-3 py-2 font-mono">{item.templateId || '—'}</td>
                         <td className="px-3 py-2">{item.pool}</td>
                         <td className="px-3 py-2">
-                          {item.labels.length > 0
-                            ? item.labels.join(', ')
-                            : '—'}
+                          {item.labels.length > 0 ? item.labels.join(', ') : '—'}
                         </td>
-                        <td className="px-3 py-2 max-w-[150px] truncate">
-                          {item.notes || '—'}
-                        </td>
+                        <td className="px-3 py-2 max-w-[150px] truncate">{item.notes || '—'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -696,17 +702,13 @@ const Accounts: React.FC = () => {
               </div>
 
               {importValid.length > 5 && (
-                <p className="text-xs text-text-muted mt-2">
-                  ...还有 {importValid.length - 5} 条
-                </p>
+                <p className="text-xs text-text-muted mt-2">...还有 {importValid.length - 5} 条</p>
               )}
             </div>
           )}
 
           {importValid.length === 0 && importErrors.length === 0 && (
-            <div className="text-sm text-text-muted py-4 text-center">
-              {t('common.noData')}
-            </div>
+            <div className="text-sm text-text-muted py-4 text-center">{t('common.noData')}</div>
           )}
         </div>
         <div className="flex justify-end gap-3 mt-6">

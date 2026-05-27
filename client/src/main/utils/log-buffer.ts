@@ -27,7 +27,7 @@ export class LogBuffer {
     this.lines.push({
       level,
       message: message.endsWith('\n') ? message.slice(0, -1) : message,
-      timestamp: new Date().toISOString(),
+      timestamp: new Date().toISOString()
     })
 
     if (this.lines.length >= this.maxBatchSize) {
@@ -55,7 +55,7 @@ export class LogBuffer {
       batch.push({
         level: 'warn' as TaskLogLevel,
         message: `[truncated ${this.truncated} earlier lines]`,
-        timestamp: new Date().toISOString(),
+        timestamp: new Date().toISOString()
       })
       this.truncated = 0
     }

@@ -1098,124 +1098,124 @@ const Wallets: React.FC = () => {
             </div>
 
             {importTab === 'mnemonic' && (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1.5">
-                  {t('wallets.importModal.mnemonic')}
-                </label>
-                <textarea
-                  value={mnemonic}
-                  onChange={(e) => setMnemonic(e.target.value)}
-                  placeholder={t('wallets.importModal.mnemonicPlaceholder')}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-border-light rounded-lg text-sm bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1.5">
-                  {t('wallets.importModal.walletTypes')}
-                </label>
-                <div className="flex gap-2">
-                  {WALLET_TYPE_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      onClick={() => toggleImportType(opt.value)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-                        importTypes.includes(opt.value)
-                          ? `${opt.color} border-current`
-                          : 'border-border-light text-text-secondary hover:border-border-hover'
-                      }`}
-                    >
-                      {opt.label}
-                    </button>
-                  ))}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                    {t('wallets.importModal.mnemonic')}
+                  </label>
+                  <textarea
+                    value={mnemonic}
+                    onChange={(e) => setMnemonic(e.target.value)}
+                    placeholder={t('wallets.importModal.mnemonicPlaceholder')}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-border-light rounded-lg text-sm bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                  />
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1.5">
-                  {t('wallets.importModal.deriveCount')}
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  max={100}
-                  value={deriveCount}
-                  onChange={(e) =>
-                    setDeriveCount(Math.max(1, Math.min(100, Number(e.target.value))))
-                  }
-                  className="w-24 px-3 py-2 border border-border-light rounded-lg text-sm bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                    {t('wallets.importModal.walletTypes')}
+                  </label>
+                  <div className="flex gap-2">
+                    {WALLET_TYPE_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => toggleImportType(opt.value)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                          importTypes.includes(opt.value)
+                            ? `${opt.color} border-current`
+                            : 'border-border-light text-text-secondary hover:border-border-hover'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-              {derivedResults.length === 0 ? (
-                <button
-                  onClick={handleDerive}
-                  disabled={deriving || !mnemonic.trim() || importTypes.length === 0}
-                  className="w-full py-2 bg-success text-white rounded-lg text-sm font-medium hover:bg-success-hover disabled:opacity-50 transition-colors"
-                >
-                  {deriving ? t('wallets.importModal.deriving') : t('wallets.importModal.derive')}
-                </button>
-              ) : (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-text-secondary mb-1.5">
-                      {t('wallets.importModal.results')}
-                    </label>
-                    <div className="border border-border-light rounded-lg overflow-hidden max-h-60 overflow-y-auto">
-                      <table className="w-full text-xs">
-                        <thead>
-                          <tr className="bg-bg-tertiary border-b border-border-light">
-                            <th className="text-left px-3 py-2 font-medium text-text-muted">#</th>
-                            <th className="text-left px-3 py-2 font-medium text-text-muted">
-                              {t('wallets.walletType')}
-                            </th>
-                            <th className="text-left px-3 py-2 font-medium text-text-muted">
-                              {t('wallets.address')}
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {derivedResults.map((r, i) => (
-                            <tr key={i} className="border-b border-border-light/50">
-                              <td className="px-3 py-1.5 text-text-muted">{r.index}</td>
-                              <td className="px-3 py-1.5">
-                                <span
-                                  className={`inline-block px-1.5 py-0.5 rounded text-xs font-medium ${WALLET_TYPE_BADGE[r.walletType] || 'bg-bg-tertiary text-text-secondary'}`}
-                                >
-                                  {r.walletType.toUpperCase()}
-                                </span>
-                              </td>
-                              <td className="px-3 py-1.5 font-mono text-text-secondary">
-                                {truncateAddress(r.address)}
-                              </td>
+                <div>
+                  <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                    {t('wallets.importModal.deriveCount')}
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={deriveCount}
+                    onChange={(e) =>
+                      setDeriveCount(Math.max(1, Math.min(100, Number(e.target.value))))
+                    }
+                    className="w-24 px-3 py-2 border border-border-light rounded-lg text-sm bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+
+                {derivedResults.length === 0 ? (
+                  <button
+                    onClick={handleDerive}
+                    disabled={deriving || !mnemonic.trim() || importTypes.length === 0}
+                    className="w-full py-2 bg-success text-white rounded-lg text-sm font-medium hover:bg-success-hover disabled:opacity-50 transition-colors"
+                  >
+                    {deriving ? t('wallets.importModal.deriving') : t('wallets.importModal.derive')}
+                  </button>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-text-secondary mb-1.5">
+                        {t('wallets.importModal.results')}
+                      </label>
+                      <div className="border border-border-light rounded-lg overflow-hidden max-h-60 overflow-y-auto">
+                        <table className="w-full text-xs">
+                          <thead>
+                            <tr className="bg-bg-tertiary border-b border-border-light">
+                              <th className="text-left px-3 py-2 font-medium text-text-muted">#</th>
+                              <th className="text-left px-3 py-2 font-medium text-text-muted">
+                                {t('wallets.walletType')}
+                              </th>
+                              <th className="text-left px-3 py-2 font-medium text-text-muted">
+                                {t('wallets.address')}
+                              </th>
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {derivedResults.map((r, i) => (
+                              <tr key={i} className="border-b border-border-light/50">
+                                <td className="px-3 py-1.5 text-text-muted">{r.index}</td>
+                                <td className="px-3 py-1.5">
+                                  <span
+                                    className={`inline-block px-1.5 py-0.5 rounded text-xs font-medium ${WALLET_TYPE_BADGE[r.walletType] || 'bg-bg-tertiary text-text-secondary'}`}
+                                  >
+                                    {r.walletType.toUpperCase()}
+                                  </span>
+                                </td>
+                                <td className="px-3 py-1.5 font-mono text-text-secondary">
+                                  {truncateAddress(r.address)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex gap-2 pt-2">
-                    <button
-                      onClick={closeImportModal}
-                      className="flex-1 py-2 border border-border-light text-text-secondary rounded-lg text-sm font-medium hover:bg-bg-card-hover transition-colors"
-                    >
-                      {t('common.cancel')}
-                    </button>
-                    <button
-                      onClick={handleSaveImported}
-                      disabled={importSaving}
-                      className="flex-1 py-2 bg-success text-white rounded-lg text-sm font-medium hover:bg-success-hover disabled:opacity-50 transition-colors"
-                    >
-                      {importSaving
-                        ? `${t('wallets.importModal.saving')} (${importSaveProgress.current}/${importSaveProgress.total})`
-                        : t('wallets.importModal.saveAll')}
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
+                    <div className="flex gap-2 pt-2">
+                      <button
+                        onClick={closeImportModal}
+                        className="flex-1 py-2 border border-border-light text-text-secondary rounded-lg text-sm font-medium hover:bg-bg-card-hover transition-colors"
+                      >
+                        {t('common.cancel')}
+                      </button>
+                      <button
+                        onClick={handleSaveImported}
+                        disabled={importSaving}
+                        className="flex-1 py-2 bg-success text-white rounded-lg text-sm font-medium hover:bg-success-hover disabled:opacity-50 transition-colors"
+                      >
+                        {importSaving
+                          ? `${t('wallets.importModal.saving')} (${importSaveProgress.current}/${importSaveProgress.total})`
+                          : t('wallets.importModal.saveAll')}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             )}
 
             {importTab === 'json' && (

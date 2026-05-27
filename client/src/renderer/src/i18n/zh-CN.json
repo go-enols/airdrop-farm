@@ -301,7 +301,7 @@
     "batchCreated": "成功创建 {{count}} 个任务",
     "batchCreatedPartial": "部分成功: {{created}}/{{total}} 个任务已创建"
   },
-"templates": {
+  "templates": {
     "title": "模板市场",
     "accountTemplates": "账户模板",
     "taskScripts": "任务脚本",

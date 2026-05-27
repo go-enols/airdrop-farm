@@ -251,9 +251,7 @@ const Logs: React.FC = () => {
                         {t(levelLabelKey[log.level] || log.level)}
                       </span>
                     </td>
-                    <td className="px-4 py-2.5 text-xs text-text-secondary">
-                      {log.category}
-                    </td>
+                    <td className="px-4 py-2.5 text-xs text-text-secondary">{log.category}</td>
                     <td className="px-4 py-2.5 text-xs font-mono break-all max-w-xl">
                       {log.message}
                     </td>
@@ -286,9 +284,7 @@ const Logs: React.FC = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-lg font-semibold mb-2">{t('logs.clearLogs')}</h2>
-            <p className="text-sm text-text-secondary mb-6">
-              {t('logs.confirmClearLogs')}
-            </p>
+            <p className="text-sm text-text-secondary mb-6">{t('logs.confirmClearLogs')}</p>
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowClearConfirm(false)}

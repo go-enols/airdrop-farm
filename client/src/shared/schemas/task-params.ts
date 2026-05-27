@@ -324,7 +324,9 @@ export function unflattenDotNotation(values: Record<string, unknown>): Record<st
   return result
 }
 
-export function fieldMetaToZodSchema(fields: FieldMeta[]): z.ZodObject<Record<string, z.ZodTypeAny>> {
+export function fieldMetaToZodSchema(
+  fields: FieldMeta[]
+): z.ZodObject<Record<string, z.ZodTypeAny>> {
   const shape: Record<string, z.ZodTypeAny> = {}
 
   for (const field of fields) {
