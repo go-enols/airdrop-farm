@@ -8,9 +8,6 @@ jobs:
   check:
     name: Type Check & Lint
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./client
 
     steps:
       - name: Checkout
@@ -23,11 +20,29 @@ jobs:
           cache: npm
           cache-dependency-path: client/package-lock.json
 
-      - name: Install dependencies
-        run: npm install
+      - name: Install client dependencies
+        working-directory: ./client
+        run: npm ci --ignore-scripts
 
-      - name: Type check
+      - name: Type check (client)
+        working-directory: ./client
         run: npm run typecheck
 
-      - name: Lint
+      - name: Lint (client)
+        working-directory: ./client
         run: npm run lint
+
+      - name: Setup Node.js (server)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install server dependencies
+        working-directory: ./server
+        run: npm ci --ignore-scripts
+
+      - name: Type check (server)
+        working-directory: ./server
+        run: npx tsc --noEmit
