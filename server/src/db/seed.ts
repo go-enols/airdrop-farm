@@ -3,7 +3,9 @@ import { existsSync, mkdtempSync, writeFileSync, readFileSync, rmSync } from 'fs
 import { join } from 'path'
 import { tmpdir } from 'os'
 import { execSync } from 'child_process'
-import { createHash } from 'crypto'
+import { createHash, randomBytes } from 'crypto'
+import bcrypt from 'bcrypt'
+import { v4 as uuidv4 } from 'uuid'
 
 interface SeedScript {
   id: string
@@ -200,7 +202,7 @@ function seed(): void {
     },
   ]
 
-  const existingScripts = stmts.scriptGetAll.all() as Record<string, unknown>[]
+  const existingScripts = stmts.scriptGetAllAdmin.all() as Record<string, unknown>[]
   if (existingScripts.length === 0) {
     for (const s of seedScripts) {
       const zipPath = join(scriptsDir, s.fileName)
@@ -224,7 +226,7 @@ function seed(): void {
     console.log(`Seeded ${seedScripts.length} example scripts`)
   }
 
-  const existingTemplates = stmts.templateGetAll.all() as Record<string, unknown>[]
+  const existingTemplates = stmts.templateGetAllAdmin.all() as Record<string, unknown>[]
   if (existingTemplates.length === 0) {
     stmts.templateInsert.run(
       'template-evm-wallet',
@@ -279,6 +281,21 @@ function seed(): void {
     )
 
     console.log('Seeded 2 example templates')
+  }
+
+  const userCount = (stmts.userCount.get() as { count: number }).count
+  if (userCount === 0) {
+    stmts.userInsert.run(
+      uuidv4(),
+      'admin',
+      bcrypt.hashSync('admin123', 10),
+      'System Admin',
+      'admin',
+      randomBytes(32).toString('hex'),
+      now,
+      now,
+    )
+    console.log('Seeded admin user')
   }
 
   if (existingScripts.length > 0 && existingTemplates.length > 0) {
