@@ -164,7 +164,9 @@ export async function call<T>(channel: string, args: unknown[] = []): Promise<T>
   }
 
   try {
-    return await callIPC<T>(channel, args)
+    const result = await callIPC<T>(channel, args)
+    activeTransport = 'ipc'
+    return result
   } catch (ipcErr) {
     try {
       const result = await callHTTP<T>(channel, args)
@@ -177,7 +179,7 @@ export async function call<T>(channel: string, args: unknown[] = []): Promise<T>
       console.error(
         `[transport] Both failed for "${channel}": IPC=${(ipcErr as Error).message}, HTTP=${(httpErr as Error).message}`
       )
-      throw httpErr
+      throw ipcErr
     }
   }
 }

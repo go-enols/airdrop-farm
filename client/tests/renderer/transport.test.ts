@@ -86,8 +86,8 @@ describe('transport', () => {
       }
       const mockFetch = vi.fn().mockResolvedValue({
         ok: false,
-        status: 500,
-        json: () => Promise.resolve({ error: { message: 'HTTP error' } })
+        status: 401,
+        json: () => Promise.resolve({ error: { message: 'Unauthorized' } })
       })
       vi.stubGlobal('fetch', mockFetch)
       await expect(call('test:channel')).rejects.toThrow('IPC error')

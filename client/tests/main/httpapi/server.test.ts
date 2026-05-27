@@ -17,6 +17,7 @@ describe('HttpApiServer', () => {
   let store: StoreService
   let server: HttpApiServer
   let baseUrl: string
+  const testToken = 'test-auth-token'
 
   beforeEach(async () => {
     handlerMap.clear()
@@ -24,9 +25,17 @@ describe('HttpApiServer', () => {
     store = new StoreService(dbPath)
     const walletService = new WalletService(store)
     const taskService = new TaskService(store)
-    registerIpcHandlers({ store, walletService, taskService })
+    registerIpcHandlers({
+      store,
+      walletService,
+      taskService,
+      scriptFetcher: null as any,
+      walletRepo: store.walletRepo,
+      proxyRepo: store.proxyRepo,
+      taskRepo: store.taskRepo
+    })
 
-    server = new HttpApiServer(0)
+    server = new HttpApiServer(0, testToken)
     await server.start()
     baseUrl = server.getAddress()
   })
@@ -47,7 +56,10 @@ describe('HttpApiServer', () => {
   it('POST /api/call wallet:list returns paginated data', async () => {
     const res = await fetch(`${baseUrl}/api/call`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${testToken}`
+      },
       body: JSON.stringify({ channel: 'wallet:list', args: [] })
     })
     expect(res.status).toBe(200)
@@ -61,7 +73,10 @@ describe('HttpApiServer', () => {
   it('POST /api/call wallet:create creates a wallet', async () => {
     const res = await fetch(`${baseUrl}/api/call`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${testToken}`
+      },
       body: JSON.stringify({
         channel: 'wallet:create',
         args: [
@@ -86,7 +101,10 @@ describe('HttpApiServer', () => {
   it('POST /api/call setting:set and setting:get', async () => {
     const setRes = await fetch(`${baseUrl}/api/call`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${testToken}`
+      },
       body: JSON.stringify({ channel: 'setting:set', args: ['testKey', 'testValue'] })
     })
     expect(setRes.status).toBe(200)
@@ -95,7 +113,10 @@ describe('HttpApiServer', () => {
 
     const getRes = await fetch(`${baseUrl}/api/call`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${testToken}`
+      },
       body: JSON.stringify({ channel: 'setting:get', args: ['testKey'] })
     })
     expect(getRes.status).toBe(200)
@@ -106,7 +127,10 @@ describe('HttpApiServer', () => {
   it('POST /api/call unknown channel returns NOT_FOUND', async () => {
     const res = await fetch(`${baseUrl}/api/call`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${testToken}`
+      },
       body: JSON.stringify({ channel: 'unknown:channel', args: [] })
     })
     expect(res.status).toBe(200)
@@ -119,7 +143,10 @@ describe('HttpApiServer', () => {
   it('POST /api/call missing channel returns 400', async () => {
     const res = await fetch(`${baseUrl}/api/call`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${testToken}`
+      },
       body: JSON.stringify({ args: [] })
     })
     expect(res.status).toBe(400)
@@ -136,7 +163,11 @@ describe('HttpApiServer', () => {
   })
 
   it('unknown path returns 404', async () => {
-    const res = await fetch(`${baseUrl}/api/unknown`)
+    const res = await fetch(`${baseUrl}/api/unknown`, {
+      headers: {
+        Authorization: `Bearer ${testToken}`
+      }
+    })
     expect(res.status).toBe(404)
     const body = await res.json()
     expect(body.error.message).toBe('Not found')

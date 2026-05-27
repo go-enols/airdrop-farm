@@ -25,7 +25,15 @@ describe('IPC Handler Integration', () => {
     store = new StoreService(dbPath)
     walletService = new WalletService(store)
     taskService = new TaskService(store)
-    registerIpcHandlers({ store, walletService, taskService })
+    registerIpcHandlers({
+      store,
+      walletService,
+      taskService,
+      scriptFetcher: null as any,
+      walletRepo: store.walletRepo,
+      proxyRepo: store.proxyRepo,
+      taskRepo: store.taskRepo
+    })
   })
 
   afterEach(() => {
