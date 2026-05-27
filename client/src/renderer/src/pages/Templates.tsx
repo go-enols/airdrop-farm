@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { templateApi, marketplaceApi, getMarketplaceUrl, scriptApi } from '../api'
 import type { Template, RemoteTemplate, RemoteScript, InstalledScript } from '../types'
-import { Search, Download, RefreshCw, Globe, FileText, Users, Zap, ChevronDown } from 'lucide-react'
+import { Search, Download, RefreshCw, Globe, FileText, Users, Zap, ChevronDown, LogIn, LogOut, Shield } from 'lucide-react'
 
 const Templates: React.FC = () => {
   const { t } = useTranslation()
@@ -11,6 +11,15 @@ const Templates: React.FC = () => {
   const [urlInput, setUrlInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Login state
+  const [marketUser, setMarketUser] = useState<{
+    id: string; username: string; displayName: string; role: string
+  } | null>(null)
+  const [loginUser, setLoginUser] = useState('')
+  const [loginPw, setLoginPw] = useState('')
+  const [loginLoading, setLoginLoading] = useState(false)
+  const [loginError, setLoginError] = useState('')
 
   const [accountTemplates, setAccountTemplates] = useState<RemoteTemplate[]>([])
   const [installedTemplates, setInstalledTemplates] = useState<Template[]>([])
@@ -28,14 +37,6 @@ const Templates: React.FC = () => {
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
   }, [search])
 
-  useEffect(() => {
-    getMarketplaceUrl().then((url) => {
-      setMarketplaceUrl(url)
-      setUrlInput(url)
-      if (url) fetchMarketplace(url)
-    })
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
-
   const loadInstalled = useCallback(async () => {
     try {
       const [tplRes, scriptRes] = await Promise.all([
@@ -49,11 +50,31 @@ const Templates: React.FC = () => {
 
   useEffect(() => { loadInstalled() }, [loadInstalled])
 
-  const fetchMarketplace = useCallback(async (urlOverride?: string) => {
+  useEffect(() => { marketplaceApi.getUser().then(u => { if (u) setMarketUser(u) }).catch(() => {}) }, [])
+
+  const handleLogin = async () => {
+    if (!loginUser || !loginPw) { setLoginError('请输入用户名和密码'); return }
+    setLoginLoading(true)
+    setLoginError('')
+    try {
+      const result = await marketplaceApi.login(loginUser, loginPw)
+      setMarketUser(result.user)
+      setLoginPw('')
+    } catch (e) {
+      setLoginError(e instanceof Error ? e.message : '登录失败')
+    } finally { setLoginLoading(false) }
+  }
+
+  const handleLogout = async () => {
+    await marketplaceApi.logout()
+    setMarketUser(null)
+  }
+
+  const fetchMarketplace = useCallback(async (urlOverride?: string, silent = false) => {
     const baseUrl = urlOverride ?? marketplaceUrl
     if (!baseUrl) return
-    setLoading(true)
-    setError(null)
+    if (!silent) setLoading(true)
+    if (!silent) setError(null)
     try {
       const [tplRes, scriptRes] = await Promise.all([
         marketplaceApi.listTemplates(baseUrl),
@@ -62,11 +83,40 @@ const Templates: React.FC = () => {
       setAccountTemplates(tplRes.items || [])
       setTaskScripts(scriptRes.items || [])
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : t('common.error'))
+      if (!silent) setError(e instanceof Error ? e.message : t('common.error'))
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }, [marketplaceUrl, t])
+
+  // Initial fetch on mount
+  useEffect(() => {
+    getMarketplaceUrl().then((url) => {
+      setMarketplaceUrl(url)
+      setUrlInput(url)
+      if (url) fetchMarketplace(url)
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Silent auto-refresh: poll marketplace every 30 seconds
+  useEffect(() => {
+    if (!marketplaceUrl) return
+    const timer = setInterval(() => {
+      fetchMarketplace(undefined, true)
+    }, 30000)
+    return () => clearInterval(timer)
+  }, [marketplaceUrl, fetchMarketplace])
+
+  // Refresh when tab/window regains focus
+  useEffect(() => {
+    const handleVisible = (): void => {
+      if (document.visibilityState === 'visible' && marketplaceUrl) {
+        fetchMarketplace(undefined, true)
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisible)
+    return () => document.removeEventListener('visibilitychange', handleVisible)
+  }, [marketplaceUrl, fetchMarketplace])
 
   const handleInstallTemplate = async (tmpl: RemoteTemplate): Promise<void> => {
     setInstallingId(tmpl.id)
@@ -140,7 +190,7 @@ const Templates: React.FC = () => {
             className="px-3 py-1.5 text-xs border border-border-light rounded-lg bg-bg-card w-52 focus:outline-none focus:ring-2 focus:ring-primary"
           />
           <button
-            onClick={fetchMarketplace}
+            onClick={() => fetchMarketplace()}
             disabled={loading}
             className="flex items-center gap-1 px-3 py-1.5 text-xs bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50"
           >
@@ -149,6 +199,45 @@ const Templates: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {marketUser ? (
+        <div className="flex items-center gap-3 px-4 py-2 bg-primary/5 border border-primary/20 rounded-lg">
+          <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold">
+            {marketUser.displayName.charAt(0).toUpperCase()}
+          </div>
+          <span className="text-sm font-medium">{marketUser.displayName}</span>
+          <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+            marketUser.role === 'admin' ? 'bg-purple-900/30 text-purple-300' :
+            marketUser.role === 'developer' ? 'bg-blue-900/30 text-blue-300' :
+            'bg-gray-700 text-gray-300'
+          }`}>
+            <Shield size={10} className="inline mr-0.5" />
+            {marketUser.role === 'admin' ? '管理员' : marketUser.role === 'developer' ? '开发者' : '用户'}
+          </span>
+          <button onClick={handleLogout} className="ml-auto text-xs text-text-muted hover:text-danger flex items-center gap-1">
+            <LogOut size={12} />
+            登出
+          </button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 px-4 py-2 bg-bg-card border border-border-light rounded-lg">
+          <LogIn size={14} className="text-text-muted shrink-0" />
+          <input
+            type="text" value={loginUser} onChange={e => setLoginUser(e.target.value)}
+            placeholder="用户名" className="px-2 py-1 text-xs border border-border-light rounded bg-bg-card w-28 focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+          <input
+            type="password" value={loginPw} onChange={e => setLoginPw(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleLogin()}
+            placeholder="密码" className="px-2 py-1 text-xs border border-border-light rounded bg-bg-card w-28 focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+          <button onClick={handleLogin} disabled={loginLoading}
+            className="px-3 py-1 text-xs bg-primary text-white rounded hover:bg-primary-hover disabled:opacity-50 flex items-center gap-1">
+            <LogIn size={12} />{loginLoading ? '...' : '登录市场'}
+          </button>
+          {loginError && <span className="text-xs text-danger">{loginError}</span>}
+        </div>
+      )}
 
       <div className="flex gap-2 border-b border-border-light pb-0">
         <button

@@ -15,10 +15,21 @@ import {
   Download,
   Globe
 } from 'lucide-react'
-import { taskApi, scriptApi, taskTemplateApi, templateApi, marketplaceApi, accountApi } from '../api'
+import {
+  taskApi,
+  scriptApi,
+  taskTemplateApi,
+  templateApi,
+  marketplaceApi,
+  accountApi
+} from '../api'
 import type { Task, TaskLog, InstalledScript, RemoteScript, Account } from '../types'
 import type { FieldMeta } from '../../../shared/schemas/task-params'
-import { jsonSchemaToFieldMeta } from '../../../shared/schemas/task-params'
+import {
+  jsonSchemaToFieldMeta,
+  validateFormFields,
+  unflattenDotNotation
+} from '../../../shared/schemas/task-params'
 import { usePaginatedList } from '../hooks'
 import { SearchInput, Pagination, Modal, DynamicForm } from '../components/common'
 
@@ -57,6 +68,7 @@ const Tasks: React.FC = () => {
   const [selectedScript, setSelectedScript] = useState<InstalledScript | null>(null)
   const [formFields, setFormFields] = useState<FieldMeta[]>([])
   const [formValues, setFormValues] = useState<Record<string, unknown>>({})
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
   const [showScriptBrowser, setShowScriptBrowser] = useState(false)
   const [remoteScripts, setRemoteScripts] = useState<RemoteScript[]>([])
   const [loadingScripts, setLoadingScripts] = useState(false)
@@ -147,7 +159,10 @@ const Tasks: React.FC = () => {
     if (!expandedId) return
     const unsubscribe = (window as any).electronAPI?.on?.(
       'task:log',
-      (data: { taskId: string; logs: Array<{ level: string; message: string; timestamp: string }> }) => {
+      (data: {
+        taskId: string
+        logs: Array<{ level: string; message: string; timestamp: string }>
+      }) => {
         if (data.taskId === expandedId) {
           setLogs((prev) => {
             const newLogs = data.logs.map((l, i) => ({
@@ -155,7 +170,7 @@ const Tasks: React.FC = () => {
               taskId: data.taskId,
               timestamp: l.timestamp,
               level: l.level as TaskLog['level'],
-              message: l.message,
+              message: l.message
             }))
             const combined = [...prev, ...newLogs]
             return combined.length > 500 ? combined.slice(-500) : combined
@@ -269,22 +284,39 @@ const Tasks: React.FC = () => {
       setNewScriptFolder(script.installPath)
       try {
         const schema = script.schema as Record<string, unknown>
+        let fieldsToSet: FieldMeta[] = []
         if (schema.type === 'object' && schema.properties) {
-          setFormFields(jsonSchemaToFieldMeta(schema))
+          fieldsToSet = jsonSchemaToFieldMeta(schema)
         } else if (schema.fields && Array.isArray(schema.fields)) {
-          setFormFields(schema.fields as FieldMeta[])
-        } else {
-          setFormFields([])
+          const validTypes = new Set(['string', 'number', 'boolean', 'select', 'multiselect'])
+          const raw = schema.fields as Array<Record<string, unknown>>
+          const validated: FieldMeta[] = []
+          for (const item of raw) {
+            if (typeof item.name === 'string' && validTypes.has(item.type as string)) {
+              validated.push(item as unknown as FieldMeta)
+            } else {
+              console.warn('[Tasks] Skipping invalid schema.fields entry:', item)
+            }
+          }
+          fieldsToSet = validated
         }
+        setFormFields(fieldsToSet)
+        const defaults: Record<string, unknown> = {}
+        for (const f of fieldsToSet) {
+          if (f.defaultValue !== undefined) defaults[f.name] = f.defaultValue
+        }
+        setFormValues(defaults)
       } catch {
         setFormFields([])
+        setFormValues({})
       }
-      setFormValues({})
+      setFormErrors({})
       loadAccountsForScript(script)
     } else {
       setSelectedScript(null)
       setFormFields([])
       setFormValues({})
+      setFormErrors({})
       setNewScriptFolder('')
       setRequiredTemplates([])
       setAvailableAccounts([])
@@ -331,7 +363,13 @@ const Tasks: React.FC = () => {
       showError(t('tasks.selectScriptError'))
       return
     }
-    // 校验 requiredAccountTemplateIds
+    if (formFields.length > 0) {
+      const errors = validateFormFields(formFields, formValues)
+      if (Object.keys(errors).length > 0) {
+        setFormErrors(errors)
+        return
+      }
+    }
     try {
       const tmpl = await taskTemplateApi.get(selectedScript.id)
       if (tmpl?.manifest) {
@@ -350,7 +388,8 @@ const Tasks: React.FC = () => {
     } catch (e: unknown) {
       showError(t('common.operationFailed') + ': ' + String(e))
     }
-    const config = formFields.length > 0 ? formValues : {}
+    const rawConfig = formFields.length > 0 ? formValues : {}
+    const config = unflattenDotNotation(rawConfig)
 
     if (batchMode && selectedAccountIds.size > 0 && requiredTemplates.length > 0) {
       const accounts = availableAccounts.filter((a) => selectedAccountIds.has(a.id))
@@ -375,7 +414,10 @@ const Tasks: React.FC = () => {
     }
   }
 
-  const createBatchTasks = async (accounts: Account[], config: Record<string, unknown>): Promise<void> => {
+  const createBatchTasks = async (
+    accounts: Account[],
+    config: Record<string, unknown>
+  ): Promise<void> => {
     setCreating(true)
     let created = 0
     try {
@@ -384,7 +426,7 @@ const Tasks: React.FC = () => {
           ...config,
           _account_id: account.id,
           _account_data: account.data,
-          _account_pool: account.pool,
+          _account_pool: account.pool
         }
         await taskApi.create({ scriptFolder: newScriptFolder, config: accountConfig })
         created++
@@ -419,8 +461,8 @@ const Tasks: React.FC = () => {
         data: a.data,
         pool: a.pool,
         labels: a.labels,
-        notes: a.notes,
-      })),
+        notes: a.notes
+      }))
     }
   }
 
@@ -429,6 +471,7 @@ const Tasks: React.FC = () => {
     setSelectedScript(null)
     setFormFields([])
     setFormValues({})
+    setFormErrors({})
     setRequiredTemplates([])
     setAvailableAccounts([])
     setAvailablePools([])
@@ -638,7 +681,10 @@ const Tasks: React.FC = () => {
       {successMsg && (
         <div className="flex items-center gap-2 px-4 py-3 rounded-lg bg-success-light text-success border border-success/20">
           <span className="flex-1 text-sm">{successMsg}</span>
-          <button onClick={() => setSuccessMsg(null)} className="text-success/70 hover:text-success">
+          <button
+            onClick={() => setSuccessMsg(null)}
+            className="text-success/70 hover:text-success"
+          >
             &times;
           </button>
         </div>
@@ -843,18 +889,20 @@ const Tasks: React.FC = () => {
                               {logs
                                 .filter((log) => logFilter === 'all' || log.level === logFilter)
                                 .map((log, idx) => (
-                                <div key={log.id ?? idx} className="flex gap-3">
-                                  <span className="text-text-muted shrink-0">
-                                    {new Date(log.timestamp).toLocaleTimeString()}
-                                  </span>
-                                  <span className={`shrink-0 w-10 ${LOG_LEVEL_STYLES[log.level]}`}>
-                                    [{log.level.toUpperCase()}]
-                                  </span>
-                                  <span className="text-text-secondary break-all">
-                                    {log.message}
-                                  </span>
-                                </div>
-                              ))}
+                                  <div key={log.id ?? idx} className="flex gap-3">
+                                    <span className="text-text-muted shrink-0">
+                                      {new Date(log.timestamp).toLocaleTimeString()}
+                                    </span>
+                                    <span
+                                      className={`shrink-0 w-10 ${LOG_LEVEL_STYLES[log.level]}`}
+                                    >
+                                      [{log.level.toUpperCase()}]
+                                    </span>
+                                    <span className="text-text-secondary break-all">
+                                      {log.message}
+                                    </span>
+                                  </div>
+                                ))}
                               <div ref={logEndRef} />
                             </div>
                           )}
@@ -879,7 +927,15 @@ const Tasks: React.FC = () => {
         />
       )}
 
-      <Modal open={showCreate} onClose={() => { setShowCreate(false); resetCreateForm() }} title={t('tasks.createTask')} maxWidth="max-w-lg">
+      <Modal
+        open={showCreate}
+        onClose={() => {
+          setShowCreate(false)
+          resetCreateForm()
+        }}
+        title={t('tasks.createTask')}
+        maxWidth="max-w-lg"
+      >
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">{t('tasks.selectScript')}</label>
@@ -891,7 +947,9 @@ const Tasks: React.FC = () => {
               >
                 <option value="">{t('tasks.selectScriptPlaceholder')}</option>
                 {installedScripts.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name} (v{s.version})</option>
+                  <option key={s.id} value={s.id}>
+                    {s.name} (v{s.version})
+                  </option>
                 ))}
               </select>
               <button
@@ -904,14 +962,14 @@ const Tasks: React.FC = () => {
             </div>
           </div>
           {!selectedScript && (
-            <div className="text-sm text-text-muted py-2">
-              {t('tasks.selectScriptHint')}
-            </div>
+            <div className="text-sm text-text-muted py-2">{t('tasks.selectScriptHint')}</div>
           )}
           {availableAccounts.length > 0 && (
             <div className="border border-border-light rounded-lg p-3 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-text-secondary">{t('tasks.selectAccounts')}</span>
+                <span className="text-sm font-medium text-text-secondary">
+                  {t('tasks.selectAccounts')}
+                </span>
                 <label className="flex items-center gap-1.5 text-xs text-text-muted cursor-pointer">
                   <input
                     type="checkbox"
@@ -928,9 +986,13 @@ const Tasks: React.FC = () => {
                   onChange={(e) => setAccountPoolFilter(e.target.value)}
                   className="w-full px-2 py-1.5 text-xs rounded border border-border-light bg-bg-card focus:outline-none focus:ring-1 focus:ring-primary"
                 >
-                  <option value="">{t('accounts.pool')}: {t('tasks.allPools')}</option>
+                  <option value="">
+                    {t('accounts.pool')}: {t('tasks.allPools')}
+                  </option>
                   {availablePools.map((p) => (
-                    <option key={p} value={p}>{p}</option>
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
                   ))}
                 </select>
               )}
@@ -938,7 +1000,10 @@ const Tasks: React.FC = () => {
                 <div className="flex items-center gap-2 px-1 py-0.5">
                   <input
                     type="checkbox"
-                    checked={selectedAccountIds.size === getFilteredAccounts().length && getFilteredAccounts().length > 0}
+                    checked={
+                      selectedAccountIds.size === getFilteredAccounts().length &&
+                      getFilteredAccounts().length > 0
+                    }
                     onChange={selectAllAccounts}
                     className="rounded"
                   />
@@ -947,7 +1012,10 @@ const Tasks: React.FC = () => {
                   </span>
                 </div>
                 {getFilteredAccounts().map((a) => (
-                  <label key={a.id} className="flex items-center gap-2 px-1 py-1 rounded hover:bg-bg-card-hover cursor-pointer text-xs">
+                  <label
+                    key={a.id}
+                    className="flex items-center gap-2 px-1 py-1 rounded hover:bg-bg-card-hover cursor-pointer text-xs"
+                  >
                     <input
                       type="checkbox"
                       checked={selectedAccountIds.has(a.id)}
@@ -956,7 +1024,9 @@ const Tasks: React.FC = () => {
                     />
                     <span className="text-text-primary truncate">
                       {typeof a.data === 'object' && a.data
-                        ? Object.values(a.data as Record<string, unknown>).slice(0, 2).join(' / ')
+                        ? Object.values(a.data as Record<string, unknown>)
+                            .slice(0, 2)
+                            .join(' / ')
                         : a.id.slice(0, 8)}
                     </span>
                     <span className="text-text-muted shrink-0">{a.pool}</span>
@@ -973,12 +1043,21 @@ const Tasks: React.FC = () => {
             </div>
           )}
           {formFields.length > 0 && (
-            <DynamicForm fields={formFields} values={formValues} onChange={setFormValues} />
+            <DynamicForm
+              fields={formFields}
+              values={formValues}
+              onChange={setFormValues}
+              errors={formErrors}
+              onValidate={setFormErrors}
+            />
           )}
         </div>
         <div className="flex justify-end gap-2 mt-6">
           <button
-            onClick={() => { setShowCreate(false); resetCreateForm() }}
+            onClick={() => {
+              setShowCreate(false)
+              resetCreateForm()
+            }}
             className="px-4 py-2 rounded-lg border border-border-light text-sm hover:bg-bg-card-hover transition-colors"
           >
             {t('common.cancel')}
@@ -1073,7 +1152,9 @@ const Tasks: React.FC = () => {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-text-muted mt-0.5 truncate">{script.description}</p>
+                      <p className="text-xs text-text-muted mt-0.5 truncate">
+                        {script.description}
+                      </p>
                     </div>
                     <button
                       onClick={() => handleInstallScript(script.id)}
