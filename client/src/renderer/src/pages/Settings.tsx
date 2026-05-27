@@ -235,24 +235,6 @@ const Settings: React.FC = () => {
       .catch(() => {})
   }, [fetchAppInfo, fetchLogLevel, fetchSettings, fetchCaptchaKeys, fetchProxyProviders])
 
-  const loadMarketplaceUrl = async (): Promise<void> => {
-    try {
-      const url = await getMarketplaceUrl()
-      setMarketplaceUrlLocal(url)
-    } catch {
-      /* ignore */
-    }
-  }
-
-  const loadMarketplaceApiKey = async (): Promise<void> => {
-    try {
-      const key = await getMarketplaceApiKey()
-      setMarketplaceApiKeyLocal(key)
-    } catch {
-      /* ignore */
-    }
-  }
-
   const handleSaveMarketplaceApiKey = async (): Promise<void> => {
     setMarketplaceApiKeySaving(true)
     try {
