@@ -2,10 +2,14 @@ import Database from 'better-sqlite3'
 import { v4 as uuidv4 } from 'uuid'
 import type { Wallet, ListResponse } from '../../../shared/types'
 import { BaseRepository } from './base'
+import { EncryptionService } from '../encryption'
 
 export class WalletRepository extends BaseRepository<Wallet> {
-  constructor(db: Database.Database) {
+  private encryption: EncryptionService
+
+  constructor(db: Database.Database, encryption?: EncryptionService) {
     super(db)
+    this.encryption = encryption || new EncryptionService()
     this.prepareStatements()
   }
 
@@ -29,8 +33,8 @@ export class WalletRepository extends BaseRepository<Wallet> {
     return {
       id: row.id as string,
       address: row.address as string,
-      privateKey: row.private_key as string | null,
-      mnemonic: row.mnemonic as string | null,
+      privateKey: this.encryption.decrypt(row.private_key as string) || null,
+      mnemonic: this.encryption.decrypt(row.mnemonic as string) || null,
       walletType: row.wallet_type as Wallet['walletType'],
       labels: this.fromJsonArray<string>(row.labels as string | null),
       createdAt: row.created_at as string
@@ -56,8 +60,8 @@ export class WalletRepository extends BaseRepository<Wallet> {
     this.stmt('wallet.insert').run(
       id,
       data.address,
-      data.privateKey ?? null,
-      data.mnemonic ?? null,
+      data.privateKey ? this.encryption.encrypt(data.privateKey) : null,
+      data.mnemonic ? this.encryption.encrypt(data.mnemonic) : null,
       data.walletType,
       this.toJson(data.labels),
       createdAt
@@ -100,8 +104,8 @@ export class WalletRepository extends BaseRepository<Wallet> {
       )
       .run(
         updated.address,
-        updated.privateKey ?? null,
-        updated.mnemonic ?? null,
+        updated.privateKey ? this.encryption.encrypt(updated.privateKey) : null,
+        updated.mnemonic ? this.encryption.encrypt(updated.mnemonic) : null,
         updated.walletType,
         this.toJson(updated.labels),
         id
@@ -124,8 +128,8 @@ export class WalletRepository extends BaseRepository<Wallet> {
         insert.run(
           id,
           item.address,
-          item.privateKey ?? null,
-          item.mnemonic ?? null,
+          item.privateKey ? this.encryption.encrypt(item.privateKey) : null,
+          item.mnemonic ? this.encryption.encrypt(item.mnemonic) : null,
           item.walletType,
           this.toJson(item.labels),
           createdAt

@@ -85,14 +85,14 @@ export class StoreService {
   private _proxyRepo: ProxyRepository
   private _taskRepo: TaskRepository
 
-  constructor(dbPath: string) {
+  constructor(dbPath: string, encryption?: import('./encryption').EncryptionService) {
     this.db = new Database(dbPath)
     this.stmts = new Map()
     this.db.pragma('journal_mode = WAL')
     this.db.pragma('foreign_keys = ON')
     this.initialize()
     this.prepareStatements()
-    this._walletRepo = new WalletRepository(this.db)
+    this._walletRepo = new WalletRepository(this.db, encryption)
     this._proxyRepo = new ProxyRepository(this.db)
     this._taskRepo = new TaskRepository(this.db)
   }
