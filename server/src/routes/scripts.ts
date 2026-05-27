@@ -5,14 +5,18 @@ import { v4 as uuidv4 } from 'uuid'
 import { existsSync, rmSync } from 'fs'
 import { join, resolve } from 'path'
 import { db, stmts, getScriptsDir } from '../db'
+import { AuthenticatedRequest } from '../types'
+import { requireRole } from '../middleware/auth'
 
 const router = Router()
 
+// 50MB file size limit
 const upload = multer({
   storage: multer.diskStorage({
     destination: (_req, _file, cb) => cb(null, getScriptsDir()),
-    filename: (_req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
+    filename: (_req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
   }),
+  limits: { fileSize: 50 * 1024 * 1024 }
 })
 
 function rowToScript(row: Record<string, unknown>) {
@@ -28,12 +32,14 @@ function rowToScript(row: Record<string, unknown>) {
     tags: JSON.parse((row.tags as string) || '[]'),
     changelog: row.changelog as string,
     downloads: row.downloads as number,
+    visible: (row.visible as number) === 1,
     updatedAt: row.updated_at as string,
   }
 }
 
-router.get('/', (_req: Request, res: Response) => {
-  const rows = stmts.scriptGetAll.all() as Record<string, unknown>[]
+router.get('/', (req: AuthenticatedRequest, res: Response) => {
+  const showAll = req.query.all === 'true' && req.user?.role === 'admin'
+  const rows = (showAll ? stmts.scriptGetAllAdmin : stmts.scriptGetAll).all() as Record<string, unknown>[]
   const items = rows.map(rowToScript)
   res.json({ data: { items, total: items.length } })
 })
@@ -74,7 +80,7 @@ router.get('/:id/download', (req: Request, res: Response) => {
   })
 })
 
-router.post('/', upload.single('file'), (req: Request, res: Response) => {
+router.post('/', requireRole('admin', 'developer'), upload.single('file'), (req: AuthenticatedRequest, res: Response) => {
   if (!req.file) {
     res.status(400).json({ error: { message: 'No file uploaded', code: 'VALIDATION_ERROR' } })
     return
@@ -163,7 +169,7 @@ router.post('/', upload.single('file'), (req: Request, res: Response) => {
   res.status(201).json({ data: rowToScript(row) })
 })
 
-router.put('/:id', upload.single('file'), (req: Request, res: Response) => {
+router.put('/:id', requireRole('admin', 'developer'), upload.single('file'), (req: AuthenticatedRequest, res: Response) => {
   const existing = stmts.scriptGetById.get(req.params.id) as Record<string, unknown> | undefined
   if (!existing) {
     if (req.file) rmSync(req.file.path, { force: true })
@@ -201,7 +207,41 @@ router.put('/:id', upload.single('file'), (req: Request, res: Response) => {
   res.json({ data: rowToScript(row) })
 })
 
-router.delete('/:id', (req: Request, res: Response) => {
+router.patch('/:id', requireRole('admin', 'developer'), (req: AuthenticatedRequest, res: Response) => {
+  const existing = stmts.scriptGetById.get(req.params.id) as Record<string, unknown> | undefined
+  if (!existing) {
+    res.status(404).json({ error: { message: 'Script not found', code: 'NOT_FOUND' } })
+    return
+  }
+
+  const { visible, name, version, description, tags, changelog } = req.body
+
+  if (visible !== undefined) {
+    stmts.scriptPatch.run(visible ? 1 : 0, req.params.id)
+  }
+
+  if (name || version || description !== undefined || tags !== undefined || changelog !== undefined) {
+    const now = new Date().toISOString()
+    stmts.scriptUpdate.run(
+      name ?? existing.name,
+      version ?? existing.version,
+      description !== undefined ? description : existing.description,
+      existing.schema,
+      existing.entry_point,
+      existing.checksum,
+      existing.file_path,
+      typeof tags === 'string' ? tags : JSON.stringify(tags ?? JSON.parse((existing.tags as string) || '[]')),
+      changelog !== undefined ? changelog : existing.changelog,
+      now,
+      req.params.id
+    )
+  }
+
+  const row = stmts.scriptGetById.get(req.params.id) as Record<string, unknown>
+  res.json({ data: rowToScript(row) })
+})
+
+router.delete('/:id', requireRole('admin'), (req: AuthenticatedRequest, res: Response) => {
   const existing = stmts.scriptGetById.get(req.params.id) as Record<string, unknown> | undefined
   if (!existing) {
     res.status(404).json({ error: { message: 'Script not found', code: 'NOT_FOUND' } })
