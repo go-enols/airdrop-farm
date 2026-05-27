@@ -18,3 +18,16 @@ server/data/*.db-wal
 
 # Editor / scratch
 tmp.json
+
+# AI tool directories
+.deepseek/
+.omo/
+.sisyphus/
+.dbg/
+
+# IDE settings
+.vscode/
+client/.vscode/
+
+# Dev tools (local development only)
+devtools/
