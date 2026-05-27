@@ -135,6 +135,32 @@ const Tasks: React.FC = () => {
     return () => clearTimeout(timer)
   }, [successMsg])
 
+  const showError = (msg: string): void => setErrorMsg(msg)
+  const showSuccess = (msg: string): void => {
+    setSuccessMsg(msg)
+  }
+
+  const loadInstalledScripts = async (): Promise<void> => {
+    try {
+      const scripts = await scriptApi.listInstalled()
+      setInstalledScripts(scripts)
+    } catch (e: unknown) {
+      showError(t('common.operationFailed') + ': ' + String(e))
+    }
+  }
+
+  const loadRemoteScripts = async (): Promise<void> => {
+    setLoadingScripts(true)
+    try {
+      const result = await marketplaceApi.listScripts()
+      setRemoteScripts(result.items || [])
+    } catch (e: unknown) {
+      showError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setLoadingScripts(false)
+    }
+  }
+
   useEffect(() => {
     loadInstalledScripts()
   }, [])
@@ -197,11 +223,6 @@ const Tasks: React.FC = () => {
     }
   }, [logs, expandedId])
 
-  const showError = (msg: string): void => setErrorMsg(msg)
-  const showSuccess = (msg: string): void => {
-    setSuccessMsg(msg)
-  }
-
   const handleAction = async (
     action: 'start' | 'stop' | 'pause' | 'resume' | 'delete',
     id: string
@@ -240,27 +261,6 @@ const Tasks: React.FC = () => {
       setLogs([])
     } catch (e: unknown) {
       showError(e instanceof Error ? e.message : String(e))
-    }
-  }
-
-  const loadInstalledScripts = async (): Promise<void> => {
-    try {
-      const scripts = await scriptApi.listInstalled()
-      setInstalledScripts(scripts)
-    } catch (e: unknown) {
-      showError(t('common.operationFailed') + ': ' + String(e))
-    }
-  }
-
-  const loadRemoteScripts = async (): Promise<void> => {
-    setLoadingScripts(true)
-    try {
-      const result = await marketplaceApi.listScripts()
-      setRemoteScripts(result.items || [])
-    } catch (e: unknown) {
-      showError(e instanceof Error ? e.message : String(e))
-    } finally {
-      setLoadingScripts(false)
     }
   }
 

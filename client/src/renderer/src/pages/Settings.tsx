@@ -200,6 +200,24 @@ const Settings: React.FC = () => {
     }
   }, [])
 
+  const loadMarketplaceUrl = async (): Promise<void> => {
+    try {
+      const url = await getMarketplaceUrl()
+      setMarketplaceUrlLocal(url)
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const loadMarketplaceApiKey = async (): Promise<void> => {
+    try {
+      const key = await getMarketplaceApiKey()
+      setMarketplaceApiKeyLocal(key)
+    } catch {
+      /* ignore */
+    }
+  }
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchAppInfo()
