@@ -1,17 +1,25 @@
-import React, { useRef, useCallback } from 'react'
+import React, { useRef, useCallback, useEffect } from 'react'
 import type { FieldMeta } from '../../../shared/schemas/task-params'
+import { validateFormFields } from '../../../shared/schemas/task-params'
 
 interface DynamicFormProps {
   fields: FieldMeta[]
   values: Record<string, unknown>
   onChange: (values: Record<string, unknown>) => void
   errors?: Record<string, string>
+  onValidate?: (errors: Record<string, string>) => void
 }
 
 const inputBase =
   'w-full px-3 py-2 rounded-lg border border-border-light bg-bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary'
 
-const DynamicForm: React.FC<DynamicFormProps> = ({ fields, values, onChange, errors }) => {
+const DynamicForm: React.FC<DynamicFormProps> = ({
+  fields,
+  values,
+  onChange,
+  errors,
+  onValidate
+}) => {
   const valuesRef = useRef(values)
   valuesRef.current = values
   const handleChange = useCallback(
@@ -20,6 +28,11 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ fields, values, onChange, err
     },
     [onChange]
   )
+
+  useEffect(() => {
+    if (!onValidate) return
+    onValidate(validateFormFields(fields, values))
+  }, [fields, values, onValidate])
 
   return (
     <div className="space-y-4">
@@ -45,73 +58,95 @@ function renderField(
   onChange: (name: string, value: unknown) => void,
   error?: string
 ): React.ReactNode {
-  const strValue = value !== undefined && value !== null ? String(value) : ''
+  const hasValue = value !== undefined && value !== null
   const defaultStr =
     field.defaultValue !== undefined && field.defaultValue !== null
       ? String(field.defaultValue)
       : ''
+  const strValue = hasValue ? String(value) : defaultStr
 
   switch (field.type) {
-    case 'boolean':
+    case 'boolean': {
+      const rawBool = value !== undefined && value !== null ? value : field.defaultValue
+      const checked = typeof rawBool === 'string' ? rawBool === 'true' : Boolean(rawBool ?? false)
       return (
         <div className="flex items-center gap-2">
           <input
             type="checkbox"
-            checked={Boolean(value ?? field.defaultValue ?? false)}
+            checked={checked}
             onChange={(e) => onChange(field.name, e.target.checked)}
             className="w-4 h-4 rounded border-border-light text-primary focus:ring-primary"
           />
           {error && <span className="text-xs text-danger">{error}</span>}
         </div>
       )
+    }
 
     case 'number':
       return (
         <div>
           <input
             type="number"
-            value={strValue || defaultStr}
+            value={strValue}
             onChange={(e) => {
-              const num = Number(e.target.value)
-              onChange(field.name, e.target.value === '' ? undefined : (isNaN(num) ? (value as number) : num))
+              const raw = e.target.value
+              if (raw === '') {
+                onChange(field.name, undefined)
+                return
+              }
+              const num = Number(raw)
+              if (!isNaN(num)) onChange(field.name, num)
             }}
             min={field.min}
             max={field.max}
             className={`${inputBase} ${error ? 'border-danger' : ''}`}
             placeholder={defaultStr}
           />
-          {error && <span className="text-xs text-danger mt-1">{error}</span>}
+          {error && <span className="text-xs text-danger mt-1 block">{error}</span>}
         </div>
       )
 
-    case 'select':
+    case 'select': {
+      const opts = field.options?.length ? field.options : null
       return (
         <div>
           <select
             value={strValue}
             onChange={(e) => onChange(field.name, e.target.value)}
             className={`${inputBase} ${error ? 'border-danger' : ''}`}
+            disabled={!opts}
           >
-            <option value="">请选择...</option>
-            {field.options?.map((opt) => (
-              <option key={String(opt.value)} value={String(opt.value)}>
-                {opt.label}
-              </option>
-            ))}
+            {opts ? (
+              <>
+                <option value="">请选择...</option>
+                {opts.map((opt) => (
+                  <option key={String(opt.value)} value={String(opt.value)}>
+                    {opt.label}
+                  </option>
+                ))}
+              </>
+            ) : (
+              <option value="">无可用选项</option>
+            )}
           </select>
-          {error && <span className="text-xs text-danger mt-1">{error}</span>}
+          {error && <span className="text-xs text-danger mt-1 block">{error}</span>}
         </div>
       )
+    }
 
-    case 'multiselect':
+    case 'multiselect': {
+      const defaultArr = Array.isArray(field.defaultValue)
+        ? (field.defaultValue as string[])
+        : undefined
+      const selected = (value as string[] | undefined) ?? defaultArr ?? []
       return (
         <div>
           <select
             multiple
-            value={(value as string[]) ?? []}
+            value={selected}
             onChange={(e) => {
-              const selected = Array.from(e.target.selectedOptions, (o) => o.value)
-              onChange(field.name, selected)
+              const vals = Array.from(e.target.selectedOptions, (o) => o.value)
+              onChange(field.name, vals)
             }}
             className={`${inputBase} min-h-[80px] ${error ? 'border-danger' : ''}`}
           >
@@ -121,9 +156,10 @@ function renderField(
               </option>
             ))}
           </select>
-          {error && <span className="text-xs text-danger mt-1">{error}</span>}
+          {error && <span className="text-xs text-danger mt-1 block">{error}</span>}
         </div>
       )
+    }
 
     case 'string':
     default:
@@ -131,12 +167,12 @@ function renderField(
         <div>
           <input
             type="text"
-            value={strValue || defaultStr}
+            value={strValue}
             onChange={(e) => onChange(field.name, e.target.value)}
             className={`${inputBase} ${error ? 'border-danger' : ''}`}
             placeholder={defaultStr}
           />
-          {error && <span className="text-xs text-danger mt-1">{error}</span>}
+          {error && <span className="text-xs text-danger mt-1 block">{error}</span>}
         </div>
       )
   }

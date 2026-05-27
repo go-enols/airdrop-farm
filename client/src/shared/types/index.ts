@@ -323,6 +323,7 @@ export interface InstalledScript {
   name: string
   version: string
   description: string
+  entryPoint: string
   schema: Record<string, unknown>
   installPath: string
   checksum: string

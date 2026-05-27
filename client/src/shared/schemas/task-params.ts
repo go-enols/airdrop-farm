@@ -28,6 +28,7 @@ export function extractFieldMeta(schema: z.ZodObject<z.ZodRawShape>): FieldMeta[
 /**
  * Convert a JSON Schema object to FieldMeta[].
  * Handles the manifest.json schema format: { type: "object", properties: {...}, required: [...] }
+ * Nested objects are flattened with dot-notation field names (e.g. "parent.child").
  */
 export function jsonSchemaToFieldMeta(jsonSchema: Record<string, unknown>): FieldMeta[] {
   const fields: FieldMeta[] = []
@@ -38,9 +39,23 @@ export function jsonSchemaToFieldMeta(jsonSchema: Record<string, unknown>): Fiel
 
   for (const [name, propSchema] of Object.entries(properties)) {
     const enumValues = propSchema.enum as string[] | undefined
+    const propType = propSchema.type as string | undefined
+
+    // Nested object: recursively flatten child properties
+    if (propType === 'object' && propSchema.properties) {
+      const nestedFields = flattenNestedProperties(
+        name,
+        propSchema.properties as Record<string, Record<string, unknown>>,
+        (propSchema.required as string[]) ?? [],
+        propSchema
+      )
+      fields.push(...nestedFields)
+      continue
+    }
+
     const meta: FieldMeta = {
       name,
-      type: mapJsonSchemaType(propSchema.type as string, enumValues),
+      type: mapJsonSchemaType(propType ?? 'string', enumValues),
       label: (propSchema.title as string) || (propSchema.description as string) || name,
       required: requiredList.includes(name),
       description: (propSchema.description as string) || undefined,
@@ -66,16 +81,75 @@ export function jsonSchemaToFieldMeta(jsonSchema: Record<string, unknown>): Fiel
   return fields
 }
 
-function mapJsonSchemaType(
-  jsonType: string,
-  enumValues: string[] | undefined
-): FieldMeta['type'] {
+/**
+ * Recursively flatten nested object properties into dot-notation FieldMeta entries.
+ */
+function flattenNestedProperties(
+  prefix: string,
+  properties: Record<string, Record<string, unknown>>,
+  requiredList: string[],
+  parentSchema: Record<string, unknown>
+): FieldMeta[] {
+  const fields: FieldMeta[] = []
+
+  const parentLabel =
+    (parentSchema.title as string) || (parentSchema.description as string) || prefix
+
+  for (const [name, propSchema] of Object.entries(properties)) {
+    const fullName = `${prefix}.${name}`
+    const enumValues = propSchema.enum as string[] | undefined
+    const propType = propSchema.type as string | undefined
+
+    // Recurse into deeper nested objects
+    if (propType === 'object' && propSchema.properties) {
+      const deeper = flattenNestedProperties(
+        fullName,
+        propSchema.properties as Record<string, Record<string, unknown>>,
+        (propSchema.required as string[]) ?? [],
+        propSchema
+      )
+      fields.push(...deeper)
+      continue
+    }
+
+    const meta: FieldMeta = {
+      name: fullName,
+      type: mapJsonSchemaType(propType ?? 'string', enumValues),
+      label: `${parentLabel} › ${(propSchema.title as string) || (propSchema.description as string) || name}`,
+      required: requiredList.includes(name),
+      description: (propSchema.description as string) || undefined,
+      defaultValue: propSchema.default
+    }
+
+    if (enumValues) {
+      meta.options = enumValues.map((v) => ({ label: v, value: v }))
+    }
+
+    if (meta.type === 'number') {
+      if (propSchema.minimum !== undefined) meta.min = propSchema.minimum as number
+      if (propSchema.maximum !== undefined) meta.max = propSchema.maximum as number
+    }
+
+    if (propSchema.pattern) {
+      meta.pattern = propSchema.pattern as string
+    }
+
+    fields.push(meta)
+  }
+
+  return fields
+}
+
+function mapJsonSchemaType(jsonType: string, enumValues: string[] | undefined): FieldMeta['type'] {
   if (enumValues?.length) return 'select'
   switch (jsonType) {
-    case 'boolean': return 'boolean'
+    case 'boolean':
+      return 'boolean'
     case 'integer':
-    case 'number': return 'number'
-    default: return 'string'
+    case 'number':
+      return 'number'
+    default:
+      return 'string'
   }
 }
 
@@ -84,7 +158,7 @@ function parseZodField(name: string, schema: z.ZodTypeAny): FieldMeta {
     name,
     type: 'string',
     label: name,
-    required: true,
+    required: true
   }
 
   const description = (schema as any).description as string | undefined
@@ -155,11 +229,106 @@ function isOptionalSchema(schema: z.ZodTypeAny): boolean {
   return false
 }
 
+/**
+ * Validate form values against FieldMeta[] definitions.
+ * Returns a map of field name → error message. Empty map means valid.
+ */
+export function validateFormFields(
+  fields: FieldMeta[],
+  values: Record<string, unknown>
+): Record<string, string> {
+  const errors: Record<string, string> = {}
+
+  for (const field of fields) {
+    const value = values[field.name]
+    const isEmpty =
+      value === undefined ||
+      value === null ||
+      (typeof value === 'string' && value.trim() === '') ||
+      (Array.isArray(value) && value.length === 0)
+
+    if (field.required && isEmpty) {
+      errors[field.name] = field.type === 'select' ? '请选择' : '此字段为必填项'
+      continue
+    }
+
+    if (isEmpty) continue
+
+    if (field.type === 'number') {
+      const num = typeof value === 'number' ? value : Number(value)
+      if (Number.isFinite(num)) {
+        if (field.min !== undefined && num < field.min) {
+          errors[field.name] = `最小值为 ${field.min}`
+          continue
+        }
+        if (field.max !== undefined && num > field.max) {
+          errors[field.name] = `最大值为 ${field.max}`
+          continue
+        }
+      }
+    }
+
+    if (field.pattern && typeof value === 'string') {
+      try {
+        const re = new RegExp(field.pattern)
+        if (!re.test(value)) {
+          errors[field.name] = '格式不正确'
+          continue
+        }
+      } catch {
+        void 0
+      }
+    }
+  }
+
+  return errors
+}
+
+/**
+ * Convert a flat object with dot-notation keys into a nested object.
+ * Example: { "profile.name": "Alice", "profile.age": 30, "url": "x" }
+ *       → { profile: { name: "Alice", age: 30 }, url: "x" }
+ *
+ * If a non-object leaf value already exists at an intermediate path, it is
+ * replaced with an object so the deeper key can be inserted.
+ */
+export function unflattenDotNotation(values: Record<string, unknown>): Record<string, unknown> {
+  const result: Record<string, unknown> = {}
+
+  for (const [key, value] of Object.entries(values)) {
+    if (!key.includes('.')) {
+      const existing = result[key]
+      if (existing && typeof existing === 'object' && !Array.isArray(existing)) {
+        continue
+      }
+      result[key] = value
+      continue
+    }
+
+    const parts = key.split('.')
+    let cursor: Record<string, unknown> = result
+    for (let i = 0; i < parts.length - 1; i++) {
+      const part = parts[i]
+      const next = cursor[part]
+      if (!next || typeof next !== 'object' || Array.isArray(next)) {
+        const obj: Record<string, unknown> = {}
+        cursor[part] = obj
+        cursor = obj
+      } else {
+        cursor = next as Record<string, unknown>
+      }
+    }
+    cursor[parts[parts.length - 1]] = value
+  }
+
+  return result
+}
+
 export const commonTaskParams = z.object({
   proxyEnabled: z.boolean().default(false).describe('使用代理'),
   headless: z.boolean().default(true).describe('无头模式'),
   maxRetries: z.number().int().min(0).max(10).default(3).describe('最大重试次数'),
-  timeout: z.number().int().min(0).default(300).describe('超时时间(秒)'),
+  timeout: z.number().int().min(0).default(300).describe('超时时间(秒)')
 })
 
 export type CommonTaskParams = z.infer<typeof commonTaskParams>
