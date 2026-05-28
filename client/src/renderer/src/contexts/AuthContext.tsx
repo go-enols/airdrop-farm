@@ -32,14 +32,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const savedUser = localStorage.getItem('marketplace_user')
     if (savedToken && savedUser) {
       try {
-        setToken(savedToken)
         const parsed = JSON.parse(savedUser) as Record<string, unknown>
-      setUser({
-        id: parsed.id as string,
-        username: parsed.username as string,
-        displayName: parsed.displayName as string,
-        role: (parsed.role as UserRole) || 'user'
-      })
+        setUser({
+          id: parsed.id as string,
+          username: parsed.username as string,
+          displayName: parsed.displayName as string,
+          role: (parsed.role as UserRole) || 'user'
+        })
+        setToken(savedToken)
       } catch {
         localStorage.removeItem('marketplace_jwt')
         localStorage.removeItem('marketplace_user')
