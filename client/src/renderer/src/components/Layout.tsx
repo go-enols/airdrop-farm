@@ -14,31 +14,58 @@ import {
   ScrollText,
   Settings,
   Menu,
-  X
+  X,
+  LogOut,
+  Shield
 } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
+import type { UserRole } from '../contexts/AuthContext'
 import TitleBar from './TitleBar'
 
-const NAV_ITEMS = [
-  { path: '/', icon: LayoutDashboard, key: 'nav.dashboard' },
-  { path: '/wallets', icon: Wallet, key: 'nav.wallets' },
-  { path: '/accounts', icon: User, key: 'nav.accounts' },
-  { path: '/proxies', icon: Globe, key: 'nav.proxies' },
-  { path: '/tasks', icon: Zap, key: 'nav.tasks' },
-  { path: '/templates', icon: FileText, key: 'nav.templates' },
-  { path: '/airdrops', icon: Gift, key: 'nav.airdrops' },
-  { path: '/stats', icon: BarChart3, key: 'nav.stats' },
-  { path: '/scheduler', icon: Clock, key: 'nav.scheduler' },
-  { path: '/logs', icon: ScrollText, key: 'nav.logs' },
-  { path: '/settings', icon: Settings, key: 'nav.settings' }
+interface NavItem {
+  path: string
+  icon: React.ElementType
+  key: string
+  roles: UserRole[]
+}
+
+const ALL_NAV_ITEMS: NavItem[] = [
+  { path: '/', icon: LayoutDashboard, key: 'nav.dashboard', roles: ['admin', 'developer', 'user'] },
+  { path: '/wallets', icon: Wallet, key: 'nav.wallets', roles: ['admin', 'developer', 'user'] },
+  { path: '/accounts', icon: User, key: 'nav.accounts', roles: ['admin', 'developer', 'user'] },
+  { path: '/proxies', icon: Globe, key: 'nav.proxies', roles: ['admin', 'developer', 'user'] },
+  { path: '/tasks', icon: Zap, key: 'nav.tasks', roles: ['admin', 'developer'] },
+  { path: '/templates', icon: FileText, key: 'nav.templates', roles: ['admin', 'developer'] },
+  { path: '/airdrops', icon: Gift, key: 'nav.airdrops', roles: ['admin', 'developer', 'user'] },
+  { path: '/stats', icon: BarChart3, key: 'nav.stats', roles: ['admin'] },
+  { path: '/scheduler', icon: Clock, key: 'nav.scheduler', roles: ['admin', 'developer'] },
+  { path: '/logs', icon: ScrollText, key: 'nav.logs', roles: ['admin'] },
+  { path: '/settings', icon: Settings, key: 'nav.settings', roles: ['admin'] }
 ]
+
+const roleLabels: Record<UserRole, string> = {
+  admin: '管理员',
+  developer: '开发者',
+  user: '用户'
+}
+
+const roleColors: Record<UserRole, string> = {
+  admin: 'bg-danger text-white',
+  developer: 'bg-primary text-white',
+  user: 'bg-success text-white'
+}
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
+  const { user, logout } = useAuth()
   const [collapsed, setCollapsed] = useState(
     () => localStorage.getItem('sidebar-collapsed') === 'true'
   )
+
+  const userRole: UserRole = user?.role ?? 'user'
+  const NAV_ITEMS = ALL_NAV_ITEMS.filter((item) => item.roles.includes(userRole))
 
   return (
     <div className="flex flex-col h-screen bg-bg-page">
@@ -82,6 +109,30 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               )
             })}
           </nav>
+
+          <div className="border-t border-border-light p-3">
+            {!collapsed && (
+              <div className="mb-2">
+                <div className="flex items-center gap-2">
+                  <Shield size={14} className="text-text-muted" />
+                  <span
+                    className={`text-xs px-2 py-0.5 rounded-full font-medium ${roleColors[userRole]}`}
+                  >
+                    {roleLabels[userRole]}
+                  </span>
+                </div>
+                <p className="text-xs text-text-secondary mt-1 truncate">{user?.displayName}</p>
+              </div>
+            )}
+            <button
+              onClick={logout}
+              className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-xs text-text-muted hover:text-danger hover:bg-danger/10 transition-colors"
+              title="退出登录"
+            >
+              <LogOut size={14} />
+              {!collapsed && <span>退出登录</span>}
+            </button>
+          </div>
         </aside>
         <main
           key={location.pathname}
