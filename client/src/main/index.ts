@@ -113,7 +113,7 @@ function startMarketplaceServer(): void {
   const serverDir = is.dev
     ? join(app.getAppPath(), '..', 'server')
     : join(process.resourcesPath, 'server')
-  const cmd = is.dev ? 'npx' : process.execPath
+  const cmd = is.dev ? 'npx' : 'node'
   const args = is.dev ? ['tsx', 'src/index.ts'] : [join(serverDir, 'dist', 'index.js')]
 
   let apiKey = store.getSetting('marketplace_api_key')
