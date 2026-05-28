@@ -1,0 +1,543 @@
+@import 'tailwindcss';
+
+@theme {
+  /* Primary - Blue (Indigo-based for more sophistication) */
+  --color-primary: #6366f1;
+  --color-primary-hover: #4f46e5;
+  --color-primary-light: #e0e7ff;
+  --color-primary-dark: #4338ca;
+  --color-primary-50: #eef2ff;
+  --color-primary-100: #e0e7ff;
+  --color-primary-200: #c7d2fe;
+  --color-primary-300: #a5b4fc;
+  --color-primary-400: #818cf8;
+  --color-primary-500: #6366f1;
+  --color-primary-600: #4f46e5;
+  --color-primary-700: #4338ca;
+  --color-primary-800: #3730a3;
+  --color-primary-900: #312e81;
+
+  /* Success - Emerald (more vibrant) */
+  --color-success: #10b981;
+  --color-success-hover: #059669;
+  --color-success-light: #d1fae5;
+  --color-success-dark: #047857;
+  --color-success-50: #ecfdf5;
+  --color-success-100: #d1fae5;
+  --color-success-200: #a7f3d0;
+  --color-success-300: #6ee7b7;
+  --color-success-400: #34d399;
+  --color-success-500: #10b981;
+  --color-success-600: #059669;
+  --color-success-700: #047857;
+  --color-success-800: #065f46;
+  --color-success-900: #064e3b;
+
+  /* Warning - Amber (warm and inviting) */
+  --color-warning: #f59e0b;
+  --color-warning-hover: #d97706;
+  --color-warning-light: #fef3c7;
+  --color-warning-dark: #b45309;
+  --color-warning-50: #fffbeb;
+  --color-warning-100: #fef3c7;
+  --color-warning-200: #fde68a;
+  --color-warning-300: #fcd34d;
+  --color-warning-400: #fbbf24;
+  --color-warning-500: #f59e0b;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+  --color-warning-800: #92400e;
+  --color-warning-900: #78350f;
+
+  /* Danger - Rose (more nuanced red) */
+  --color-danger: #f43f5e;
+  --color-danger-hover: #e11d48;
+  --color-danger-light: #ffe4e6;
+  --color-danger-dark: #be123c;
+  --color-danger-50: #fff1f2;
+  --color-danger-100: #ffe4e6;
+  --color-danger-200: #fecdd3;
+  --color-danger-300: #fda4af;
+  --color-danger-400: #fb7185;
+  --color-danger-500: #f43f5e;
+  --color-danger-600: #e11d48;
+  --color-danger-700: #be123c;
+  --color-danger-800: #9f1239;
+  --color-danger-900: #881337;
+
+  /* Info - Sky (clean and professional) */
+  --color-info: #0ea5e9;
+  --color-info-hover: #0284c7;
+  --color-info-light: #e0f2fe;
+  --color-info-dark: #0369a1;
+  --color-info-50: #f0f9ff;
+  --color-info-100: #e0f2fe;
+  --color-info-200: #bae6fd;
+  --color-info-300: #7dd3fc;
+  --color-info-400: #38bdf8;
+  --color-info-500: #0ea5e9;
+  --color-info-600: #0284c7;
+  --color-info-700: #0369a1;
+  --color-info-800: #075985;
+  --color-info-900: #0c4a6e;
+
+  /* Purple - For special accents */
+  --color-purple: #8b5cf6;
+  --color-purple-hover: #7c3aed;
+  --color-purple-light: #ede9fe;
+  --color-purple-50: #f5f3ff;
+  --color-purple-100: #ede9fe;
+  --color-purple-200: #ddd6fe;
+  --color-purple-300: #c4b5fd;
+  --color-purple-400: #a78bfa;
+  --color-purple-500: #8b5cf6;
+  --color-purple-600: #7c3aed;
+  --color-purple-700: #6d28d9;
+  --color-purple-800: #5b21b6;
+  --color-purple-900: #4c1d95;
+
+  /* Cyan - For tech/crypto feel */
+  --color-cyan: #06b6d4;
+  --color-cyan-hover: #0891b2;
+  --color-cyan-light: #cffafe;
+  --color-cyan-50: #ecfeff;
+  --color-cyan-100: #cffafe;
+  --color-cyan-200: #a5f3fc;
+  --color-cyan-300: #67e8f9;
+  --color-cyan-400: #22d3ee;
+  --color-cyan-500: #06b6d4;
+  --color-cyan-600: #0891b2;
+  --color-cyan-700: #0e7490;
+  --color-cyan-800: #155e75;
+  --color-cyan-900: #164e63;
+
+  /* Orange - For warmth */
+  --color-orange: #f97316;
+  --color-orange-hover: #ea580c;
+  --color-orange-light: #ffedd5;
+  --color-orange-50: #fff7ed;
+  --color-orange-100: #ffedd5;
+  --color-orange-200: #fed7aa;
+  --color-orange-300: #fdba74;
+  --color-orange-400: #fb923c;
+  --color-orange-500: #f97316;
+  --color-orange-600: #ea580c;
+  --color-orange-700: #c2410c;
+  --color-orange-800: #9a3412;
+  --color-orange-900: #7c2d12;
+
+  /* Pink - For highlights */
+  --color-pink: #ec4899;
+  --color-pink-hover: #db2777;
+  --color-pink-light: #fce7f3;
+  --color-pink-50: #fdf2f8;
+  --color-pink-100: #fce7f3;
+  --color-pink-200: #fbcfe8;
+  --color-pink-300: #f9a8d4;
+  --color-pink-400: #f472b6;
+  --color-pink-500: #ec4899;
+  --color-pink-600: #db2777;
+  --color-pink-700: #be185d;
+  --color-pink-800: #9d174d;
+  --color-pink-900: #831843;
+
+  /* Light Theme - Refined grays with warm undertones */
+  --color-bg-page: #f8fafc;
+  --color-bg-card: #ffffff;
+  --color-bg-card-hover: #f1f5f9;
+  --color-bg-tertiary: #f1f5f9;
+  --color-bg-elevated: #ffffff;
+  --color-bg-sunken: #f1f5f9;
+
+  --color-border-light: #e2e8f0;
+  --color-border-hover: #cbd5e1;
+  --color-border-focus: #6366f1;
+
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94a3b8;
+  --color-text-inverse: #ffffff;
+
+  /* Status colors - Light theme */
+  --color-status-running-bg: #dbeafe;
+  --color-status-running-text: #1d4ed8;
+  --color-status-running-border: #93c5fd;
+
+  --color-status-complete-bg: #dcfce7;
+  --color-status-complete-text: #15803d;
+  --color-status-complete-border: #86efac;
+
+  --color-status-error-bg: #fee2e2;
+  --color-status-error-text: #b91c1c;
+  --color-status-error-border: #fca5a5;
+
+  --color-status-idle-bg: #f1f5f9;
+  --color-status-idle-text: #64748b;
+  --color-status-idle-border: #cbd5e1;
+
+  --color-status-paused-bg: #fef3c7;
+  --color-status-paused-text: #b45309;
+  --color-status-paused-border: #fcd34d;
+
+  --color-status-stopped-bg: #ffedd5;
+  --color-status-stopped-text: #9a3412;
+  --color-status-stopped-border: #fdba74;
+
+  --color-status-active-bg: #dcfce7;
+  --color-status-active-text: #15803d;
+  --color-status-active-border: #86efac;
+
+  --color-status-inactive-bg: #f1f5f9;
+  --color-status-inactive-text: #64748b;
+  --color-status-inactive-border: #cbd5e1;
+
+  --color-status-expired-bg: #fee2e2;
+  --color-status-expired-text: #b91c1c;
+  --color-status-expired-border: #fca5a5;
+
+  /* Wallet type colors - Light theme */
+  --color-wallet-evm-bg: #dbeafe;
+  --color-wallet-evm-text: #1d4ed8;
+  --color-wallet-evm-border: #93c5fd;
+
+  --color-wallet-solana-bg: #ede9fe;
+  --color-wallet-solana-text: #6d28d9;
+  --color-wallet-solana-border: #c4b5fd;
+
+  --color-wallet-sui-bg: #ecfeff;
+  --color-wallet-sui-text: #0e7490;
+  --color-wallet-sui-border: #67e8f9;
+
+  --color-wallet-bitcoin-bg: #fef3c7;
+  --color-wallet-bitcoin-text: #b45309;
+  --color-wallet-bitcoin-border: #fcd34d;
+
+  /* Input styles */
+  --color-border-input: #e2e8f0;
+  --color-border-input-dark: #475569;
+  --color-bg-input: #ffffff;
+  --color-bg-input-disabled: #f1f5f9;
+
+  /* Shadow styles */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+
+  --font-sans:
+    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
+
+  --animate-fade-in: fade-in 0.2s ease-out;
+  --animate-slide-in: slide-in-right 0.2s ease-out;
+  --animate-pulse-skeleton: pulse-skeleton 1.5s ease-in-out infinite;
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-right {
+  0% {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse-skeleton {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  input,
+  select,
+  textarea {
+    color-scheme: inherit;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-bg-page);
+    color: var(--color-text-primary);
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+}
+
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+
+  .scrollbar-thumb-gray {
+    scrollbar-color: var(--color-border-light) transparent;
+  }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .select-all {
+    user-select: all;
+  }
+
+  .drag {
+    -webkit-app-region: drag;
+  }
+
+  .no-drag {
+    -webkit-app-region: no-drag;
+  }
+
+  .animate-slide-in {
+    animation: var(--animate-slide-in);
+  }
+
+  .animate-pulse-skeleton {
+    animation: var(--animate-pulse-skeleton);
+  }
+
+  .card-hover {
+    transition: all 0.2s ease;
+  }
+
+  .card-hover:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    border-color: var(--color-border-hover);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-fade-in,
+    .animate-slide-in,
+    .animate-pulse-skeleton {
+      animation: none;
+    }
+
+    .card-hover:hover {
+      transform: none;
+    }
+  }
+}
+
+/* Dark Theme - Deep, rich colors with excellent contrast */
+.dark {
+  /* Backgrounds - Deep slate/gray tones */
+  --color-bg-page: #0f172a;
+  --color-bg-card: #1e293b;
+  --color-bg-card-hover: #334155;
+  --color-bg-tertiary: #334155;
+  --color-bg-elevated: #1e293b;
+  --color-bg-sunken: #0f172a;
+
+  /* Borders - Subtle but visible */
+  --color-border-light: #334155;
+  --color-border-hover: #475569;
+  --color-border-focus: #818cf8;
+
+  /* Text - High contrast for readability */
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #cbd5e1;
+  --color-text-muted: #64748b;
+  --color-text-inverse: #0f172a;
+
+  /* Status colors - Dark theme */
+  --color-status-running-bg: #1e3a5f;
+  --color-status-running-text: #60a5fa;
+  --color-status-running-border: #2563eb;
+
+  --color-status-complete-bg: #064e3b;
+  --color-status-complete-text: #34d399;
+  --color-status-complete-border: #059669;
+
+  --color-status-error-bg: #4c0519;
+  --color-status-error-text: #fb7185;
+  --color-status-error-border: #e11d48;
+
+  --color-status-idle-bg: #1e293b;
+  --color-status-idle-text: #94a3b8;
+  --color-status-idle-border: #475569;
+
+  --color-status-paused-bg: #451a03;
+  --color-status-paused-text: #fbbf24;
+  --color-status-paused-border: #d97706;
+
+  --color-status-stopped-bg: #431407;
+  --color-status-stopped-text: #fb923c;
+  --color-status-stopped-border: #ea580c;
+
+  --color-status-active-bg: #064e3b;
+  --color-status-active-text: #34d399;
+  --color-status-active-border: #059669;
+
+  --color-status-inactive-bg: #1e293b;
+  --color-status-inactive-text: #94a3b8;
+  --color-status-inactive-border: #475569;
+
+  --color-status-expired-bg: #4c0519;
+  --color-status-expired-text: #fb7185;
+  --color-status-expired-border: #e11d48;
+
+  /* Wallet type colors - Dark theme */
+  --color-wallet-evm-bg: #1e3a5f;
+  --color-wallet-evm-text: #60a5fa;
+  --color-wallet-evm-border: #2563eb;
+
+  --color-wallet-solana-bg: #2e1065;
+  --color-wallet-solana-text: #a78bfa;
+  --color-wallet-solana-border: #7c3aed;
+
+  --color-wallet-sui-bg: #083344;
+  --color-wallet-sui-text: #22d3ee;
+  --color-wallet-sui-border: #0891b2;
+
+  --color-wallet-bitcoin-bg: #451a03;
+  --color-wallet-bitcoin-text: #fbbf24;
+  --color-wallet-bitcoin-border: #d97706;
+
+  /* Input styles - Dark theme */
+  --color-border-input: #334155;
+  --color-border-input-dark: #64748b;
+  --color-bg-input: #1e293b;
+  --color-bg-input-disabled: #0f172a;
+
+  /* Shadows - More subtle in dark mode */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.4), 0 8px 10px -6px rgb(0 0 0 / 0.3);
+
+  scrollbar-color: #334155 transparent;
+}
+
+/* System preference dark mode */
+@media (prefers-color-scheme: dark) {
+  html:not(.light):not(.dark) {
+    --color-bg-page: #0f172a;
+    --color-bg-card: #1e293b;
+    --color-bg-card-hover: #334155;
+    --color-bg-tertiary: #334155;
+    --color-bg-elevated: #1e293b;
+    --color-bg-sunken: #0f172a;
+
+    --color-border-light: #334155;
+    --color-border-hover: #475569;
+    --color-border-focus: #818cf8;
+
+    --color-text-primary: #f1f5f9;
+    --color-text-secondary: #cbd5e1;
+    --color-text-muted: #64748b;
+    --color-text-inverse: #0f172a;
+
+    --color-status-running-bg: #1e3a5f;
+    --color-status-running-text: #60a5fa;
+    --color-status-running-border: #2563eb;
+
+    --color-status-complete-bg: #064e3b;
+    --color-status-complete-text: #34d399;
+    --color-status-complete-border: #059669;
+
+    --color-status-error-bg: #4c0519;
+    --color-status-error-text: #fb7185;
+    --color-status-error-border: #e11d48;
+
+    --color-status-idle-bg: #1e293b;
+    --color-status-idle-text: #94a3b8;
+    --color-status-idle-border: #475569;
+
+    --color-status-paused-bg: #451a03;
+    --color-status-paused-text: #fbbf24;
+    --color-status-paused-border: #d97706;
+
+    --color-status-stopped-bg: #431407;
+    --color-status-stopped-text: #fb923c;
+    --color-status-stopped-border: #ea580c;
+
+    --color-status-active-bg: #064e3b;
+    --color-status-active-text: #34d399;
+    --color-status-active-border: #059669;
+
+    --color-status-inactive-bg: #1e293b;
+    --color-status-inactive-text: #94a3b8;
+    --color-status-inactive-border: #475569;
+
+    --color-status-expired-bg: #4c0519;
+    --color-status-expired-text: #fb7185;
+    --color-status-expired-border: #e11d48;
+
+    --color-wallet-evm-bg: #1e3a5f;
+    --color-wallet-evm-text: #60a5fa;
+    --color-wallet-evm-border: #2563eb;
+
+    --color-wallet-solana-bg: #2e1065;
+    --color-wallet-solana-text: #a78bfa;
+    --color-wallet-solana-border: #7c3aed;
+
+    --color-wallet-sui-bg: #083344;
+    --color-wallet-sui-text: #22d3ee;
+    --color-wallet-sui-border: #0891b2;
+
+    --color-wallet-bitcoin-bg: #451a03;
+    --color-wallet-bitcoin-text: #fbbf24;
+    --color-wallet-bitcoin-border: #d97706;
+
+    --color-border-input: #334155;
+    --color-border-input-dark: #64748b;
+    --color-bg-input: #1e293b;
+    --color-bg-input-disabled: #0f172a;
+
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.4), 0 8px 10px -6px rgb(0 0 0 / 0.3);
+
+    scrollbar-color: #334155 transparent;
+  }
+}
