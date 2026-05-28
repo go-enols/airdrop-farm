@@ -116,6 +116,9 @@ function startMarketplaceServer(): void {
   const cmd = is.dev ? 'npx' : 'node'
   const args = is.dev ? ['tsx', 'src/index.ts'] : [join(serverDir, 'dist', 'index.js')]
 
+  const port = 3400
+  const host = '127.0.0.1'
+
   let apiKey = store.getSetting('marketplace_api_key')
   if (!apiKey) {
     apiKey = randomBytes(32).toString('hex')
@@ -127,36 +130,58 @@ function startMarketplaceServer(): void {
     store.setSetting('marketplace_jwt_secret', jwtSecret)
   }
 
-  try {
-    marketplaceServerProcess = spawn(cmd, args, {
-      cwd: serverDir,
-      env: {
-        ...process.env,
-        JWT_SECRET: jwtSecret,
-        MARKETPLACE_API_KEY: apiKey,
-        PORT: '3400',
-        HOST: '127.0.0.1'
-      },
-      stdio: 'pipe',
-      shell: false
-    })
-
-    marketplaceServerProcess.stdout?.on('data', (data: Buffer) => {
-      logger.info(data.toString().trim())
-    })
-    marketplaceServerProcess.stderr?.on('data', (data: Buffer) => {
-      logger.warn(data.toString().trim())
-    })
-    marketplaceServerProcess.on('error', (err: Error) => {
-      logger.warn(`Marketplace server failed to start: ${err.message}`)
-    })
-    marketplaceServerProcess.on('exit', (code: number | null) => {
-      logger.info(`Marketplace server exited with code ${code}`)
-      marketplaceServerProcess = null
-    })
-  } catch (err) {
-    logger.warn(`Could not start marketplace server: ${err}`)
+  const env = {
+    ...process.env,
+    JWT_SECRET: jwtSecret,
+    MARKETPLACE_API_KEY: apiKey,
+    PORT: String(port),
+    HOST: host
   }
+
+  function doSpawn(): void {
+    try {
+      marketplaceServerProcess = spawn(cmd, args, {
+        cwd: serverDir,
+        env,
+        stdio: 'pipe',
+        shell: false
+      })
+      marketplaceServerProcess.stdout?.on('data', (data: Buffer) => {
+        logger.info(data.toString().trim())
+      })
+      marketplaceServerProcess.stderr?.on('data', (data: Buffer) => {
+        logger.warn(data.toString().trim())
+      })
+      marketplaceServerProcess.on('error', (err: Error) => {
+        logger.warn(`Marketplace server failed to start: ${err.message}`)
+      })
+      marketplaceServerProcess.on('exit', (code: number | null) => {
+        logger.info(`Marketplace server exited with code ${code}`)
+        marketplaceServerProcess = null
+      })
+    } catch (err) {
+      logger.warn(`Could not start marketplace server: ${err}`)
+    }
+  }
+
+  const http = require('http')
+  const probe = http.request(
+    { hostname: host, port, path: '/api/health', method: 'GET', timeout: 2000 },
+    (res: import('http').IncomingMessage) => {
+      if (res.statusCode === 200) {
+        logger.info(`Marketplace server already running on ${host}:${port}, skipping spawn`)
+        res.resume()
+      } else {
+        doSpawn()
+      }
+    }
+  )
+  probe.on('error', () => doSpawn())
+  probe.on('timeout', () => {
+    probe.destroy()
+    doSpawn()
+  })
+  probe.end()
 }
 
 app.whenReady().then(async () => {
