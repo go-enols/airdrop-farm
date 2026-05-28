@@ -1,6 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { templateApi, taskTemplateApi, marketplaceApi, scriptApi } from '../../api'
-import type { Template, TaskTemplate, RemoteScript, InstalledScript, ListResponse } from '../../types'
+import type {
+  Template,
+  TaskTemplate,
+  RemoteScript,
+  InstalledScript,
+  ListResponse
+} from '../../types'
 
 export const templateKeys = {
   all: ['templates'] as const,

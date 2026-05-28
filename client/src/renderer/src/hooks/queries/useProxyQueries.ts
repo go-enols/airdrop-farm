@@ -27,8 +27,7 @@ export function useCreateProxy() {
 export function useUpdateProxy() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Proxy> }) =>
-      proxyApi.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: Partial<Proxy> }) => proxyApi.update(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: proxyKeys.all })
   })
 }

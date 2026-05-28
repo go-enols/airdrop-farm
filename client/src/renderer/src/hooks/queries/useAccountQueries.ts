@@ -35,8 +35,7 @@ export function useAccountPools() {
 export function useCreateAccount() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>) =>
-      accountApi.create(data),
+    mutationFn: (data: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>) => accountApi.create(data),
     onSuccess: () => qc.invalidateQueries({ queryKey: accountKeys.all })
   })
 }

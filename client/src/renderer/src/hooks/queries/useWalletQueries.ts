@@ -35,8 +35,7 @@ export function useCreateWallet() {
 export function useUpdateWallet() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Wallet> }) =>
-      walletApi.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: Partial<Wallet> }) => walletApi.update(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: walletKeys.all })
   })
 }

@@ -45,7 +45,7 @@ describe('Wallet CRUD', () => {
       mnemonic: null,
       walletType: 'solana',
       labels: [],
-      accountPool: "test-pool"
+      accountPool: 'test-pool'
     })
     const fetched = store.walletRepo.getWallet(created.id)
     expect(fetched).not.toBeNull()
@@ -74,7 +74,7 @@ describe('Wallet CRUD', () => {
         mnemonic: null,
         walletType: 'evm',
         labels: [],
-      accountPool: "test-pool"
+        accountPool: 'test-pool'
       })
     }
     const page1 = store.walletRepo.listWallets(1, 2)
@@ -94,7 +94,7 @@ describe('Wallet CRUD', () => {
       mnemonic: null,
       walletType: 'evm',
       labels: [],
-      accountPool: "test-pool"
+      accountPool: 'test-pool'
     })
     store.walletRepo.createWallet({
       address: '0xother',
@@ -102,7 +102,7 @@ describe('Wallet CRUD', () => {
       mnemonic: null,
       walletType: 'solana',
       labels: [],
-      accountPool: "test-pool"
+      accountPool: 'test-pool'
     })
     const result = store.walletRepo.listWallets(1, 20, 'searchable')
     expect(result.items.length).toBe(1)
@@ -116,7 +116,7 @@ describe('Wallet CRUD', () => {
       mnemonic: null,
       walletType: 'evm',
       labels: [],
-      accountPool: "test-pool"
+      accountPool: 'test-pool'
     })
     const updated = store.walletRepo.updateWallet(created.id, {
       address: '0xafter',
@@ -141,7 +141,7 @@ describe('Wallet CRUD', () => {
       mnemonic: null,
       walletType: 'evm',
       labels: [],
-      accountPool: "test-pool"
+      accountPool: 'test-pool'
     })
     const result = store.walletRepo.deleteWallet(created.id)
     expect(result).toBe(true)
@@ -155,10 +155,22 @@ describe('Wallet CRUD', () => {
 
   it('batchCreateWallets creates correct count', () => {
     const items = [
-      { address: '0xb1', privateKey: null, mnemonic: null, walletType: 'evm', labels: [],
-      accountPool: "test-pool" },
-      { address: '0xb2', privateKey: null, mnemonic: null, walletType: 'evm', labels: [],
-      accountPool: "test-pool" },
+      {
+        address: '0xb1',
+        privateKey: null,
+        mnemonic: null,
+        walletType: 'evm',
+        labels: [],
+        accountPool: 'test-pool'
+      },
+      {
+        address: '0xb2',
+        privateKey: null,
+        mnemonic: null,
+        walletType: 'evm',
+        labels: [],
+        accountPool: 'test-pool'
+      },
       { address: '0xb3', privateKey: null, mnemonic: null, walletType: 'solana', labels: ['batch'] }
     ]
     const count = store.walletRepo.batchCreateWallets(items)
@@ -174,7 +186,7 @@ describe('Wallet CRUD', () => {
       mnemonic: null,
       walletType: 'evm',
       labels: [],
-      accountPool: "test-pool"
+      accountPool: 'test-pool'
     })
     const w2 = store.walletRepo.createWallet({
       address: '0xbd2',
@@ -182,7 +194,7 @@ describe('Wallet CRUD', () => {
       mnemonic: null,
       walletType: 'evm',
       labels: [],
-      accountPool: "test-pool"
+      accountPool: 'test-pool'
     })
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const w3 = store.walletRepo.createWallet({
@@ -191,7 +203,7 @@ describe('Wallet CRUD', () => {
       mnemonic: null,
       walletType: 'evm',
       labels: [],
-      accountPool: "test-pool"
+      accountPool: 'test-pool'
     })
     const deleted = store.walletRepo.batchDeleteWallets([w1.id, w2.id, 'non-existent'])
     expect(deleted).toBe(2)
@@ -233,7 +245,7 @@ describe('Account CRUD', () => {
         data: {},
         pool: `pool-${i}`,
         labels: [],
-      accountPool: "test-pool",
+        accountPool: 'test-pool',
         notes: ''
       })
     }
@@ -243,10 +255,22 @@ describe('Account CRUD', () => {
   })
 
   it('listAccounts search works', () => {
-    store.createAccount({ templateId: 't1', data: {}, pool: 'special-pool', labels: [],
-      accountPool: "test-pool", notes: '' })
-    store.createAccount({ templateId: 't2', data: {}, pool: 'other', labels: [],
-      accountPool: "test-pool", notes: '' })
+    store.createAccount({
+      templateId: 't1',
+      data: {},
+      pool: 'special-pool',
+      labels: [],
+      accountPool: 'test-pool',
+      notes: ''
+    })
+    store.createAccount({
+      templateId: 't2',
+      data: {},
+      pool: 'other',
+      labels: [],
+      accountPool: 'test-pool',
+      notes: ''
+    })
     const result = store.listAccounts(1, 20, 'special')
     expect(result.items.length).toBe(1)
   })
@@ -257,7 +281,7 @@ describe('Account CRUD', () => {
       data: {},
       pool: 'old-pool',
       labels: [],
-      accountPool: "test-pool",
+      accountPool: 'test-pool',
       notes: 'old'
     })
     const updated = store.updateAccount(created.id, {
@@ -280,7 +304,7 @@ describe('Account CRUD', () => {
       data: {},
       pool: 'p',
       labels: [],
-      accountPool: "test-pool",
+      accountPool: 'test-pool',
       notes: ''
     })
     expect(store.deleteAccount(created.id)).toBe(true)
@@ -332,7 +356,7 @@ describe('Proxy CRUD', () => {
         password: null,
         status: 'active',
         labels: [],
-      accountPool: "test-pool"
+        accountPool: 'test-pool'
       })
     }
     const result = store.proxyRepo.listProxies(1, 2)
@@ -349,7 +373,7 @@ describe('Proxy CRUD', () => {
       password: null,
       status: 'active',
       labels: [],
-      accountPool: "test-pool"
+      accountPool: 'test-pool'
     })
     store.proxyRepo.createProxy({
       protocol: 'http',
@@ -359,7 +383,7 @@ describe('Proxy CRUD', () => {
       password: null,
       status: 'active',
       labels: [],
-      accountPool: "test-pool"
+      accountPool: 'test-pool'
     })
     const result = store.proxyRepo.listProxies(1, 20, 'target')
     expect(result.items.length).toBe(1)
@@ -374,7 +398,7 @@ describe('Proxy CRUD', () => {
       password: null,
       status: 'active',
       labels: [],
-      accountPool: "test-pool"
+      accountPool: 'test-pool'
     })
     const updated = store.proxyRepo.updateProxy(created.id, {
       host: 'new-host',
@@ -400,7 +424,7 @@ describe('Proxy CRUD', () => {
       password: null,
       status: 'active',
       labels: [],
-      accountPool: "test-pool"
+      accountPool: 'test-pool'
     })
     expect(store.proxyRepo.deleteProxy(created.id)).toBe(true)
     expect(store.proxyRepo.getProxy(created.id)).toBeNull()
@@ -661,10 +685,16 @@ describe('Stats', () => {
       mnemonic: null,
       walletType: 'evm',
       labels: [],
-      accountPool: "test-pool"
+      accountPool: 'test-pool'
     })
-    store.createAccount({ templateId: 't1', data: {}, pool: 'p', labels: [],
-      accountPool: "test-pool", notes: '' })
+    store.createAccount({
+      templateId: 't1',
+      data: {},
+      pool: 'p',
+      labels: [],
+      accountPool: 'test-pool',
+      notes: ''
+    })
     store.proxyRepo.createProxy({
       protocol: 'http',
       host: 'h',
@@ -673,7 +703,7 @@ describe('Stats', () => {
       password: null,
       status: 'active',
       labels: [],
-      accountPool: "test-pool"
+      accountPool: 'test-pool'
     })
     store.taskRepo.createTask({
       scriptFolder: '/s',
@@ -811,7 +841,7 @@ describe('Airdrop CRUD', () => {
         earnings: [],
         tags: [],
         labels: [],
-      accountPool: "test-pool"
+        accountPool: 'test-pool'
       })
     }
     const result = store.listAirdrops(1, 2)
@@ -833,7 +863,7 @@ describe('Airdrop CRUD', () => {
       earnings: [],
       tags: [],
       labels: [],
-      accountPool: "test-pool"
+      accountPool: 'test-pool'
     })
     store.createAirdrop({
       name: 'OtherProject',
@@ -848,7 +878,7 @@ describe('Airdrop CRUD', () => {
       earnings: [],
       tags: [],
       labels: [],
-      accountPool: "test-pool"
+      accountPool: 'test-pool'
     })
     const result = store.listAirdrops(1, 20, 'Special')
     expect(result.items.length).toBe(1)
@@ -869,7 +899,7 @@ describe('Airdrop CRUD', () => {
       earnings: [],
       tags: [],
       labels: [],
-      accountPool: "test-pool"
+      accountPool: 'test-pool'
     })
     const updated = store.updateAirdrop(created.id, {
       name: 'Updated',
@@ -902,7 +932,7 @@ describe('Airdrop CRUD', () => {
       earnings: [],
       tags: [],
       labels: [],
-      accountPool: "test-pool"
+      accountPool: 'test-pool'
     })
     expect(store.deleteAirdrop(created.id)).toBe(true)
     expect(store.getAirdrop(created.id)).toBeNull()

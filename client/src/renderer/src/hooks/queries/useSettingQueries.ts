@@ -1,6 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { settingApi, schedulerApi, captchaKeyApi, proxyProviderApi, appApi } from '../../api'
-import type { ScheduledTask, CaptchaKey, ProxyProvider, StatsAggregate, ListResponse } from '../../types'
+import type {
+  ScheduledTask,
+  CaptchaKey,
+  ProxyProvider,
+  StatsAggregate,
+  ListResponse
+} from '../../types'
 
 export const settingKeys = {
   all: ['settings'] as const,
@@ -49,8 +55,7 @@ export function useAllSettings() {
 export function useSetSetting() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ key, value }: { key: string; value: string }) =>
-      settingApi.set(key, value),
+    mutationFn: ({ key, value }: { key: string; value: string }) => settingApi.set(key, value),
     onSuccess: () => qc.invalidateQueries({ queryKey: settingKeys.all })
   })
 }
@@ -65,8 +70,7 @@ export function useSchedulerList(page = 1, pageSize = 20, search = '') {
 export function useCreateScheduler() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data: Omit<ScheduledTask, 'id' | 'createdAt'>) =>
-      schedulerApi.create(data),
+    mutationFn: (data: Omit<ScheduledTask, 'id' | 'createdAt'>) => schedulerApi.create(data),
     onSuccess: () => qc.invalidateQueries({ queryKey: schedulerKeys.all })
   })
 }
@@ -98,8 +102,7 @@ export function useCaptchaKeyList(page = 1, pageSize = 20, search = '') {
 export function useCreateCaptchaKey() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data: Omit<CaptchaKey, 'id' | 'createdAt'>) =>
-      captchaKeyApi.create(data),
+    mutationFn: (data: Omit<CaptchaKey, 'id' | 'createdAt'>) => captchaKeyApi.create(data),
     onSuccess: () => qc.invalidateQueries({ queryKey: captchaKeyKeys.all })
   })
 }
@@ -122,8 +125,7 @@ export function useProxyProviderList(page = 1, pageSize = 20, search = '') {
 export function useCreateProxyProvider() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (data: Omit<ProxyProvider, 'id' | 'createdAt'>) =>
-      proxyProviderApi.create(data),
+    mutationFn: (data: Omit<ProxyProvider, 'id' | 'createdAt'>) => proxyProviderApi.create(data),
     onSuccess: () => qc.invalidateQueries({ queryKey: proxyProviderKeys.all })
   })
 }
