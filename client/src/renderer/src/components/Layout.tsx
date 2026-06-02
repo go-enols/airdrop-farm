@@ -47,7 +47,8 @@ const ALL_NAV_ITEMS: NavItem[] = [
   { path: '/admin/review', icon: Shield, key: 'nav.adminReview', roles: ['admin'] },
   { path: '/users', icon: User, key: 'nav.users', roles: ['admin'] },
   { path: '/logs', icon: ScrollText, key: 'nav.logs', roles: ['admin'] },
-  { path: '/settings', icon: Settings, key: 'nav.settings', roles: ['admin'] },
+  // ── Settings (all roles — content adapts to permission) ──
+  { path: '/settings', icon: Settings, key: 'nav.settings', roles: ['admin', 'developer', 'user'] },
 ]
 
 const roleLabelKeys: Record<UserRole, string> = {
@@ -81,15 +82,23 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <aside
           className={`${collapsed ? 'w-16' : 'w-52'} flex flex-col border-r border-border-light bg-bg-card transition-all duration-200`}
         >
-          <div className="flex items-center justify-end h-12 px-3 border-b border-border-light">
+          <div
+            className={`relative flex items-center h-11 px-2.5 border-b border-border-light/60 ${
+              collapsed ? 'justify-center' : 'justify-end'
+            }`}
+          >
+            {/* Subtle accent hairline at the bottom of the header */}
+            <div className="pointer-events-none absolute inset-x-0 -bottom-px h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+
             <button
               onClick={() => {
                 const next = !collapsed
                 setCollapsed(next)
                 localStorage.setItem('sidebar-collapsed', String(next))
               }}
-              className="p-1 rounded hover:bg-bg-tertiary"
+              className="group relative flex items-center justify-center w-7 h-7 rounded-md text-text-muted hover:text-primary hover:bg-primary/10 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 transition-all duration-150"
               aria-label={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
+              title={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
             >
               {collapsed ? <Menu size={16} /> : <X size={16} />}
             </button>

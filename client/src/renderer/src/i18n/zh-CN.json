@@ -536,7 +536,113 @@
     "proxyProvidersReadonly": "代理提供商已移至「代理管理」页面统一管理。此处仅作只读展示。",
     "marketplaceSection": "脚本/模板市场",
     "marketplaceUrlHint": "设置脚本和模板市场的服务器地址。修改后将在下次打开市场浏览器时生效。",
-    "saveSettings": "保存设置"
+    "saveSettings": "保存设置",
+    "sections": {
+      "profile": "个人资料",
+      "appearance": "外观",
+      "taskDefaults": "任务默认",
+      "marketplace": "脚本/模板市场",
+      "security": "安全",
+      "system": "系统",
+      "data": "数据",
+      "advanced": "高级",
+      "about": "关于"
+    },
+    "profile": {
+      "username": "用户名",
+      "usernameReadonly": "用户名不可修改",
+      "displayName": "显示名称",
+      "displayNamePlaceholder": "在界面中显示的名字",
+      "role": "当前角色",
+      "saveProfile": "保存个人资料",
+      "profileUpdated": "个人资料已更新",
+      "changePassword": "修改密码",
+      "currentPassword": "当前密码",
+      "currentPasswordPlaceholder": "输入当前密码以验证身份",
+      "newPassword": "新密码",
+      "newPasswordPlaceholder": "至少 4 个字符",
+      "confirmPassword": "确认新密码",
+      "confirmPasswordPlaceholder": "再次输入新密码",
+      "passwordMismatch": "两次输入的新密码不一致",
+      "passwordUpdated": "密码已更新",
+      "logout": "退出登录",
+      "logoutConfirm": "确认退出当前账号？"
+    },
+    "taskDefaults": {
+      "subtitle": "创建新任务时使用的默认值，可在创建任务时单独调整。",
+      "sandboxDefault": "默认启用沙箱模式",
+      "sandboxHint": "沙箱模式禁止脚本访问网络和文件系统。",
+      "threadCount": "默认并发数",
+      "threadCountHint": "同时运行的任务/线程数",
+      "retryCount": "默认重试次数",
+      "retryCountHint": "任务失败时自动重试的次数",
+      "saved": "任务默认已保存"
+    },
+    "marketplaceSettings": {
+      "subtitle": "配置市场服务器地址、管理你的 API 密钥。",
+      "serverUrl": "市场服务器地址",
+      "serverUrlHint": "脚本和模板市场的服务端地址，例如 http://localhost:3400",
+      "testConnection": "测试连接",
+      "connectionOk": "连接成功",
+      "connectionFailed": "连接失败：{{error}}",
+      "myApiKey": "我的 API 密钥",
+      "myApiKeyHint": "用于访问市场服务端。点击复制或重新生成。",
+      "copyKey": "复制密钥",
+      "regenerateKey": "重新生成",
+      "regenerateConfirm": "重新生成后当前密钥将立即失效，确认继续？",
+      "myPublished": "我的发布",
+      "myPublishedHint": "你发布的脚本/模板数量"
+    },
+    "security": {
+      "subtitle": "管理验证码识别服务的 API 密钥。",
+      "captchaKeysHint": "新增的密钥将按顺序优先匹配（2captcha、anticaptcha、capsolver 等）。"
+    },
+    "system": {
+      "subtitle": "应用级别的配置与维护。",
+      "logLevel": "日志级别",
+      "logLevelHint": "影响 app_logs 表的写入粒度。生产环境建议 INFO。",
+      "logLevels": {
+        "debug": "DEBUG",
+        "info": "INFO",
+        "warn": "WARN",
+        "error": "ERROR"
+      },
+      "updatesHint": "通过 GitHub Releases 检查新版本。",
+      "openReleases": "在 GitHub 查看"
+    },
+    "dataSection": {
+      "subtitle": "导出、清理与存储信息。",
+      "export": "导出我的数据",
+      "exportHint": "导出钱包、账户、代理、任务等数据为 JSON 文件。",
+      "clearLogs": "清空应用日志",
+      "clearLogsHint": "清空 app_logs 表中的所有记录，此操作不可恢复。",
+      "clearAllHint": "清空所有业务数据（钱包、账户、代理、任务、模板等），保留账户和设置。",
+      "storageInfo": "存储信息",
+      "openDataFolder": "打开数据目录",
+      "exportSuccess": "导出成功",
+      "exportFailed": "导出失败：{{error}}"
+    },
+    "advanced": {
+      "subtitle": "高级选项与自定义设置。",
+      "customSettings": "自定义键值设置",
+      "customSettingsHint": "自由添加/修改键值对设置，谨慎操作。",
+      "addKey": "添加键",
+      "noCustom": "暂无自定义设置"
+    },
+    "aboutSection": {
+      "subtitle": "应用信息与版本详情。",
+      "version": "应用版本",
+      "buildType": "构建类型",
+      "dataDirectoryLabel": "数据目录",
+      "openDir": "打开",
+      "copyPath": "复制路径",
+      "database": "数据库",
+      "dbConnected": "已连接",
+      "dbDisconnected": "未连接：{{error}}",
+      "electronVersion": "Electron",
+      "nodeVersion": "Node",
+      "platform": "平台"
+    }
   },
   "updates": {
     "checkNow": "检查更新",
