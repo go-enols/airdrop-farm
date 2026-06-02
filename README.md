@@ -1,53 +1,129 @@
 # airdrop-farm
 
-An Electron application with React and TypeScript, plus a marketplace server for scripts and account templates.
+一个基于 Electron + React + TypeScript 的全栈桌面应用，用于管理加密货币空投操作，附带独立的 Express 服务端子项目用于脚本和账户模板市场。
 
-## Project Layout
+## 项目结构
 
-- `client/` — Electron desktop app (main / preload / renderer)
-- `server/` — Marketplace server (Express + SQLite, port 3400)
+- `client/` — Electron 桌面应用（主程序）
+- `server/` — Marketplace 服务端（Express + SQLite）
 
-## Recommended IDE Setup
+## 推荐 IDE 配置
 
-- [VSCode](https://code.visualstudio.com/) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) + [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
+- VSCode + ESLint + Prettier
 
-## Client (Electron app)
+## 快速开始
+
+### 端到端本地开发
+
+在两个终端中分别运行：
+
+```bash
+# 终端 1 - 启动服务端
+cd server
+npm install
+npm run dev
+
+# 终端 2 - 启动客户端
+cd client
+npm install
+npm run dev
+```
+
+客户端从 `http://127.0.0.1:3400` 获取脚本和模板（可在 Settings 页面配置 `marketplace_server_url`）。
+
+## Client (Electron 应用)
+
+### 开发命令
 
 ```bash
 cd client
 npm install
-npm run dev          # development
-npm run typecheck    # tsc --noEmit for main + renderer
-npm run lint         # eslint --cache .
-npm test             # vitest run
-npm run build        # full build (typecheck + electron-vite)
-npm run build:win    # platform installers
-npm run build:mac
-npm run build:linux
+npm run dev          # 开发模式
+npm run typecheck    # TypeScript 类型检查
+npm run lint         # ESLint 检查
+npm run format       # Prettier 格式化
+npm test             # 运行 Vitest 测试
+npm run build        # 完整构建
+npm run build:win    # Windows 安装包
+npm run build:mac    # macOS 安装包
+npm run build:linux  # Linux 安装包
 ```
 
-## Server (marketplace)
+### 功能特性
+
+- **多链钱包管理** — 支持 EVM/Solana/SUI/Bitcoin 钱包
+- **账户模板系统** — 从 Marketplace 下载模板，动态表单渲染
+- **代理管理** — 支持 http/https/socks5/ws 代理，多种格式
+- **任务执行引擎** — 子进程管理、三层权限控制、沙箱模式
+- **定时任务调度** — Cron 表达式定时执行任务
+- **空投项目追踪** — 支持状态管理、Markdown 描述、关联脚本和账号池
+- **脚本/模板市场** — 上传、下载、安装任务脚本和账户模板
+- **用户角色系统** — admin/developer/user 权限分级
+- **国际化** — 支持中英文（i18next）
+- **双传输层通信** — IPC 优先、HTTP 降级（稳定可靠）
+
+### 技术栈
+
+- Electron + electron-vite
+- React 19 + TypeScript
+- Tailwind CSS v4
+- better-sqlite3（本地数据库）
+- ethers.js / @solana/web3.js
+- react-router-dom
+- @tanstack/react-query
+- react-hook-form + zod
+- sonner（Toast）
+- lucide-react（图标）
+- Vitest（测试）
+
+## Server (Marketplace)
+
+### 开发命令
 
 ```bash
 cd server
 npm install
-npm run dev          # tsx watch, listens on http://localhost:3400
-npm run build        # tsc to dist/
-npm start            # node dist/index.js
+npm run dev          # tsx watch 模式，监听 http://localhost:3400
+npm run build        # tsc 编译到 dist/
+npm start            # 运行编译后的 dist/index.js
 ```
 
-The marketplace database starts empty. Scripts and templates are added by developers via the client's upload UI (Templates page) or by `POST /api/scripts` / `POST /api/templates`.
+### API 端点
 
-## End-to-end local development
+- `GET /api/health` — 健康检查
+- `POST /api/auth/setup` — 初始化（创建第一个管理员用户）
+- `POST /api/auth/login` — 用户登录
+- `POST /api/auth/register` — 用户注册
+- `GET /api/users/me` — 获取当前用户信息
+- `GET /api/users` — 列出所有用户（admin 权限）
+- `PUT /api/users/:id/role` — 更新用户角色（admin 权限）
+- `GET /api/scripts` — 列出所有脚本
+- `GET /api/scripts/:id` — 获取脚本详情
+- `GET /api/scripts/:id/download` — 下载脚本 zip
+- `POST /api/scripts` — 上传脚本（multipart）
+- `PUT /api/scripts/:id` — 更新脚本
+- `DELETE /api/scripts/:id` — 删除脚本
+- `GET /api/templates` — 列出所有模板
+- `GET /api/templates/:id` — 获取模板详情
+- `POST /api/templates` — 创建模板
+- `PUT /api/templates/:id` — 更新模板
+- `DELETE /api/templates/:id` — 删除模板
 
-In two terminals:
+### 配置
 
-```bash
-# terminal 1
-cd server && npm run dev
+- 默认端口：3400（可通过 `PORT` 环境变量覆盖）
+- 监听地址：127.0.0.1（可通过 `HOST` 环境变量覆盖）
+- 数据库：`server/data/marketplace.db`（SQLite + WAL）
+- 上传目录：`server/data/uploads/scripts/`、`server/data/uploads/templates/`
+- 认证：JWT Token + Bearer Token
 
-# terminal 2
-cd client && npm run dev
-```
+## 开发指南
 
-The client fetches scripts and templates from `http://127.0.0.1:3400` (configurable via Settings → `marketplace_server_url`).
+详细的开发规范、架构说明和待实现功能请参阅：
+
+- **AGENTS.md** — 完整的开发规范文档（架构、技术栈、数据库设计、模块详情、TODO 清单）
+- **CLAUDE.md** — Claude 专用指导文档
+
+## 许可证
+
+MIT
