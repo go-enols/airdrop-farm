@@ -118,6 +118,8 @@ const Settings: React.FC = () => {
   // If role changes (e.g. login), ensure active section is allowed
   useEffect(() => {
     if (!availableSections.find((s) => s.id === activeId)) {
+      // Fallback when the current section is no longer available (e.g. role change).
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveId(availableSections[0]?.id ?? 'profile')
     }
   }, [availableSections, activeId])
@@ -178,6 +180,8 @@ const ProfileSection: React.FC = () => {
   const [pwModalOpen, setPwModalOpen] = useState(false)
 
   useEffect(() => {
+    // Sync local form state with the latest marketplace user (e.g. after profile refresh).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDisplayName(marketUser?.displayName ?? '')
   }, [marketUser?.displayName])
 
@@ -283,11 +287,14 @@ const PasswordChangeModal: React.FC<{ open: boolean; onClose: () => void }> = ({
 
   useEffect(() => {
     if (open) {
+      // Reset the password-change form fields whenever the modal transitions to open.
+      /* eslint-disable react-hooks/set-state-in-effect */
       setCurrent('')
       setNext('')
       setConfirm('')
       setShowCurrent(false)
       setShowNext(false)
+      /* eslint-enable react-hooks/set-state-in-effect */
     }
   }, [open])
 
@@ -431,6 +438,8 @@ const TaskDefaultsSection: React.FC = () => {
   }, [])
 
   useEffect(() => {
+    // fetchDefaults performs the async load and updates defaults/loaded state.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchDefaults()
   }, [fetchDefaults])
 
@@ -565,6 +574,8 @@ const MarketplaceSection: React.FC = () => {
   }, [])
 
   useEffect(() => {
+    // fetchUrl / fetchMe perform async loads and update url/me state.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchUrl()
     fetchMe()
   }, [fetchUrl, fetchMe])
@@ -722,6 +733,8 @@ const SecuritySection: React.FC = () => {
   }, [])
 
   useEffect(() => {
+    // fetch performs the async load of captcha keys and updates local state.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetch()
   }, [fetch])
 
@@ -1261,6 +1274,8 @@ const AdvancedSection: React.FC = () => {
   }, [])
 
   useEffect(() => {
+    // fetch performs the async load of advanced settings and updates local state.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetch()
   }, [fetch])
 
