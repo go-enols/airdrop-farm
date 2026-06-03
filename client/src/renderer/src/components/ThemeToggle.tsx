@@ -33,7 +33,7 @@ const ThemeToggle: React.FC<Props> = ({ collapsed = false }) => {
       <button
         onClick={next}
         aria-label={current.label}
-        className="flex items-center justify-center w-full p-1.5 rounded-lg text-text-secondary hover:bg-bg-tertiary transition-colors"
+        className="flex items-center justify-center w-full p-1.5 rounded-lg text-text-secondary hover:bg-bg-tertiary transition-colors focus-ring"
         title={`${t('settings.theme')}: ${current.label}`}
       >
         <CurrentIcon size={16} />
@@ -55,7 +55,7 @@ const ThemeToggle: React.FC<Props> = ({ collapsed = false }) => {
             role="radio"
             aria-checked={active}
             onClick={() => setPref(value)}
-            className={`flex items-center justify-center flex-1 px-2 py-1 rounded-md text-xs transition-all ${
+            className={`flex items-center justify-center flex-1 px-2 py-1 rounded-md text-xs transition-all focus-ring ${
               active
                 ? 'bg-bg-card text-text-primary shadow-sm'
                 : 'text-text-muted hover:text-text-secondary'

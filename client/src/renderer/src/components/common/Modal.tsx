@@ -33,7 +33,7 @@ const Modal: React.FC<ModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className="fixed inset-0 z-50 flex items-center justify-center animate-modal-enter"
       role="dialog"
       aria-modal="true"
       onKeyDown={(e) => e.key === 'Escape' && onClose()}
@@ -42,7 +42,7 @@ const Modal: React.FC<ModalProps> = ({
     >
       <div className="absolute inset-0 bg-black/60" onClick={onClose} />
       <div
-        className={`relative bg-bg-card rounded-xl shadow-xl ring-1 ring-border-light p-6 w-full ${maxWidth} ${scrollable ? 'max-h-[90vh] overflow-y-auto' : ''}`}
+        className={`modal-panel relative bg-bg-card rounded-xl shadow-xl ring-1 ring-border-light p-6 w-full ${maxWidth} ${scrollable ? 'max-h-[90vh] overflow-y-auto' : ''}`}
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-lg font-semibold text-text-primary mb-4">{title}</h2>

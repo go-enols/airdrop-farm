@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 
 interface PaginationProps {
   page: number
@@ -18,6 +19,7 @@ const Pagination: React.FC<PaginationProps> = ({
   totalCountText,
   pageText
 }) => {
+  const { t } = useTranslation()
   const btnClass =
     'p-2 rounded-lg border border-border-light hover:bg-bg-card-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors'
   const textClass = 'text-sm text-text-muted min-w-[80px] text-center'
@@ -27,11 +29,21 @@ const Pagination: React.FC<PaginationProps> = ({
       <div className="flex items-center justify-between">
         <span className="text-sm text-text-muted">{totalCountText}</span>
         <div className="flex items-center gap-2">
-          <button onClick={onPrev} disabled={page <= 1} className={btnClass}>
+          <button
+            onClick={onPrev}
+            disabled={page <= 1}
+            className={btnClass}
+            aria-label={t('common.previous')}
+          >
             <ChevronLeft size={16} />
           </button>
           <span className={textClass}>{pageText || `${page} / ${totalPages}`}</span>
-          <button onClick={onNext} disabled={page >= totalPages} className={btnClass}>
+          <button
+            onClick={onNext}
+            disabled={page >= totalPages}
+            className={btnClass}
+            aria-label={t('common.next')}
+          >
             <ChevronRight size={16} />
           </button>
         </div>
@@ -41,11 +53,21 @@ const Pagination: React.FC<PaginationProps> = ({
 
   return (
     <div className="flex items-center justify-center gap-2">
-      <button onClick={onPrev} disabled={page <= 1} className={btnClass}>
+      <button
+        onClick={onPrev}
+        disabled={page <= 1}
+        className={btnClass}
+        aria-label={t('common.previous')}
+      >
         <ChevronLeft size={16} />
       </button>
       <span className={textClass}>{pageText || `${page} / ${totalPages}`}</span>
-      <button onClick={onNext} disabled={page >= totalPages} className={btnClass}>
+      <button
+        onClick={onNext}
+        disabled={page >= totalPages}
+        className={btnClass}
+        aria-label={t('common.next')}
+      >
         <ChevronRight size={16} />
       </button>
     </div>

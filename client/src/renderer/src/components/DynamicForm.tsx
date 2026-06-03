@@ -2,6 +2,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { Loader2 } from 'lucide-react'
 import type { FieldMeta } from '../../../shared/schemas/task-params'
 import { fieldMetaToZodSchema } from '../../../shared/schemas/task-params'
 
@@ -12,6 +13,7 @@ interface DynamicFormProps {
   submitLabel?: string
   onCancel?: () => void
   onValuesChange?: (values: Record<string, unknown>) => void
+  isSubmitting?: boolean
 }
 
 const inputBase =
@@ -23,7 +25,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
   onSubmit,
   submitLabel,
   onCancel,
-  onValuesChange
+  onValuesChange,
+  isSubmitting: externalSubmitting = false
 }) => {
   const { t } = useTranslation()
   const schema = fieldMetaToZodSchema(fields)
@@ -32,11 +35,13 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
     control,
     handleSubmit,
     watch,
-    formState: { errors, isSubmitting }
+    formState: { errors, isSubmitting: rhfSubmitting }
   } = useForm({
     resolver: zodResolver(schema),
     defaultValues: buildDefaultValues(fields, defaultValues)
   })
+
+  const isSubmitting = rhfSubmitting || externalSubmitting
 
   // 同步表单值到父组件（如 Tasks 页面需要实时获取表单数据）
   const watchedValues = watch()
@@ -78,8 +83,9 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors"
+            className="px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors inline-flex items-center gap-2"
           >
+            {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
             {isSubmitting ? t('form.submitting') : (submitLabel || t('common.submit'))}
           </button>
         )}

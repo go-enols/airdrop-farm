@@ -404,12 +404,14 @@ const Accounts: React.FC = () => {
                         <button
                           onClick={() => openEdit(item)}
                           className="p-1.5 text-text-muted hover:text-primary hover:bg-primary-light rounded-lg transition-colors"
+                          aria-label={t('common.edit')}
                         >
                           <Edit3 size={16} />
                         </button>
                         <button
                           onClick={() => handleDelete(item.id)}
                           className="p-1.5 text-text-muted hover:text-danger hover:bg-danger-light rounded-lg transition-colors"
+                          aria-label={t('common.delete')}
                         >
                           <Trash2 size={16} />
                         </button>

@@ -112,7 +112,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 <button
                   key={path}
                   onClick={() => navigate(path)}
-                  className={`flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-sm transition-colors ${
+                  className={`flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-sm transition-colors focus-ring ${
                     active
                       ? 'bg-primary/10 text-primary font-medium'
                       : 'text-text-secondary hover:bg-bg-tertiary'
@@ -142,7 +142,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             )}
             <button
               onClick={logout}
-              className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-xs text-text-muted hover:text-danger hover:bg-danger/10 transition-colors"
+              className="flex items-center gap-2 w-full px-2 py-1.5 rounded-lg text-xs text-text-muted hover:text-danger hover:bg-danger/10 transition-colors focus-ring"
               title={t('nav.logout')}
             >
               <LogOut size={14} />

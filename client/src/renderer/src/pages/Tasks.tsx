@@ -568,6 +568,7 @@ const Tasks: React.FC = () => {
             }}
             className={btnBase + 'text-warning hover:bg-warning-light'}
             title={t('tasks.pause')}
+            aria-label={t('tasks.pause')}
           >
             <Pause size={15} />
           </button>
@@ -578,6 +579,7 @@ const Tasks: React.FC = () => {
             }}
             className={btnBase + 'text-orange hover:bg-orange-light'}
             title={t('tasks.stop')}
+            aria-label={t('tasks.stop')}
           >
             <Square size={15} />
           </button>
@@ -595,6 +597,7 @@ const Tasks: React.FC = () => {
             }}
             className={btnBase + 'text-success hover:bg-success-light'}
             title={t('tasks.resume')}
+            aria-label={t('tasks.resume')}
           >
             <Play size={15} />
           </button>
@@ -605,6 +608,7 @@ const Tasks: React.FC = () => {
             }}
             className={btnBase + 'text-orange hover:bg-orange-light'}
             title={t('tasks.stop')}
+            aria-label={t('tasks.stop')}
           >
             <Square size={15} />
           </button>
@@ -621,6 +625,7 @@ const Tasks: React.FC = () => {
           }}
           className={btnBase + 'text-primary hover:bg-primary-light'}
           title={t('tasks.start')}
+          aria-label={t('tasks.start')}
         >
           <Play size={15} />
         </button>
@@ -631,6 +636,7 @@ const Tasks: React.FC = () => {
           }}
           className={btnBase + 'text-text-secondary hover:bg-bg-tertiary'}
           title={t('tasks.editTask')}
+          aria-label={t('tasks.editTask')}
         >
           <Edit3 size={15} />
         </button>
@@ -641,6 +647,7 @@ const Tasks: React.FC = () => {
           }}
           className={btnBase + 'text-danger hover:bg-danger-light'}
           title={t('common.delete')}
+          aria-label={t('common.delete')}
         >
           <Trash2 size={15} />
         </button>
@@ -681,7 +688,11 @@ const Tasks: React.FC = () => {
           inputClassName="w-full pl-9 pr-3 py-2 rounded-lg border border-border-light bg-bg-card text-sm focus:outline-none focus:ring-2 focus:ring-primary"
         />
         {selectedIds.size > 0 && (
-          <div className="flex items-center gap-2">
+          <div
+            className="flex items-center gap-2"
+            role="toolbar"
+            aria-label={t('tasks.batchActions')}
+          >
             <span className="text-sm text-text-muted">
               {t('tasks.selectedCount', { count: selectedIds.size })}
             </span>
@@ -723,6 +734,7 @@ const Tasks: React.FC = () => {
                   <button
                     onClick={toggleSelectAll}
                     className="text-text-muted hover:text-text-primary transition-colors"
+                    aria-label={t('common.selectAll')}
                   >
                     {allSelected ? <CheckSquareIcon size={16} /> : <SquareIcon size={16} />}
                   </button>
@@ -747,6 +759,7 @@ const Tasks: React.FC = () => {
                         <button
                           onClick={() => toggleSelect(task.id)}
                           className="text-text-muted hover:text-text-primary transition-colors"
+                          aria-label={t('tasks.selectTask')}
                         >
                           {selectedIds.has(task.id) ? (
                             <CheckSquareIcon size={16} className="text-primary" />

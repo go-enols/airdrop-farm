@@ -9,8 +9,9 @@ import {
   unflattenDotNotation
 } from '../../../shared/schemas/task-params'
 import { Plus, Trash2, Clock, Edit3, ToggleLeft, ToggleRight } from 'lucide-react'
-import { Modal, DynamicForm, Skeleton } from '../components/common'
+import { Modal, DynamicForm, Skeleton, ConfirmDialog } from '../components/common'
 import { useApi } from '../hooks'
+import { toastError } from '../utils/toast'
 
 const PRESETS: { label: string; cron: string }[] = [
   { label: 'scheduler.preset30min', cron: '*/30 * * * *' },
@@ -42,6 +43,7 @@ const Scheduler: React.FC = () => {
   const [saving, setSaving] = useState(false)
   const [editError, setEditError] = useState<string | null>(null)
   const [togglingId, setTogglingId] = useState<string | null>(null)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
   const [taskTemplates, setTaskTemplates] = useState<TaskTemplate[]>([])
   const [formFields, setFormFields] = useState<FieldMeta[]>([])
   const [formValues, setFormValues] = useState<Record<string, unknown>>({})
@@ -77,9 +79,11 @@ const Scheduler: React.FC = () => {
     try {
       const res = await schedulerApi.list()
       setItems(res.items || [])
-    } catch {
+    } catch (err: unknown) {
       setItems([])
-      setError(t('common.error'))
+      const msg = err instanceof Error ? err.message : t('common.error')
+      setError(msg)
+      toastError(msg)
     } finally {
       setLoading(false)
     }
@@ -147,21 +151,28 @@ const Scheduler: React.FC = () => {
       setFormFields([])
       setFormValues({})
       fetchData()
-    } catch {
-      setError(t('common.error'))
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : t('common.error')
+      setError(msg)
+      toastError(msg)
     } finally {
       setCreating(false)
     }
   }
 
-  const handleDelete = async (id: string): Promise<void> => {
-    if (!window.confirm(t('scheduler.confirmDelete'))) return
+  const performDelete = async (id: string): Promise<void> => {
     try {
       await schedulerApi.delete(id)
       fetchData()
-    } catch {
-      setError(t('common.error'))
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : t('common.error')
+      setError(msg)
+      toastError(msg)
     }
+  }
+
+  const handleDelete = (id: string): void => {
+    setDeleteId(id)
   }
 
   const handleToggle = async (item: ScheduledTask): Promise<void> => {
@@ -170,8 +181,10 @@ const Scheduler: React.FC = () => {
     try {
       await schedulerApi.update(item.id, { enabled: !item.enabled })
       fetchData()
-    } catch {
-      setError(t('common.error'))
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : t('common.error')
+      setError(msg)
+      toastError(msg)
     } finally {
       setTogglingId(null)
     }
@@ -197,8 +210,10 @@ const Scheduler: React.FC = () => {
       await schedulerApi.update(editingItem.id, { cronExpression: cronExpr })
       setEditingItem(null)
       fetchData()
-    } catch {
-      setEditError(t('common.error'))
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : t('common.error')
+      setEditError(msg)
+      toastError(msg)
     } finally {
       setSaving(false)
     }
@@ -502,6 +517,21 @@ const Scheduler: React.FC = () => {
           </button>
         </div>
       </Modal>
+
+      <ConfirmDialog
+        open={deleteId !== null}
+        onClose={() => setDeleteId(null)}
+        onConfirm={() => {
+          if (deleteId !== null) {
+            void performDelete(deleteId)
+            setDeleteId(null)
+          }
+        }}
+        title={t('common.confirmDelete')}
+        message={t('scheduler.confirmDelete')}
+        confirmText={t('common.delete')}
+        cancelText={t('common.cancel')}
+      />
     </div>
   )
 }

@@ -130,8 +130,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem('marketplace_jwt')
         localStorage.removeItem('marketplace_user')
       }
-    } catch {
-      /* keep current state on transient failure */
+    } catch (err: unknown) {
+      // Transient failure: keep current state, log for diagnostics.
+      console.warn('[auth] refresh failed:', err)
     }
   }, [])
 
@@ -140,7 +141,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null)
     localStorage.removeItem('marketplace_jwt')
     localStorage.removeItem('marketplace_user')
-    marketplaceApi.logout().catch(() => {})
+    // Local auth state is already cleared. A server-side logout failure is
+    // not user-actionable here (token is gone locally), so we log to the
+    // console for diagnostics rather than surfacing a toast.
+    marketplaceApi.logout().catch((err: unknown) => {
+      console.warn('[auth] server-side logout failed:', err)
+    })
   }, [])
 
   return (

@@ -154,7 +154,7 @@ export default function LoginPage(): React.ReactElement {
               <button
                 onClick={handleSaveUrl}
                 disabled={serverLoading}
-                className="flex items-center gap-1.5 px-3 py-2 bg-bg-tertiary border border-border-light rounded-lg text-text-secondary hover:text-text-primary hover:border-primary/50 transition-all text-sm disabled:opacity-50"
+                className="flex items-center gap-1.5 px-3 py-2 bg-bg-tertiary border border-border-light rounded-lg text-text-secondary hover:text-text-primary hover:border-primary/50 transition-all text-sm disabled:opacity-50 focus-ring"
               >
                 <Server className={`w-4 h-4 ${serverLoading ? 'animate-pulse' : ''}`} />
                 {t('login.connect')}
@@ -168,7 +168,7 @@ export default function LoginPage(): React.ReactElement {
               <button
                 key={m}
                 onClick={() => setMode(m)}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-md text-sm font-medium transition-colors focus-ring ${
                   mode === m
                     ? 'bg-primary text-white shadow-sm'
                     : 'text-text-secondary hover:text-text-primary'
@@ -233,7 +233,7 @@ export default function LoginPage(): React.ReactElement {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 px-4 bg-primary hover:bg-primary-hover text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              className="w-full py-2.5 px-4 bg-primary hover:bg-primary-hover text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm focus-ring"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">

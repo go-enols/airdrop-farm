@@ -35,7 +35,7 @@ import {
   RotateCcw,
   X
 } from 'lucide-react'
-import { toast } from '../utils/toast'
+import { toast, toastError } from '../utils/toast'
 import ThemeToggle from '../components/ThemeToggle'
 import { Modal, ConfirmDialog } from '../components/common'
 
@@ -922,8 +922,10 @@ const SystemSection: React.FC = () => {
     logApi
       .getLevel()
       .then(setLogLevel)
-      .catch(() => {})
-  }, [])
+      .catch((err: unknown) => {
+        toastError(err instanceof Error ? err.message : t('common.error'))
+      })
+  }, [t])
 
   useEffect(() => {
     const handler = (...args: unknown[]): void => {
@@ -975,8 +977,9 @@ const SystemSection: React.FC = () => {
   const installUpdate = async (): Promise<void> => {
     try {
       await window.electronAPI?.invoke?.('update:install')
-    } catch {
-      /* ignore */
+    } catch (err: unknown) {
+      // The app is about to restart; no UI to update. Log for diagnostics.
+      console.warn('[settings] update:install failed:', err)
     }
   }
 
@@ -1101,8 +1104,10 @@ const DataSection: React.FC = () => {
           taskCount: info.taskCount
         })
       })
-      .catch(() => {})
-  }, [])
+      .catch((err: unknown) => {
+        toastError(err instanceof Error ? err.message : t('common.error'))
+      })
+  }, [t])
 
   const handleOpenFolder = async (): Promise<void> => {
     if (!dataDir) return
@@ -1436,12 +1441,18 @@ const AboutSection: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     appApi
       .getInfo()
       .then(setInfo)
-      .catch(() => {})
+      .catch((err: unknown) => {
+        toastError(err instanceof Error ? err.message : t('common.error'))
+      })
     windowApi
       .platform()
       .then(setPlatform)
-      .catch(() => {})
-  }, [])
+      .catch((err: unknown) => {
+        // Platform is purely informational; fall back to a placeholder.
+        setPlatform('—')
+        toastError(err instanceof Error ? err.message : t('common.error'))
+      })
+  }, [t])
 
   const handleCopy = async (text: string, field: string): Promise<void> => {
     try {

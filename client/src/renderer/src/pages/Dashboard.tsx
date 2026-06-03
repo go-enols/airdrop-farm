@@ -23,6 +23,7 @@ import { appApi, airdropApi } from '../api'
 import type { StatsAggregate, AirdropProject } from '../types'
 import { statusLabel } from '../utils/i18n-status'
 import { useAuth } from '../contexts/AuthContext'
+import Skeleton from '../components/common/Skeleton'
 
 const statusIcons: Record<string, React.ReactNode> = {
   running: <Activity className="w-4 h-4 animate-pulse" />,
@@ -199,8 +200,23 @@ export default function Dashboard(): React.JSX.Element {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+      <div className="space-y-6 animate-fade-in">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-text-primary">{t('dashboard.title')}</h1>
+            <p className="text-text-muted mt-1">{t('dashboard.refresh.title')}</p>
+          </div>
+          <div className="flex items-center gap-2 px-4 py-2 bg-bg-card border border-border-light rounded-lg opacity-50">
+            <RefreshCw className="w-4 h-4" />
+            {t('common.refresh')}
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Skeleton lines={1} className="h-16 rounded-xl" />
+          <Skeleton lines={1} className="h-16 rounded-xl" />
+          <Skeleton lines={1} className="h-16 rounded-xl" />
+          <Skeleton lines={1} className="h-16 rounded-xl" />
+        </div>
       </div>
     )
   }

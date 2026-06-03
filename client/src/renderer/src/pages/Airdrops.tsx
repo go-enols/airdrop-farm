@@ -19,11 +19,13 @@ import {
   ChevronUp,
   Link,
   DollarSign,
-  ListChecks
+  ListChecks,
+  AlertCircle,
+  Inbox
 } from 'lucide-react'
 import { toast } from '../utils/toast'
 import { usePaginatedList } from '../hooks'
-import { SearchInput, Pagination, Modal, ConfirmDialog } from '../components/common'
+import { SearchInput, Pagination, Modal, ConfirmDialog, EmptyState, Skeleton } from '../components/common'
 
 const PAGE_SIZE = 12
 
@@ -132,15 +134,21 @@ const Airdrops: React.FC = () => {
   const [createError, setCreateError] = useState<string | null>(null)
   const [taskTemplates, setTaskTemplates] = useState<TaskTemplate[]>([])
   const [accountPools, setAccountPools] = useState<string[]>([])
+  const [formDataLoading, setFormDataLoading] = useState(true)
+  const [formDataError, setFormDataError] = useState<string | null>(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
 
   // Load task templates and account pools
   useEffect(() => {
-    scriptApi
-      .listInstalled()
-      .then((scripts) => {
-        // Convert InstalledScript[] to TaskTemplate-like list
+    const loadFormData = async (): Promise<void> => {
+      const [scriptsResult, poolsResult] = await Promise.allSettled([
+        scriptApi.listInstalled(),
+        accountApi.listPools()
+      ])
+
+      if (scriptsResult.status === 'fulfilled') {
+        const scripts = scriptsResult.value
         setTaskTemplates(
           scripts.map((s) => ({
             id: s.id,
@@ -155,16 +163,20 @@ const Airdrops: React.FC = () => {
             updatedAt: s.updatedAt
           }))
         )
-      })
-      .catch(() => {
-        /* ignore */
-      })
-    accountApi
-      .listPools()
-      .then(setAccountPools)
-      .catch(() => {
-        /* ignore */
-      })
+      } else {
+        setFormDataError(t('common.error'))
+      }
+
+      if (poolsResult.status === 'fulfilled') {
+        setAccountPools(poolsResult.value)
+      } else {
+        setFormDataError(t('common.error'))
+      }
+
+      setFormDataLoading(false)
+    }
+
+    loadFormData()
   }, [])
 
   const handleCreate = useCallback(async () => {
@@ -381,21 +393,45 @@ const Airdrops: React.FC = () => {
         </div>
       </div>
 
-      {(error || createError) && (
-        <div className="text-danger text-sm bg-danger-light border border-danger/30 rounded-lg px-4 py-2">
-          {createError || t('common.error')}
+      {(error || createError || formDataError) && (
+        <div className="text-danger text-sm bg-danger-light border border-danger/30 rounded-lg px-4 py-2 flex items-center gap-2">
+          <AlertCircle size={16} />
+          {createError || formDataError || t('common.error')}
         </div>
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center py-20 text-text-muted">
-          <span>{t('common.loading')}</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="bg-bg-card rounded-xl border border-border-light p-4">
+              <div className="flex items-start justify-between mb-2">
+                <Skeleton className="h-5 w-32" />
+                <Skeleton className="h-5 w-12" />
+              </div>
+              <div className="flex items-center gap-2 mb-2">
+                <Skeleton className="h-5 w-16 rounded-full" />
+                <Skeleton className="h-5 w-14 rounded-full" />
+              </div>
+              <Skeleton className="h-4 w-24 mb-2" />
+              <Skeleton lines={2} className="h-3" />
+              <Skeleton className="h-4 w-20 mt-3" />
+            </div>
+          ))}
         </div>
       ) : items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-text-muted">
-          <ExternalLink size={48} />
-          <p className="mt-4 text-lg">{t('airdrops.noAirdrops')}</p>
-        </div>
+        <EmptyState
+          icon={Inbox}
+          title={t('airdrops.noAirdrops')}
+          action={
+            <button
+              onClick={() => setShowCreate(true)}
+              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-hover transition-colors"
+            >
+              <Plus size={16} />
+              {t('airdrops.createAirdrop')}
+            </button>
+          }
+        />
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -561,9 +597,10 @@ const Airdrops: React.FC = () => {
             <select
               value={form.scriptTemplateId}
               onChange={(e) => setForm((f) => ({ ...f, scriptTemplateId: e.target.value }))}
-              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              disabled={formDataLoading}
+              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
             >
-              <option value="">{t('airdrops.noScriptTemplate')}</option>
+              <option value="">{formDataLoading ? t('common.loading') : t('airdrops.noScriptTemplate')}</option>
               {taskTemplates.map((tmpl) => (
                 <option key={tmpl.id} value={tmpl.id}>
                   {tmpl.name} (v{tmpl.version})
@@ -665,16 +702,17 @@ const Airdrops: React.FC = () => {
             <select
               value={form.accountPool}
               onChange={(e) => setForm((f) => ({ ...f, accountPool: e.target.value }))}
-              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              disabled={formDataLoading}
+              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
             >
-              <option value="">{t('airdrops.selectAccountPool')}</option>
+              <option value="">{formDataLoading ? t('common.loading') : t('airdrops.selectAccountPool')}</option>
               {accountPools.map((pool) => (
                 <option key={pool} value={pool}>
                   {pool}
                 </option>
               ))}
             </select>
-            {accountPools.length === 0 && (
+            {!formDataLoading && accountPools.length === 0 && (
               <p className="text-xs text-text-muted mt-1">{t('airdrops.noAccountPoolHint')}</p>
             )}
           </div>
@@ -748,9 +786,10 @@ const Airdrops: React.FC = () => {
             <select
               value={editForm.scriptTemplateId}
               onChange={(e) => setEditForm((f) => ({ ...f, scriptTemplateId: e.target.value }))}
-              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              disabled={formDataLoading}
+              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
             >
-              <option value="">{t('airdrops.noScriptTemplate')}</option>
+              <option value="">{formDataLoading ? t('common.loading') : t('airdrops.noScriptTemplate')}</option>
               {taskTemplates.map((tmpl) => (
                 <option key={tmpl.id} value={tmpl.id}>
                   {tmpl.name} (v{tmpl.version})
@@ -765,9 +804,10 @@ const Airdrops: React.FC = () => {
             <select
               value={editForm.accountPool}
               onChange={(e) => setEditForm((f) => ({ ...f, accountPool: e.target.value }))}
-              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              disabled={formDataLoading}
+              className="w-full px-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
             >
-              <option value="">{t('airdrops.selectAccountPool')}</option>
+              <option value="">{formDataLoading ? t('common.loading') : t('airdrops.selectAccountPool')}</option>
               {accountPools.map((pool) => (
                 <option key={pool} value={pool}>
                   {pool}

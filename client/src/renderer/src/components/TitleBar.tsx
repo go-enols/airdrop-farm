@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Leaf, Minus, Square, Copy, X } from 'lucide-react'
 import { windowApi } from '../api'
+import { toastError } from '../utils/toast'
 import ThemeToggle from './ThemeToggle'
 
 const dragStyle = { WebkitAppRegion: 'drag' } as unknown as React.CSSProperties
@@ -19,17 +20,29 @@ const TitleBar: React.FC = () => {
       .then((p) => {
         if (!cancelled) setPlatform(p)
       })
-      .catch(() => {})
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          // Platform info is non-critical: default to a safe value so the UI still renders.
+          setPlatform('win32')
+          toastError(err instanceof Error ? err.message : t('common.error'))
+        }
+      })
     windowApi
       .isMaximized()
       .then((m) => {
         if (!cancelled) setMaximized(m)
       })
-      .catch(() => {})
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          // Default to "not maximized" so window controls render correctly.
+          setMaximized(false)
+          toastError(err instanceof Error ? err.message : t('common.error'))
+        }
+      })
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [t])
 
   useEffect(() => {
     const off = window.electronAPI?.on?.('window:maximizedChanged', (...args: unknown[]) => {
@@ -81,7 +94,7 @@ const TitleBar: React.FC = () => {
           onClick={onMinimize}
           aria-label={t('window.minimize')}
           title={t('window.minimize')}
-          className="flex items-center justify-center w-11 h-8 text-text-secondary hover:bg-bg-tertiary transition-colors"
+          className="flex items-center justify-center w-11 h-8 text-text-secondary hover:bg-bg-tertiary transition-colors focus-ring"
           style={noDragStyle}
         >
           <Minus size={14} />
@@ -91,7 +104,7 @@ const TitleBar: React.FC = () => {
           onClick={onToggleMaximize}
           aria-label={maximized ? t('window.restore') : t('window.maximize')}
           title={maximized ? t('window.restore') : t('window.maximize')}
-          className="flex items-center justify-center w-11 h-8 text-text-secondary hover:bg-bg-tertiary transition-colors"
+          className="flex items-center justify-center w-11 h-8 text-text-secondary hover:bg-bg-tertiary transition-colors focus-ring"
           style={noDragStyle}
         >
           {maximized ? <Copy size={12} /> : <Square size={12} />}
@@ -101,7 +114,7 @@ const TitleBar: React.FC = () => {
           onClick={onClose}
           aria-label={t('window.close')}
           title={t('window.close')}
-          className="flex items-center justify-center w-11 h-8 text-text-secondary hover:bg-danger hover:text-white transition-colors"
+          className="flex items-center justify-center w-11 h-8 text-text-secondary hover:bg-danger hover:text-white transition-colors focus-ring"
           style={noDragStyle}
         >
           <X size={14} />

@@ -5,6 +5,7 @@ interface SearchInputProps {
   value: string
   onChange: (value: string) => void
   placeholder?: string
+  ariaLabel?: string
   className?: string
   inputClassName?: string
 }
@@ -13,6 +14,7 @@ const SearchInput: React.FC<SearchInputProps> = ({
   value,
   onChange,
   placeholder,
+  ariaLabel,
   className = '',
   inputClassName = 'pl-9 pr-3 py-2 text-sm border border-border-light rounded-lg focus:outline-none focus:ring-2 focus:ring-primary w-64 bg-bg-card'
 }) => {
@@ -24,6 +26,7 @@ const SearchInput: React.FC<SearchInputProps> = ({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        aria-label={ariaLabel || placeholder}
         className={inputClassName}
       />
     </div>

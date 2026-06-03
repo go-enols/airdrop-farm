@@ -567,6 +567,7 @@ const Wallets: React.FC = () => {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t('wallets.searchPlaceholder')}
+          aria-label={t('common.search')}
           className="w-full max-w-md pl-9 pr-3 py-2 border border-border-light rounded-lg text-sm bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
         />
       </div>
@@ -611,6 +612,7 @@ const Wallets: React.FC = () => {
                     <button
                       onClick={toggleSelectAll}
                       className="text-text-muted hover:text-text-primary transition-colors"
+                      aria-label={t('common.selectAll')}
                     >
                       {isAllSelected ? <CheckSquare size={16} /> : <Square size={16} />}
                     </button>
@@ -649,6 +651,7 @@ const Wallets: React.FC = () => {
                         <button
                           onClick={() => toggleSelect(wallet.id)}
                           className="text-text-muted hover:text-text-primary transition-colors"
+                          aria-label={t('common.selectAll')}
                         >
                           {isSelected ? (
                             <CheckSquare size={16} className="text-primary" />
@@ -664,6 +667,7 @@ const Wallets: React.FC = () => {
                             onClick={() => handleCopy(wallet.address, wallet.id, 'address')}
                             className="p-0.5 rounded hover:bg-bg-tertiary text-text-muted hover:text-primary transition-colors"
                             title={t('wallets.copyAddress')}
+                            aria-label={t('wallets.copyAddress')}
                           >
                             {copiedId === wallet.id ? (
                               <span className="text-xs text-success">{t('wallets.copied')}</span>
@@ -693,6 +697,11 @@ const Wallets: React.FC = () => {
                                 ? t('wallets.hidePrivateKey')
                                 : t('wallets.showPrivateKey')
                             }
+                            aria-label={
+                              isPkVisible
+                                ? t('wallets.hidePrivateKey')
+                                : t('wallets.showPrivateKey')
+                            }
                           >
                             {isPkVisible ? <EyeOff size={12} /> : <Eye size={12} />}
                           </button>
@@ -701,6 +710,7 @@ const Wallets: React.FC = () => {
                               onClick={() => handleCopy(pk, wallet.id, 'pk')}
                               className="p-0.5 rounded hover:bg-bg-tertiary text-text-muted hover:text-primary transition-colors"
                               title={t('wallets.copyPrivateKey')}
+                              aria-label={t('wallets.copyPrivateKey')}
                             >
                               {copiedPkId === wallet.id ? (
                                 <span className="text-xs text-success">{t('wallets.copied')}</span>
@@ -736,6 +746,7 @@ const Wallets: React.FC = () => {
                             onClick={() => handleEdit(wallet)}
                             className="p-1.5 rounded hover:bg-bg-tertiary text-text-muted hover:text-primary transition-colors"
                             title={t('wallets.editWallet')}
+                            aria-label={t('wallets.editWallet')}
                           >
                             <Edit3 size={14} />
                           </button>
@@ -743,6 +754,7 @@ const Wallets: React.FC = () => {
                             onClick={() => setDeleteTarget(wallet)}
                             className="p-1.5 rounded hover:bg-bg-tertiary text-text-muted hover:text-danger transition-colors"
                             title={t('wallets.deleteWallet')}
+                            aria-label={t('wallets.deleteWallet')}
                           >
                             <Trash2 size={14} />
                           </button>
@@ -766,6 +778,7 @@ const Wallets: React.FC = () => {
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page <= 1}
                   className="p-1.5 rounded hover:bg-bg-tertiary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  aria-label={t('common.previous')}
                 >
                   <ChevronLeft size={18} />
                 </button>
@@ -773,6 +786,7 @@ const Wallets: React.FC = () => {
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={page >= totalPages}
                   className="p-1.5 rounded hover:bg-bg-tertiary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  aria-label={t('common.next')}
                 >
                   <ChevronRight size={18} />
                 </button>

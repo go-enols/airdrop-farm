@@ -159,7 +159,7 @@ const Proxies: React.FC = () => {
       setCopiedId(proxy.id)
       setTimeout(() => setCopiedId(null), 2000)
     } catch {
-      // Ignore clipboard errors
+      toast.error(t('common.copyFail'))
     }
   }
 
@@ -309,7 +309,7 @@ const Proxies: React.FC = () => {
               className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 text-primary text-xs rounded"
             >
               {l}
-              <button onClick={() => removeLabel(l)} className="hover:text-danger">
+              <button onClick={() => removeLabel(l)} className="hover:text-danger" aria-label={t('common.delete')}>
                 &times;
               </button>
             </span>
@@ -332,6 +332,7 @@ const Proxies: React.FC = () => {
           <button
             onClick={addLabel}
             className="px-3 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover transition-colors"
+            aria-label={t('common.addLabel')}
           >
             <Plus size={14} />
           </button>
@@ -353,6 +354,7 @@ const Proxies: React.FC = () => {
             <input
               type="text"
               placeholder={t('proxies.searchPlaceholder')}
+              aria-label={t('common.search')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9 pr-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary w-60"
@@ -391,6 +393,7 @@ const Proxies: React.FC = () => {
                     <button
                       onClick={toggleSelectAll}
                       className="text-text-muted hover:text-text-primary transition-colors"
+                      aria-label={t('common.selectAll')}
                     >
                       {allSelected ? <CheckSquare size={16} /> : <Square size={16} />}
                     </button>
@@ -422,6 +425,7 @@ const Proxies: React.FC = () => {
                       <button
                         onClick={() => toggleSelect(proxy.id)}
                         className="text-text-muted hover:text-text-primary transition-colors"
+                        aria-label={t('common.selectAll')}
                       >
                         {selectedIds.has(proxy.id) ? (
                           <CheckSquare size={16} className="text-primary" />
@@ -458,8 +462,9 @@ const Proxies: React.FC = () => {
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => copyProxyAddress(proxy)}
-                          className="p-1 text-text-muted hover:text-primary hover:bg-primary-light rounded transition-colors"
+                          className="p-1.5 text-text-muted hover:text-primary rounded-lg transition-colors"
                           title={t('proxies.copyAddress')}
+                          aria-label={t('proxies.copyAddress')}
                         >
                           {copiedId === proxy.id ? (
                             <CheckSquare size={16} className="text-success" />
@@ -469,15 +474,17 @@ const Proxies: React.FC = () => {
                         </button>
                         <button
                           onClick={() => openEditModal(proxy)}
-                          className="p-1 text-text-muted hover:text-primary hover:bg-primary-light rounded transition-colors"
+                          className="p-1.5 text-text-muted hover:text-primary rounded-lg transition-colors"
                           title={t('common.edit')}
+                          aria-label={t('common.edit')}
                         >
                           <Edit3 size={16} />
                         </button>
                         <button
                           onClick={() => setDeleteId(proxy.id)}
-                          className="p-1 text-danger hover:bg-danger-light rounded transition-colors"
+                          className="p-1.5 text-text-muted hover:text-danger rounded-lg transition-colors"
                           title={t('common.delete')}
+                          aria-label={t('common.delete')}
                         >
                           <Trash2 size={16} />
                         </button>
@@ -494,17 +501,19 @@ const Proxies: React.FC = () => {
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="p-1.5 rounded border border-border-light disabled:opacity-40 hover:bg-bg-card-hover transition-colors"
+                className="p-2 rounded hover:bg-bg-tertiary transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                aria-label={t('common.previous')}
               >
                 <ChevronLeft size={16} />
               </button>
-              <span className="text-sm text-text-muted">
+              <span className="text-sm text-text-muted font-medium">
                 {page} / {data.totalPages}
               </span>
               <button
                 onClick={() => setPage((p) => Math.min(data.totalPages, p + 1))}
                 disabled={page >= data.totalPages}
-                className="p-1.5 rounded border border-border-light disabled:opacity-40 hover:bg-bg-card-hover transition-colors"
+                className="p-2 rounded hover:bg-bg-tertiary transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                aria-label={t('common.next')}
               >
                 <ChevronRight size={16} />
               </button>
