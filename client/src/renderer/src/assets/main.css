@@ -221,6 +221,9 @@
   --animate-fade-in: fade-in 0.2s ease-out;
   --animate-slide-in: slide-in-right 0.2s ease-out;
   --animate-pulse-skeleton: pulse-skeleton 1.5s ease-in-out infinite;
+  --animate-modal-enter: modal-enter 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-modal-exit: modal-exit 0.15s cubic-bezier(0.5, 0, 0.75, 0) forwards;
+  --animate-stagger-fade: stagger-fade 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes fade-in {
@@ -236,6 +239,39 @@
 @keyframes pulse-skeleton {
   0%, 100% { opacity: 0.3; }
   50% { opacity: 0.6; }
+}
+
+@keyframes modal-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes modal-exit {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.96) translateY(4px);
+  }
+}
+
+@keyframes stagger-fade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @layer base {
@@ -290,9 +326,68 @@
     border-color: var(--color-border-hover);
   }
 
+  /* Modal panel — apply to the inner card of a modal */
+  .modal-panel {
+    @apply animate-modal-enter;
+  }
+
+  /* Stagger container — children get staggered fade-in */
+  .stagger-fade {
+    /* Container; no own animation, children get .stagger-item */
+  }
+
+  /* Each child of .stagger-fade fades in with delay from --stagger-delay */
+  .stagger-item {
+    animation: var(--animate-stagger-fade);
+    animation-delay: var(--stagger-delay, 0ms);
+    opacity: 0;
+  }
+
+  /* Standardized focus ring — use on every interactive element */
+  .focus-ring {
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-bg-card;
+  }
+
+  /* Standardized button base — opt-in for new code; existing buttons unchanged */
+  .btn-base {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-all duration-150 focus-ring disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-base:not(:disabled):active {
+    transform: scale(0.98);
+  }
+
+  /* Variant helpers (composable with .btn-base) */
+  .btn-primary {
+    @apply btn-base bg-primary text-white hover:bg-primary-hover shadow-sm;
+  }
+  .btn-secondary {
+    @apply btn-base bg-bg-tertiary text-text-primary border border-border-light hover:bg-bg-card-hover hover:border-border-hover;
+  }
+  .btn-danger {
+    @apply btn-base bg-danger text-white hover:bg-danger/90 shadow-sm;
+  }
+  .btn-ghost {
+    @apply btn-base text-text-secondary hover:bg-bg-tertiary hover:text-text-primary;
+  }
+  .btn-sm {
+    @apply text-xs px-2.5 py-1.5;
+  }
+  .btn-md {
+    @apply text-sm px-4 py-2;
+  }
+  .btn-lg {
+    @apply text-base px-5 py-2.5;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .animate-fade-in, .animate-slide-in, .animate-pulse-skeleton { animation: none; }
     .card-hover:hover { transform: none; }
+    .modal-panel,
+    .stagger-item {
+      animation: none !important;
+      opacity: 1 !important;
+      transform: none !important;
+    }
   }
 }
 
