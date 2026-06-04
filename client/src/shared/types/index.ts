@@ -187,6 +187,7 @@ export interface AirdropAnalytics {
   ongoingCount: number
   completedCount: number
   claimedCount: number
+  cancelledCount: number
   totalEarningsValueUsd: number
   tokenEarnings: TokenEarnings[]
   upcomingDeadlines: UpcomingDeadline[]

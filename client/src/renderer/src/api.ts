@@ -7,6 +7,7 @@ import type {
   Template,
   ScheduledTask,
   AirdropProject,
+  AirdropAnalytics,
   AppInfo,
   StatsAggregate,
   ListResponse,
@@ -133,7 +134,8 @@ export const airdropApi = {
   get: (id: string) => call<AirdropProject | null>('airdrop:get', [id]),
   update: (id: string, data: Partial<AirdropProject>) =>
     call<AirdropProject>('airdrop:update', [id, data]),
-  delete: (id: string) => call<void>('airdrop:delete', [id])
+  delete: (id: string) => call<void>('airdrop:delete', [id]),
+  getAnalytics: () => call<AirdropAnalytics>('airdrop:analytics')
 }
 
 export const settingApi = {

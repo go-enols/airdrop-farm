@@ -289,6 +289,7 @@ export function registerIpcHandlers(services: Services): void {
     store.updateAirdrop(id as string, data as Parameters<typeof store.updateAirdrop>[1])
   )
   register('airdrop:delete', (id) => store.deleteAirdrop(id as string))
+  register('airdrop:analytics', () => store.getAirdropAnalytics())
 
   register('setting:get', (key) => store.getSetting(key as string))
   register('setting:set', (key, value) => store.setSetting(key as string, value as string))

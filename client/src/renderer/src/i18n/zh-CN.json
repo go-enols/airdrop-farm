@@ -421,7 +421,37 @@
     "noAccountPoolHint": "暂无账号池，请先在「账户管理」页面创建账号并指定账号池",
     "descriptionMarkdownHint": "（支持 Markdown）",
     "tagsPlaceholder": "tag1, tag2",
-    "labelsPlaceholder": "label1, label2"
+    "labelsPlaceholder": "label1, label2",
+    "sectionBasic": "基础信息",
+    "sectionClassification": "分类与资源",
+    "sectionLinks": "链接",
+    "sectionEligibility": "资格条件",
+    "sectionTasks": "任务清单",
+    "sectionEarnings": "收益",
+    "sectionTags": "标签与备注",
+    "kpi": {
+      "total": "空投总数",
+      "ongoing": "进行中",
+      "claimed": "已领取",
+      "earnings": "累计收益 (USD)",
+      "topTokens": "代币分布"
+    },
+    "fieldRequired": "此项必填",
+    "viewDetails": "查看详情",
+    "addEligibility": "添加资格条件",
+    "noEligibility": "暂无资格条件",
+    "eligibilityDescription": "资格描述",
+    "eligibilityType": "类型",
+    "eligibilityValue": "要求值",
+    "eligibilityRequired": "必须满足",
+    "eligibilityMet": "已满足",
+    "counts": {
+      "links": "{{count}} 个链接",
+      "tasks": "{{count}} 个任务",
+      "earnings": "{{count}} 笔收益"
+    },
+    "stalenessWarning": "该项目在您打开编辑表单后已被修改，保存前请确认覆盖",
+    "earningsSummary": "汇总"
   },
   "stats": {
     "title": "统计分析",

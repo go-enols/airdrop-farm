@@ -10,6 +10,9 @@ import type {
   TaskTemplate,
   ScheduledTask,
   AirdropProject,
+  AirdropAnalytics,
+  TokenEarnings,
+  UpcomingDeadline,
   CaptchaKey,
   ProxyProvider,
   AppLog,
@@ -920,6 +923,88 @@ export class StoreService {
   deleteAirdrop(id: string): boolean {
     const result = this.stmt('airdrop.delete').run(id)
     return result.changes > 0
+  }
+
+  /**
+   * Aggregate analytics over all airdrop projects. Status counts come from
+   * the indexed status column; earnings and deadlines are computed in JS
+   * from the JSON-decoded rows. Upcoming deadlines are capped at 5, sorted
+   * by deadline ASC.
+   */
+  getAirdropAnalytics(): AirdropAnalytics {
+    const countByStatus = this.db
+      .prepare('SELECT status, COUNT(*) as cnt FROM airdrop_projects GROUP BY status')
+      .all() as Array<{ status: string; cnt: number }>
+    const counts: Record<string, number> = {
+      ongoing: 0,
+      completed: 0,
+      cancelled: 0,
+      claimed: 0
+    }
+    let totalAirdrops = 0
+    for (const row of countByStatus) {
+      const cnt = Number(row.cnt) || 0
+      totalAirdrops += cnt
+      if (row.status in counts) counts[row.status] = cnt
+    }
+
+    const allRows = this.db
+      .prepare('SELECT * FROM airdrop_projects')
+      .all() as Array<Record<string, unknown>>
+
+    let totalEarningsValueUsd = 0
+    const tokenMap = new Map<string, { amount: number; valueUsd: number }>()
+    const deadlineEntries: UpcomingDeadline[] = []
+
+    for (const row of allRows) {
+      const airdrop = this.rowToAirdropProject(row)
+      const earnings = airdrop.earnings ?? []
+      for (const e of earnings) {
+        const v = Number(e.valueUsd) || 0
+        totalEarningsValueUsd += v
+        const token = (e.token ?? '').trim()
+        if (token) {
+          const prev = tokenMap.get(token) ?? { amount: 0, valueUsd: 0 }
+          tokenMap.set(token, {
+            amount: prev.amount + (Number(e.amount) || 0),
+            valueUsd: prev.valueUsd + v
+          })
+        }
+      }
+      const tasks = airdrop.tasks ?? []
+      for (const t of tasks) {
+        if (t.deadline && t.deadline.trim().length > 0) {
+          deadlineEntries.push({
+            taskId: t.id,
+            projectName: airdrop.name,
+            taskTitle: t.title,
+            deadline: t.deadline
+          })
+        }
+      }
+    }
+
+    const tokenEarnings: TokenEarnings[] = Array.from(tokenMap.entries())
+      .map(([token, v]) => ({ token, totalAmount: v.amount, totalValueUsd: v.valueUsd }))
+      .sort((a, b) => {
+        if (b.totalValueUsd !== a.totalValueUsd) return b.totalValueUsd - a.totalValueUsd
+        return b.totalAmount - a.totalAmount
+      })
+
+    const upcomingDeadlines = deadlineEntries
+      .sort((a, b) => a.deadline.localeCompare(b.deadline))
+      .slice(0, 5)
+
+    return {
+      totalAirdrops,
+      ongoingCount: counts.ongoing,
+      completedCount: counts.completed,
+      claimedCount: counts.claimed,
+      cancelledCount: counts.cancelled,
+      totalEarningsValueUsd,
+      tokenEarnings,
+      upcomingDeadlines
+    }
   }
 
   createCaptchaKey(data: Omit<CaptchaKey, 'id' | 'createdAt'>): CaptchaKey {
