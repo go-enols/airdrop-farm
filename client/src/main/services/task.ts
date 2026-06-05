@@ -1,7 +1,7 @@
 import { spawn, ChildProcess, exec } from 'child_process'
 import { promisify } from 'util'
 const execAsync = promisify(exec)
-import { join } from 'path'
+import { join, resolve as resolvePath } from 'path'
 import { existsSync, readFileSync, statSync } from 'fs'
 import { app } from 'electron'
 import { createLogger } from '../utils/logger'
@@ -299,6 +299,33 @@ export class TaskService {
 
       if (task.config.args && Array.isArray(task.config.args)) {
         args.push(...(task.config.args as string[]))
+      }
+
+      // Root-level sandbox enforcement: load sandbox-enforcer.cjs via
+      // NODE_OPTIONS=--require so it runs BEFORE the user's script. This
+      // patches http/https/net/tls/dgram/dns/fetch/child_process/worker_threads
+      // and chroots fs.* to the script's cwd + system temp dirs.
+      //
+      // The enforcer reads TASK_PERM_NETWORK / TASK_PERM_FILESYSTEM from
+      // the env and enforces accordingly. If the script author declares
+      // `permissions: ["network"]` in their manifest, the env var is set
+      // to "1" and the patches are skipped. If is_sandbox=true, both are
+      // set to "0" and the patches deny every operation.
+      //
+      // Skip the enforcer when the entry point is a tsx runner (npx tsx)
+      // because NODE_OPTIONS=--require doesn't work cleanly with tsx's
+      // own pre-loads; in that case the user is running their own
+      // TypeScript dev script and should be in control.
+      const isTsx = command === 'npx' && args[0] === 'tsx'
+      if (!isTsx) {
+        const enforcerPath = resolvePath(__dirname, 'sandbox-enforcer.cjs')
+        // Sanity check: enforcer file must exist
+        if (existsSync(enforcerPath)) {
+          const existingOpts = env.NODE_OPTIONS || ''
+          env.NODE_OPTIONS = `--require ${enforcerPath}${existingOpts ? ' ' + existingOpts : ''}`
+        } else {
+          createLogger('task').warn('Sandbox enforcer not found at ' + enforcerPath)
+        }
       }
 
       const proc = spawn(command, args, {

@@ -544,7 +544,7 @@ airdrop-farm/
 
 ### 6.2 脚本执行环境与权限控制
 
-每个任务通过 `child_process.spawn` 启动独立子进程，实现了**三层权限模型**：
+每个任务通过 `child_process.spawn` 启动独立子进程，实现了**四层权限模型**：
 
 #### Layer 1 — 脚本声明权限（manifest.permissions）
 从脚本的 `meta.json`（安装时由 `manifest.json` 的 `permissions` 字段写入）读取：
@@ -563,6 +563,28 @@ SHELL, USER, LOGNAME, LANG, TERM,
 LD_LIBRARY_PATH, LD_PRELOAD, DYLD_LIBRARY_PATH,
 PYTHONPATH, CLASSPATH
 ```
+
+#### Layer 4 — 根级别强制（sandbox-enforcer.cjs）⚠️ 安全关键
+**Layers 1–3 都是声明性的，恶意脚本可以直接忽略**。Layer 4 在子进程启动时通过 `NODE_OPTIONS=--require` 强制加载 `client/src/main/services/sandbox-enforcer.cjs`，在用户脚本运行**之前**monkey-patch 掉所有受限 API：
+
+| 被 patch 的模块 | 行为 |
+|---|---|
+| `http`, `https` | `request`/`get` 抛 `ERR_PERMISSION_DENIED` |
+| `net` | `connect`/`createConnection`/`createServer` 抛 `ERR_PERMISSION_DENIED` |
+| `tls` | `connect` 抛 `ERR_PERMISSION_DENIED` |
+| `dgram` | `createSocket` 抛 `ERR_PERMISSION_DENIED` |
+| `dns` | `lookup`/`resolve*` 抛 `ERR_PERMISSION_DENIED` |
+| `globalThis.fetch` | 抛 `ERR_PERMISSION_DENIED` |
+| `child_process` | `spawn`/`exec`/`execFile`/`fork` 等抛 `ERR_PERMISSION_DENIED` |
+| `worker_threads` | `Worker` 构造抛 `ERR_PERMISSION_DENIED` |
+| `fs` (同步+异步+promises) | 路径必须在 `cwd` 或 `TEMP/TMP/TMPDIR` 之内，否则抛 `ERR_PERMISSION_DENIED` |
+
+**绕过不可能**：patch 在模块导出对象上，脚本 `require('http')` 拿到的就是 patch 后的版本。
+**白名单绕过**：`TASK_PERM_BYPASS=1`（仅供内部脚本使用）跳过所有 patch。
+
+`scripts/check-i18n.cjs` 在 CI 阶段扫描所有 `t()` 调用并校验 `zh-CN.json`，防止 i18n 缺失 key 导致界面显示原始 key（被用户误认为变量名）。
+
+测试：`tests/main/sandbox-enforcer.test.ts`（11/11 通过）证明 patch 生效。
 
 #### 注入的环境变量（供脚本运行时自检）
 

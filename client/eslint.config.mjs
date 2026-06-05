@@ -29,11 +29,11 @@ export default defineConfig(
     }
   },
   {
-    files: ['**/*.{js,jsx}'],
+    files: ['**/*.{js,jsx,cjs}'],
     rules: {
       'react/prop-types': 'off',
-      // `require()` is the standard import syntax in plain JS files;
-      // this TS-only rule has no meaning for `.js` and produces false positives on build helpers.
+
+
       '@typescript-eslint/no-require-imports': 'off'
     }
   },
