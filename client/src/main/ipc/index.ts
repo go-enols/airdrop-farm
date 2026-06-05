@@ -39,14 +39,28 @@ function restoreWindowAfterDialog(win: BrowserWindow): void {
   try {
     if (win.isDestroyed()) return
     if (win.isMinimized()) win.restore()
-    // 显式重新启用窗口（清除 WS_DISABLED）
-    win.setEnabled(true)
-    // 重新聚焦 OS 窗口
-    win.focus()
-    // 重新聚焦 webContents（renderer 进程）
-    win.webContents.focus()
+
+    // Defer re-enable to the next event-loop tick so that Windows has
+    // finished processing the dialog's internal teardown messages
+    // (WM_DESTROY, WM_NCDESTROY, etc.).  Calling setEnabled(true)
+    // immediately can race with the COM dialog clean-up, which may
+    // re-apply WS_DISABLED *after* we've already lifted it.
+    setImmediate(() => {
+      try {
+        if (win.isDestroyed()) return
+        win.setEnabled(true)
+        win.focus()
+        win.webContents.focus()
+      } catch (err) {
+        logger.warn('Failed to restore window after native dialog (deferred):', {
+          error: err instanceof Error ? err.message : String(err)
+        })
+      }
+    })
   } catch (err) {
-    logger.warn('Failed to restore window after native dialog:', { error: err instanceof Error ? err.message : String(err) })
+    logger.warn('Failed to schedule window restore after native dialog:', {
+      error: err instanceof Error ? err.message : String(err)
+    })
   }
 }
 

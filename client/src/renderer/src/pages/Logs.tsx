@@ -81,7 +81,7 @@ const Logs: React.FC = () => {
       const cats = await logApi.getCategories()
       setCategories(cats)
     } catch {
-
+      // silently ignore: categories are optional metadata
     }
   }, [])
 

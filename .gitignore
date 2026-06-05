@@ -18,6 +18,8 @@ server/data/*.db-wal
 
 # Editor / scratch
 tmp.json
+tmp_*.txt
+vitest_result.txt
 
 # AI tool directories
 .deepseek/

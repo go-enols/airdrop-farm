@@ -1,4 +1,5 @@
-// @vitest-environment jsdom/**
+// @vitest-environment jsdom/**/**/**/**
+/**
  * @file 双传输层测试
  * @description 验证渲染进程传输层的 IPC 优先 / HTTP 降级策略，
  *              包括自动切换、强制模式、健康检查、传输状态管理等场景。

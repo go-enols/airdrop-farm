@@ -107,8 +107,6 @@ describe('Layout — nav visibility by role', () => {
     expect(html).not.toContain('nav.adminReview')
   })
 })
-  }
-})
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (k: string) => k })

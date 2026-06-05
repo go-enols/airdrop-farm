@@ -29,12 +29,13 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
   isSubmitting: externalSubmitting = false
 }) => {
   const { t } = useTranslation()
-  const schema = fieldMetaToZodSchema(fields)
+  const schema = React.useMemo(() => fieldMetaToZodSchema(fields), [fields])
 
   const {
     control,
     handleSubmit,
     watch,
+    getValues,
     formState: { errors, isSubmitting: rhfSubmitting }
   } = useForm({
     resolver: zodResolver(schema),
@@ -43,11 +44,22 @@ const DynamicForm: React.FC<DynamicFormProps> = ({
 
   const isSubmitting = rhfSubmitting || externalSubmitting
 
-  // 同步表单值到父组件（如 Tasks 页面需要实时获取表单数据）
-  const watchedValues = watch()
+  // Subscribe to form value changes via watch(callback) instead of watch().
+  // watch() returns a new object reference on every render, which would cause
+  // an infinite render loop when onValuesChange calls the parent's setState.
+  // watch(callback) only fires on actual value changes and does NOT trigger
+  // re-renders — the callback is a subscription, not a hook return value.
   React.useEffect(() => {
-    if (onValuesChange) onValuesChange(watchedValues as Record<string, unknown>)
-  }, [watchedValues, onValuesChange])
+    if (!onValuesChange) return
+
+    // Push initial values on mount
+    onValuesChange(getValues() as Record<string, unknown>)
+
+    const { unsubscribe } = watch((values) => {
+      onValuesChange(values as Record<string, unknown>)
+    })
+    return unsubscribe
+  }, [watch, onValuesChange])
 
   return (
     <form onSubmit={onSubmit ? handleSubmit(onSubmit) : (e) => e.preventDefault()} className="space-y-4">

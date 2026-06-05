@@ -13,9 +13,9 @@ import {
   type SectionId
 } from '../../../src/renderer/src/pages/settings-sections'
 
-// describe: Settings 配置项 — 角色可见性（终结模型验证）
+
 describe('Settings sections — role visibility (terminal model)', () => {
-  // 用例：SECTIONS 暴露 10 个已知配置项 ID（updates 已独立为单独项）
+
   it('SECTIONS exposes the 10 known section ids (updates is now its own section)', () => {
     const ids = SECTIONS.map((s) => s.id).sort()
     expect(ids).toEqual(
@@ -34,7 +34,7 @@ describe('Settings sections — role visibility (terminal model)', () => {
     )
   })
 
-  // 用例：每个配置项都定义了 labelKey 和 descriptionKey（支持国际化）
+
   it('every section declares both a labelKey and a descriptionKey (i18n-ready)', () => {
     for (const s of SECTIONS) {
       expect(s.labelKey, `${s.id}.labelKey`).toMatch(/^settings\./)
@@ -42,7 +42,7 @@ describe('Settings sections — role visibility (terminal model)', () => {
     }
   })
 
-  // 用例：每个配置项都声明了 scope（personal | computer）
+
   it('every section declares a scope (personal | computer)', () => {
     const scopes = new Set(SECTIONS.map((s) => s.scope))
     expect(scopes.has('personal')).toBe(true)
@@ -52,7 +52,7 @@ describe('Settings sections — role visibility (terminal model)', () => {
     }
   })
 
-  // 用例：admin 角色可见全部 10 个配置项
+
   it('admin sees ALL 10 sections (including taskDefaults + updates)', () => {
     const visible = getVisibleSections('admin')
     const ids = visible.map((s) => s.id)
@@ -64,7 +64,7 @@ describe('Settings sections — role visibility (terminal model)', () => {
     expect(ids).toContain('advanced')
   })
 
-  // 用例：developer 角色可见 6 个配置项（不含 admin 专属项）
+
   it('developer sees 6 sections (no admin-only server config)', () => {
     const visible = getVisibleSections('developer')
     const ids = visible.map((s) => s.id)
@@ -76,7 +76,7 @@ describe('Settings sections — role visibility (terminal model)', () => {
     expect(ids).not.toContain('advanced')
   })
 
-  // 用例：user 角色可见 6 个配置项（个人设置 + taskDefaults + updates）
+
   it('user sees 6 sections (personal + task defaults + updates)', () => {
     const visible = getVisibleSections('user')
     const ids = visible.map((s) => s.id)
@@ -92,7 +92,7 @@ describe('Settings sections — role visibility (terminal model)', () => {
     expect(ids).not.toContain('advanced')
   })
 
-  // 用例：developer 角色可见 6 个配置项（重复验证，确认不含 admin 专属项）
+
   it('developer sees 6 sections (no admin-only server config)', () => {
     const visible = getVisibleSections('developer')
     const ids = visible.map((s) => s.id)
@@ -103,7 +103,7 @@ describe('Settings sections — role visibility (terminal model)', () => {
     expect(ids).not.toContain('advanced')
   })
 
-  // 用例：user 角色可见 5 个个人配置项（不含 admin 管理工具）
+
   it('user sees 5 sections (personal + task defaults, no admin tooling)', () => {
     const visible = getVisibleSections('user')
     const ids = visible.map((s) => s.id)
@@ -118,7 +118,7 @@ describe('Settings sections — role visibility (terminal model)', () => {
     expect(ids).not.toContain('advanced')
   })
 
-  // 用例：渲染顺序中 personal 配置项排在 computer 配置项之前
+
   it('personal sections come BEFORE computer sections in render order', () => {
     const visible = getVisibleSections('admin')
     const lastPersonalIdx = visible
@@ -129,7 +129,7 @@ describe('Settings sections — role visibility (terminal model)', () => {
     expect(firstComputerIdx).toBeGreaterThan(lastPersonalIdx)
   })
 
-  // 用例：profile 是所有角色的默认着陆配置项
+
   it('profile is the default landing section for any role', () => {
     for (const role of ['admin', 'developer', 'user'] as UserRole[]) {
       const visible = getVisibleSections(role)
@@ -138,7 +138,7 @@ describe('Settings sections — role visibility (terminal model)', () => {
   })
 })
 
-// describe: Settings 配置项 — 各角色精确配置项列表
+
 describe('Settings sections — per-role exact sections', () => {
   /** 各角色预期可见的完整配置项列表 */
   const expected: Record<UserRole, SectionId[]> = {
@@ -159,130 +159,7 @@ describe('Settings sections — per-role exact sections', () => {
   }
 
   for (const role of ['admin', 'developer', 'user'] as UserRole[]) {
-    // 用例：role=xxx 角色的配置项列表完全匹配预期
-    it(`role=${role} sees the exact section list`, () => {
-      const visible = getVisibleSections(role).map((s) => s.id)
-      expect(visible).toEqual(expected[role])
-    })
-  }
-})
 
-  it('every section declares both a labelKey and a descriptionKey (i18n-ready)', () => {
-    for (const s of SECTIONS) {
-      expect(s.labelKey, `${s.id}.labelKey`).toMatch(/^settings\./)
-      expect(s.descriptionKey, `${s.id}.descriptionKey`).toMatch(/^settings\./)
-    }
-  })
-
-  it('every section declares a scope (personal | computer)', () => {
-    const scopes = new Set(SECTIONS.map((s) => s.scope))
-    expect(scopes.has('personal')).toBe(true)
-    expect(scopes.has('computer')).toBe(true)
-    for (const s of SECTIONS) {
-      expect(['personal', 'computer']).toContain(s.scope)
-    }
-  })
-
-  it('admin sees ALL 10 sections (including taskDefaults + updates)', () => {
-    const visible = getVisibleSections('admin')
-    const ids = visible.map((s) => s.id)
-    expect(ids).toContain('taskDefaults') // the fix: previously excluded admin
-    expect(ids).toContain('updates') // the fix: previously hidden inside admin-only System
-    expect(ids).toContain('marketplace')
-    expect(ids).toContain('security')
-    expect(ids).toContain('system')
-    expect(ids).toContain('advanced')
-  })
-
-  it('developer sees 6 sections (no admin-only server config)', () => {
-    const visible = getVisibleSections('developer')
-    const ids = visible.map((s) => s.id)
-    expect(ids).toContain('taskDefaults')
-    expect(ids).toContain('updates') // NEW: updates is now its own section visible to all roles
-    expect(ids).not.toContain('marketplace')
-    expect(ids).not.toContain('security')
-    expect(ids).not.toContain('system')
-    expect(ids).not.toContain('advanced')
-  })
-
-  it('user sees 6 sections (personal + task defaults + updates)', () => {
-    const visible = getVisibleSections('user')
-    const ids = visible.map((s) => s.id)
-    expect(ids).toContain('profile')
-    expect(ids).toContain('appearance')
-    expect(ids).toContain('taskDefaults')
-    expect(ids).toContain('data')
-    expect(ids).toContain('about')
-    expect(ids).toContain('updates') // NEW: updates is now its own section visible to all roles
-    expect(ids).not.toContain('marketplace')
-    expect(ids).not.toContain('security')
-    expect(ids).not.toContain('system')
-    expect(ids).not.toContain('advanced')
-  })
-
-  it('developer sees 6 sections (no admin-only server config)', () => {
-    const visible = getVisibleSections('developer')
-    const ids = visible.map((s) => s.id)
-    expect(ids).toContain('taskDefaults')
-    expect(ids).not.toContain('marketplace')
-    expect(ids).not.toContain('security')
-    expect(ids).not.toContain('system')
-    expect(ids).not.toContain('advanced')
-  })
-
-  it('user sees 5 sections (personal + task defaults, no admin tooling)', () => {
-    const visible = getVisibleSections('user')
-    const ids = visible.map((s) => s.id)
-    expect(ids).toContain('profile')
-    expect(ids).toContain('appearance')
-    expect(ids).toContain('taskDefaults')
-    expect(ids).toContain('data')
-    expect(ids).toContain('about')
-    expect(ids).not.toContain('marketplace')
-    expect(ids).not.toContain('security')
-    expect(ids).not.toContain('system')
-    expect(ids).not.toContain('advanced')
-  })
-
-  it('personal sections come BEFORE computer sections in render order', () => {
-    const visible = getVisibleSections('admin')
-    const lastPersonalIdx = visible
-      .map((s, i) => (s.scope === 'personal' ? i : -1))
-      .filter((i) => i >= 0)
-      .pop()!
-    const firstComputerIdx = visible.findIndex((s) => s.scope === 'computer')
-    expect(firstComputerIdx).toBeGreaterThan(lastPersonalIdx)
-  })
-
-  it('profile is the default landing section for any role', () => {
-    for (const role of ['admin', 'developer', 'user'] as UserRole[]) {
-      const visible = getVisibleSections(role)
-      expect(visible[0]?.id).toBe('profile')
-    }
-  })
-})
-
-describe('Settings sections — per-role exact sections', () => {
-  // Exact-section assertions serve as a regression guard. If you intentionally
-  // add or remove a section for a role, update the expected list here.
-  const expected: Record<UserRole, SectionId[]> = {
-    admin: [
-      'profile',
-      'appearance',
-      'data',
-      'about',
-      'taskDefaults',
-      'updates',
-      'marketplace',
-      'security',
-      'system',
-      'advanced'
-    ],
-    developer: ['profile', 'appearance', 'data', 'about', 'taskDefaults', 'updates'],
-    user: ['profile', 'appearance', 'data', 'about', 'taskDefaults', 'updates']
-  }
-
-  for (const role of ['admin', 'developer', 'user'] as UserRole[]) {
     it(`role=${role} sees the exact section list`, () => {
       const visible = getVisibleSections(role).map((s) => s.id)
       expect(visible).toEqual(expected[role])

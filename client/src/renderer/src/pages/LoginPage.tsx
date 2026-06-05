@@ -56,11 +56,14 @@ export default function LoginPage(): React.ReactElement {
     }
   }, [])
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     getMarketplaceUrl().then((url) => setServerUrl(url))
 
     checkSetup()
   }, [checkSetup])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   /** 保存并测试服务端 URL 连接 */
   const handleSaveUrl = async () => {

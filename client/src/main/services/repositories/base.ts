@@ -24,6 +24,7 @@ import type { ListResponse } from '../../../shared/types'
  * }
  * ```
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export abstract class BaseRepository<_T = unknown> {
   /** better-sqlite3 数据库连接实例 */
   protected db: Database.Database
