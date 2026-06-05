@@ -99,7 +99,7 @@ const LogViewer: React.FC<LogViewerProps> = ({
             onChange={(e) => setAutoScroll(e.target.checked)}
             className="rounded"
           />
-          {t('tasks.autoScroll')}
+          {t('tasks.logFilter.autoScroll')}
         </label>
 
         {onExport && (
