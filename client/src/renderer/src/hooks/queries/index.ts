@@ -1,3 +1,9 @@
+/**
+ * @file React Query Hooks 统一导出
+ * @description 将所有数据查询 Hooks 和键工厂统一导出，方便外部引用。
+ * @module renderer/hooks/queries
+ */
+
 export { queryClient } from './queryClient'
 
 export {

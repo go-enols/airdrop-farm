@@ -1,3 +1,9 @@
+/**
+ * @file 模板/脚本数据查询 Hook
+ * @description 封装账户模板和任务脚本的查询与变更操作，
+ *              包括本地模板 CRUD、远程脚本获取、安装与移除。
+ * @module renderer/hooks/queries
+ */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { templateApi, taskTemplateApi, marketplaceApi, scriptApi } from '../../api'
 import type {
@@ -8,22 +14,38 @@ import type {
   ListResponse
 } from '../../types'
 
+/** 账户模板查询键工厂 */
 export const templateKeys = {
+  /** 所有模板根键 */
   all: ['templates'] as const,
+  /** 分页列表查询键 */
   list: (page: number, pageSize: number, search: string) =>
     [...templateKeys.all, 'list', page, pageSize, search] as const,
+  /** 单个模板详情查询键 */
   detail: (id: string) => [...templateKeys.all, 'detail', id] as const
 }
 
+/** 任务脚本模板查询键工厂 */
 export const taskTemplateKeys = {
+  /** 所有任务模板根键 */
   all: ['taskTemplates'] as const,
+  /** 分页列表查询键 */
   list: (page: number, pageSize: number, search: string) =>
     [...taskTemplateKeys.all, 'list', page, pageSize, search] as const,
+  /** 单个任务模板详情查询键 */
   detail: (id: string) => [...taskTemplateKeys.all, 'detail', id] as const,
+  /** 已安装脚本查询键 */
   installed: ['installedScripts'] as const,
+  /** 远程脚本查询键 */
   remote: ['remoteScripts'] as const
 }
 
+/**
+ * 获取账户模板分页列表
+ * @param page - 页码（默认 1）
+ * @param pageSize - 每页条数（默认 20）
+ * @param search - 搜索关键字
+ */
 export function useTemplateList(page = 1, pageSize = 20, search = '') {
   return useQuery<ListResponse<Template>>({
     queryKey: templateKeys.list(page, pageSize, search),
@@ -31,6 +53,7 @@ export function useTemplateList(page = 1, pageSize = 20, search = '') {
   })
 }
 
+/** 创建账户模板 mutation */
 export function useCreateTemplate() {
   const qc = useQueryClient()
   return useMutation({
@@ -39,6 +62,7 @@ export function useCreateTemplate() {
   })
 }
 
+/** 更新账户模板 mutation */
 export function useUpdateTemplate() {
   const qc = useQueryClient()
   return useMutation({
@@ -48,6 +72,7 @@ export function useUpdateTemplate() {
   })
 }
 
+/** 删除账户模板 mutation */
 export function useDeleteTemplate() {
   const qc = useQueryClient()
   return useMutation({
@@ -56,6 +81,12 @@ export function useDeleteTemplate() {
   })
 }
 
+/**
+ * 获取已安装的任务脚本分页列表
+ * @param page - 页码（默认 1）
+ * @param pageSize - 每页条数（默认 20）
+ * @param search - 搜索关键字
+ */
 export function useTaskTemplateList(page = 1, pageSize = 20, search = '') {
   return useQuery<ListResponse<TaskTemplate>>({
     queryKey: taskTemplateKeys.list(page, pageSize, search),
@@ -63,6 +94,7 @@ export function useTaskTemplateList(page = 1, pageSize = 20, search = '') {
   })
 }
 
+/** 获取所有已安装脚本列表 */
 export function useInstalledScripts() {
   return useQuery<InstalledScript[]>({
     queryKey: taskTemplateKeys.installed,
@@ -70,6 +102,7 @@ export function useInstalledScripts() {
   })
 }
 
+/** 获取远程市场脚本列表 */
 export function useRemoteScripts() {
   return useQuery<{ items: RemoteScript[]; total: number }>({
     queryKey: taskTemplateKeys.remote,
@@ -77,6 +110,7 @@ export function useRemoteScripts() {
   })
 }
 
+/** 下载并安装远程脚本 mutation */
 export function useDownloadScript() {
   const qc = useQueryClient()
   return useMutation({
@@ -88,6 +122,7 @@ export function useDownloadScript() {
   })
 }
 
+/** 移除已安装脚本 mutation */
 export function useRemoveScript() {
   const qc = useQueryClient()
   return useMutation({

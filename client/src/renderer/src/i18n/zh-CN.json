@@ -603,7 +603,6 @@
     "accountCount": "账户数量",
     "proxyCount": "代理数量",
     "taskCount": "任务数量",
-    "updates": "软件更新",
     "marketplaceApiKey": "市场 API Key",
     "marketplaceApiKeyHint": "用于访问脚本/模板市场服务端的鉴权密钥。客户端启动内置市场服务时也会注入该值。修改后需重启应用以生效。",
     "stickyUnsavedChanges": "有未保存的更改",

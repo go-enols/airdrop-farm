@@ -1,13 +1,31 @@
+/**
+ * @file 钱包导入工具
+ * @description 提供 JSON 格式的钱包批量导入功能，支持验证地址、私钥、钱包类型和标签格式。
+ * @module renderer/utils
+ */
 import type { Wallet } from '../types'
 
+/** 解析后的钱包数据（不包含数据库自动生成的字段） */
 export type ParsedWallet = Omit<Wallet, 'id' | 'createdAt'>
 
+/** 支持的钱包类型列表 */
 const VALID_WALLET_TYPES: ReadonlyArray<Wallet['walletType']> = ['evm', 'solana', 'sui', 'bitcoin']
 
+/**
+ * 检查值是否为普通对象（非 null、非数组）
+ * @param value - 要检查的值
+ */
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
+/**
+ * 验证并解析单个钱包项
+ * @param item - 原始 JSON 中的单个钱包对象
+ * @param index - 在数组中的索引（用于错误消息）
+ * @returns 解析后的钱包数据
+ * @throws 字段缺失或格式错误时抛出异常
+ */
 function validateOne(item: unknown, index: number): ParsedWallet {
   if (!isPlainObject(item)) {
     throw new Error(`Item #${index + 1} must be an object`)
@@ -55,6 +73,16 @@ function validateOne(item: unknown, index: number): ParsedWallet {
   }
 }
 
+/**
+ * 解析 JSON 字符串为钱包数据数组
+ *
+ * 支持单个钱包对象或钱包数组两种输入格式。
+ * 每个钱包必须包含 address、privateKey 和 walletType 字段。
+ *
+ * @param raw - JSON 字符串
+ * @returns 解析后的钱包数组
+ * @throws JSON 格式错误、内容为空或字段校验失败时抛出异常
+ */
 export function parseWalletJson(raw: string): ParsedWallet[] {
   const trimmed = raw.trim()
   if (!trimmed) {
