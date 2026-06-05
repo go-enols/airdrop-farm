@@ -44,9 +44,12 @@ function runChild(script: string, env: Record<string, string>): Promise<ChildRes
   })
 }
 
+// describe: 沙箱强制器根 describe 块，分组测试各权限场景
 describe('sandbox-enforcer', () => {
+  // describe: 网络权限禁用场景（TASK_PERM_NETWORK=0）
   describe('when TASK_PERM_NETWORK=0', () => {
     it('http.request throws ERR_PERMISSION_DENIED', async () => {
+      // 用例：http.request 在网络权限禁用时抛出 ERR_PERMISSION_DENIED
       const script = `try { require('http').request('http://example.com'); console.log('NO_THROW'); } catch (e) { console.log('THREW:' + e.code); }`
       const { stdout } = await runChild(script, {
         TASK_PERM_NETWORK: '0',
@@ -57,6 +60,7 @@ describe('sandbox-enforcer', () => {
     })
 
     it('https.get throws ERR_PERMISSION_DENIED', async () => {
+      // 用例：https.get 在网络权限禁用时抛出 ERR_PERMISSION_DENIED
       const script = `try { require('https').get('https://example.com'); console.log('NO_THROW'); } catch (e) { console.log('THREW:' + e.code); }`
       const { stdout } = await runChild(script, {
         TASK_PERM_NETWORK: '0',
@@ -66,6 +70,7 @@ describe('sandbox-enforcer', () => {
     })
 
     it('net.connect throws ERR_PERMISSION_DENIED', async () => {
+      // 用例：net.connect 在网络权限禁用时抛出 ERR_PERMISSION_DENIED
       const script = `try { require('net').connect(80, 'example.com'); console.log('NO_THROW'); } catch (e) { console.log('THREW:' + e.code); }`
       const { stdout } = await runChild(script, {
         TASK_PERM_NETWORK: '0',
@@ -75,6 +80,7 @@ describe('sandbox-enforcer', () => {
     })
 
     it('tls.connect throws ERR_PERMISSION_DENIED', async () => {
+      // 用例：tls.connect 在网络权限禁用时抛出 ERR_PERMISSION_DENIED
       const script = `try { require('tls').connect(443, 'example.com'); console.log('NO_THROW'); } catch (e) { console.log('THREW:' + e.code); }`
       const { stdout } = await runChild(script, {
         TASK_PERM_NETWORK: '0',
@@ -84,6 +90,7 @@ describe('sandbox-enforcer', () => {
     })
 
     it('global fetch throws ERR_PERMISSION_DENIED', async () => {
+      // 用例：globalThis.fetch 在网络权限禁用时抛出 ERR_PERMISSION_DENIED
       const script = `try { fetch('http://example.com'); console.log('NO_THROW'); } catch (e) { console.log('THREW:' + e.code); }`
       const { stdout } = await runChild(script, {
         TASK_PERM_NETWORK: '0',
@@ -93,6 +100,7 @@ describe('sandbox-enforcer', () => {
     })
 
     it('child_process.spawn throws ERR_PERMISSION_DENIED', async () => {
+      // 用例：child_process.spawn 在网络权限禁用时抛出 ERR_PERMISSION_DENIED
       const script = `try { require('child_process').spawn('echo', ['hi']); console.log('NO_THROW'); } catch (e) { console.log('THREW:' + e.code); }`
       const { stdout } = await runChild(script, {
         TASK_PERM_NETWORK: '0',
@@ -102,8 +110,10 @@ describe('sandbox-enforcer', () => {
     })
   })
 
+  // describe: 网络权限启用场景（TASK_PERM_NETWORK=1）
   describe('when TASK_PERM_NETWORK=1', () => {
     it('http.request does NOT throw synchronously (permission granted)', async () => {
+      // 用例：网络权限已启用时 http.request 不抛出异常
       // Use an invalid host so the request fails fast; we only check
       // that the function itself doesn't throw synchronously.
       const script = `try { const r = require('http').request('http://127.0.0.1:1'); r.on('error', () => {}); r.end(); console.log('OK'); } catch (e) { console.log('THREW:' + e.code); }`
@@ -115,8 +125,10 @@ describe('sandbox-enforcer', () => {
     })
   })
 
+  // describe: 文件系统权限禁用场景（TASK_PERM_FILESYSTEM=0）
   describe('when TASK_PERM_FILESYSTEM=0', () => {
     it('fs.readFileSync throws ERR_PERMISSION_DENIED', async () => {
+      // 用例：fs.readFileSync 在文件系统权限禁用时抛出 ERR_PERMISSION_DENIED
       const script = `try { require('fs').readFileSync('/etc/hostname'); console.log('NO_THROW'); } catch (e) { console.log('THREW:' + e.code); }`
       const { stdout } = await runChild(script, {
         TASK_PERM_NETWORK: '1',
@@ -126,6 +138,7 @@ describe('sandbox-enforcer', () => {
     })
 
     it('fs.writeFileSync throws ERR_PERMISSION_DENIED', async () => {
+      // 用例：fs.writeFileSync 在文件系统权限禁用时抛出 ERR_PERMISSION_DENIED
       const script = `try { require('fs').writeFileSync('/tmp/should-not-exist.txt', 'x'); console.log('NO_THROW'); } catch (e) { console.log('THREW:' + e.code); }`
       const { stdout } = await runChild(script, {
         TASK_PERM_NETWORK: '1',
@@ -135,6 +148,7 @@ describe('sandbox-enforcer', () => {
     })
 
     it('fs.promises.readFile rejects with ERR_PERMISSION_DENIED', async () => {
+      // 用例：fs.promises.readFile 在文件系统权限禁用时拒绝并返回 ERR_PERMISSION_DENIED
       const script = `require('fs').promises.readFile('/etc/hostname').then(() => console.log('NO_THROW')).catch(e => console.log('REJECTED:' + e.code))`
       const { stdout } = await runChild(script, {
         TASK_PERM_NETWORK: '1',
@@ -144,8 +158,10 @@ describe('sandbox-enforcer', () => {
     })
   })
 
+  // describe: 绕过标志场景（TASK_PERM_BYPASS=1，禁用所有强制补丁）
   describe('when TASK_PERM_BYPASS=1', () => {
     it('no patches applied — http.request does not throw synchronously', async () => {
+      // 用例：BYPASS 标志启用时所有补丁被跳过，http.request 正常执行不抛出
       const script = `try { const r = require('http').request('http://127.0.0.1:1'); r.on('error', () => {}); r.end(); console.log('OK'); } catch (e) { console.log('THREW:' + e.code); }`
       const { stdout } = await runChild(script, {
         TASK_PERM_NETWORK: '0',

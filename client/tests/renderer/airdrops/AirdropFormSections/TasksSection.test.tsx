@@ -1,3 +1,10 @@
+/**
+ * @file TasksSection 任务区块测试
+ * @description 验证 TasksSection 组件的服务端渲染和交互行为，
+ *              包括任务列表渲染、添加/删除任务、更新任务状态等功能。
+ * @module tests/renderer/airdrops/AirdropFormSections
+ */
+
 import { describe, it, expect, vi } from 'vitest'
 import { renderToString } from 'react-dom/server'
 import { createRoot, type Root } from 'react-dom/client'
@@ -5,6 +12,7 @@ import { act } from 'react'
 import TasksSection from '../../../../src/renderer/src/components/airdrops/AirdropFormSections/TasksSection'
 import type { AirdropFormData, AirdropTaskFormData } from '../../../../src/renderer/src/components/airdrops/airdrop-defaults'
 
+/** 模拟 react-i18next */
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (k: string) => k }) }))
 
 const baseForm = (overrides: Partial<AirdropFormData> = {}): AirdropFormData => ({
@@ -34,6 +42,7 @@ const sampleTask: AirdropTaskFormData = {
   notes: 'low fee window'
 }
 
+// describe: TasksSection 服务端渲染测试
 describe('TasksSection (server render)', () => {
   it('shows empty hint when no tasks', () => {
     const html = renderToString(<TasksSection form={baseForm()} onChange={() => {}} />)
@@ -55,6 +64,7 @@ describe('TasksSection (server render)', () => {
   })
 })
 
+// describe: TasksSection 交互行为测试
 describe('TasksSection (interactive)', () => {
   let container: HTMLDivElement
   let root: Root

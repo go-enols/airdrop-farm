@@ -1,3 +1,11 @@
+/**
+ * @file 日志查看器测试
+ * @description 验证 LogViewer 组件的服务端渲染和交互行为，
+ *              包括日志行渲染、级别筛选、颜色标记、自动滚动、
+ *              清除和导出按钮等功能的正确性。
+ * @module tests/renderer/components/common
+ */
+
 import { describe, it, expect, vi, beforeAll } from 'vitest'
 import { renderToString } from 'react-dom/server'
 import { createRoot, type Root } from 'react-dom/client'
@@ -5,6 +13,7 @@ import { act } from 'react'
 import LogViewer from '../../../../src/renderer/src/components/common/LogViewer'
 import type { TaskLog } from '../../../../../src/shared/types'
 
+/** 模拟 react-i18next */
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (k: string) => k }) }))
 
 // jsdom does not implement scrollIntoView, but LogViewer calls it from
@@ -35,6 +44,7 @@ function click(el: Element | null): void {
   })
 }
 
+// describe: LogViewer 服务端渲染测试
 describe('LogViewer (server render)', () => {
   it('renders an empty state when logs is empty', () => {
     const html = renderToString(<LogViewer logs={[]} />)

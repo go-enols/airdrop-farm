@@ -1,11 +1,18 @@
+/**
+ * @file 调试页面测试
+ * @description 验证 DebugPage 组件的服务端渲染和交互行为，
+ *              包括选择文件夹、读取 manifest/meta 配置、
+ *              沙箱开关、运行/停止任务、日志查看等功能。
+ * @module tests/renderer/pages
+ */
+
 import { describe, it, expect, vi, beforeAll } from 'vitest'
 import { renderToString } from 'react-dom/server'
 import { createRoot, type Root } from 'react-dom/client'
 import { act } from 'react'
 import DebugPage from '../../../src/renderer/src/pages/DebugPage'
 
-// jsdom does not implement scrollIntoView, but DebugPage's LogViewer calls
-// it from useEffect. Stub it once globally so tests don't crash.
+// 模拟 scrollIntoView（jsdom 环境不支持）
 beforeAll(() => {
   if (!window.HTMLElement.prototype.scrollIntoView) {
     window.HTMLElement.prototype.scrollIntoView = function () {
@@ -14,10 +21,10 @@ beforeAll(() => {
   }
 })
 
+/** 模拟 react-i18next */
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (k: string) => k }) }))
 
-// `vi.mock` factories are hoisted to the top of the file before module
-// evaluation, so they cannot reference top-level consts. Use `vi.hoisted`.
+/** 模拟所有 API 方法 */
 const mocks = vi.hoisted(() => ({
   taskApi: {
     create: vi.fn(),
@@ -47,6 +54,7 @@ const mockTaskApi = mocks.taskApi
 const mockFileApi = mocks.fileApi
 const mockAccountApi = mocks.accountApi
 
+/** 生成示例账户数据 */
 const sampleAccount = (id: string, templateId: string) => ({
   id,
   templateId,
@@ -58,6 +66,7 @@ const sampleAccount = (id: string, templateId: string) => ({
   updatedAt: '2026-01-01T00:00:00Z'
 })
 
+/** 辅助函数：在 act 中触发点击事件 */
 function click(el: Element | null): void {
   if (!el) throw new Error('element not found')
   act(() => {
@@ -65,6 +74,7 @@ function click(el: Element | null): void {
   })
 }
 
+// describe: DebugPage 服务端渲染测试
 describe('DebugPage (server render)', () => {
   it('renders the page title', () => {
     const html = renderToString(<DebugPage />)
@@ -84,6 +94,7 @@ describe('DebugPage (server render)', () => {
   })
 })
 
+// describe: DebugPage 交互行为测试
 describe('DebugPage (interactive)', () => {
   let container: HTMLDivElement
   let root: Root

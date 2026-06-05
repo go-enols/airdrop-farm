@@ -1,3 +1,11 @@
+/**
+ * @file 空投默认值辅助函数测试
+ * @description 验证 airdrop-defaults 工具函数的正确性，
+ *              包括空表单结构、FormData 双向转换、基础验证、
+ *              以及空行工厂函数等功能。
+ * @module tests/renderer/airdrops
+ */
+
 import { describe, it, expect } from 'vitest'
 import {
   emptyForm,

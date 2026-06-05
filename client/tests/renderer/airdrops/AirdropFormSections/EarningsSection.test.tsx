@@ -1,3 +1,10 @@
+/**
+ * @file EarningsSection 收益区块测试
+ * @description 验证 EarningsSection 组件的服务端渲染和交互行为，
+ *              包括收益列表渲染、添加收益、编辑金额等功能。
+ * @module tests/renderer/airdrops/AirdropFormSections
+ */
+
 import { describe, it, expect, vi } from 'vitest'
 import { renderToString } from 'react-dom/server'
 import { createRoot, type Root } from 'react-dom/client'
@@ -5,6 +12,7 @@ import { act } from 'react'
 import EarningsSection from '../../../../src/renderer/src/components/airdrops/AirdropFormSections/EarningsSection'
 import type { AirdropFormData, AirdropEarningFormData } from '../../../../src/renderer/src/components/airdrops/airdrop-defaults'
 
+/** 模拟 react-i18next */
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (k: string) => k }) }))
 
 const baseForm = (overrides: Partial<AirdropFormData> = {}): AirdropFormData => ({
@@ -34,6 +42,7 @@ const sampleEarning: AirdropEarningFormData = {
   notes: 'season 1'
 }
 
+// describe: EarningsSection 服务端渲染测试
 describe('EarningsSection (server render)', () => {
   it('shows empty hint when no earnings', () => {
     const html = renderToString(<EarningsSection form={baseForm()} onChange={() => {}} />)
@@ -57,6 +66,7 @@ describe('EarningsSection (server render)', () => {
   })
 })
 
+// describe: EarningsSection 交互行为测试
 describe('EarningsSection (interactive)', () => {
   let container: HTMLDivElement
   let root: Root

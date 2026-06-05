@@ -1,3 +1,10 @@
+/**
+ * @file AirdropDetailModal 组件测试
+ * @description 测试 AirdropDetailModal 组件：服务端渲染（标题、描述、链接、任务、收益、资格条件、标签和空状态）
+ *              以及交互行为（编辑/删除/关闭按钮回调）。
+ * @module tests/renderer/airdrops
+ */
+
 import { describe, it, expect, vi } from 'vitest'
 import { renderToString } from 'react-dom/server'
 import { createRoot, type Root } from 'react-dom/client'
@@ -5,10 +12,12 @@ import { act } from 'react'
 import AirdropDetailModal from '../../../src/renderer/src/components/airdrops/AirdropDetailModal'
 import type { AirdropProject } from '../../../src/shared/types'
 
+// 模拟 react-i18next，返回 key 作为翻译结果
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key })
 }))
 
+/** 构造一个示例空投项目用于详情弹窗渲染测试 */
 const sample = (overrides: Partial<AirdropProject> = {}): AirdropProject => ({
   id: 'a1',
   name: 'Hyperliquid',
@@ -34,7 +43,9 @@ const sample = (overrides: Partial<AirdropProject> = {}): AirdropProject => ({
   ...overrides
 })
 
+// describe: 服务端渲染测试 — 验证 AirdropDetailModal 的渲染输出
 describe('AirdropDetailModal (server render)', () => {
+  // 用例：渲染项目名称作为标题
   it('renders the project name as title', () => {
     const html = renderToString(
       <AirdropDetailModal project={sample()} open={true} onClose={() => {}} onEdit={() => {}} onDelete={() => {}} />
@@ -42,6 +53,7 @@ describe('AirdropDetailModal (server render)', () => {
     expect(html).toContain('Hyperliquid')
   })
 
+  // 用例：渲染项目描述
   it('renders the description', () => {
     const html = renderToString(
       <AirdropDetailModal project={sample()} open={true} onClose={() => {}} onEdit={() => {}} onDelete={() => {}} />
@@ -49,6 +61,7 @@ describe('AirdropDetailModal (server render)', () => {
     expect(html).toContain('Testnet points farming')
   })
 
+  // 用例：渲染网站为可点击的外部链接
   it('renders the website as a clickable external link', () => {
     const html = renderToString(
       <AirdropDetailModal project={sample()} open={true} onClose={() => {}} onEdit={() => {}} onDelete={() => {}} />
@@ -57,6 +70,7 @@ describe('AirdropDetailModal (server render)', () => {
     expect(html).toContain('target="_blank"')
   })
 
+  // 用例：渲染所有链接及其标签
   it('renders all links with labels', () => {
     const html = renderToString(
       <AirdropDetailModal project={sample()} open={true} onClose={() => {}} onEdit={() => {}} onDelete={() => {}} />
@@ -65,6 +79,7 @@ describe('AirdropDetailModal (server render)', () => {
     expect(html).toContain('https://docs.hyperliquid.xyz')
   })
 
+  // 用例：渲染任务标题和状态
   it('renders tasks with title and status', () => {
     const html = renderToString(
       <AirdropDetailModal project={sample()} open={true} onClose={() => {}} onEdit={() => {}} onDelete={() => {}} />
@@ -73,6 +88,7 @@ describe('AirdropDetailModal (server render)', () => {
     expect(html).toContain('Use Orbiter')
   })
 
+  // 用例：渲染收益的 token、数量和美元价值
   it('renders earnings with token, amount, and valueUsd', () => {
     const html = renderToString(
       <AirdropDetailModal project={sample()} open={true} onClose={() => {}} onEdit={() => {}} onDelete={() => {}} />
@@ -82,6 +98,7 @@ describe('AirdropDetailModal (server render)', () => {
     expect(html).toContain('200')
   })
 
+  // 用例：渲染资格条件列表
   it('renders eligibility criteria as a list', () => {
     const html = renderToString(
       <AirdropDetailModal project={sample()} open={true} onClose={() => {}} onEdit={() => {}} onDelete={() => {}} />
@@ -89,6 +106,7 @@ describe('AirdropDetailModal (server render)', () => {
     expect(html).toContain('Bridge at least 0.1 ETH')
   })
 
+  // 用例：渲染标签和标记
   it('renders tags and labels', () => {
     const html = renderToString(
       <AirdropDetailModal project={sample()} open={true} onClose={() => {}} onEdit={() => {}} onDelete={() => {}} />
@@ -98,6 +116,7 @@ describe('AirdropDetailModal (server render)', () => {
     expect(html).toContain('priority')
   })
 
+  // 用例：弹窗关闭时（open=false）不渲染任何内容
   it('renders nothing when closed (open=false)', () => {
     const html = renderToString(
       <AirdropDetailModal project={sample()} open={false} onClose={() => {}} onEdit={() => {}} onDelete={() => {}} />
@@ -105,6 +124,7 @@ describe('AirdropDetailModal (server render)', () => {
     expect(html).not.toContain('Hyperliquid')
   })
 
+  // 用例：空集合时显示空状态提示信息
   it('shows empty-state messages for empty collections', () => {
     const html = renderToString(
       <AirdropDetailModal
@@ -121,20 +141,24 @@ describe('AirdropDetailModal (server render)', () => {
   })
 })
 
+// describe: 交互测试 — 验证 AirdropDetailModal 的事件回调
 describe('AirdropDetailModal (interactive)', () => {
   let container: HTMLDivElement
   let root: Root
 
+  // 每次测试后卸载根节点并移除容器
   afterEach(() => {
     act(() => root.unmount())
     container.remove()
   })
 
+  // 每次测试前创建 DOM 容器
   beforeEach(() => {
     container = document.createElement('div')
     document.body.appendChild(container)
   })
 
+  // 用例：点击"编辑"按钮触发 onEdit 并传递项目 id
   it('clicking "Edit" button fires onEdit with project id', () => {
     const onEdit = vi.fn()
     act(() => {
@@ -151,6 +175,7 @@ describe('AirdropDetailModal (interactive)', () => {
     expect(onEdit).toHaveBeenCalledWith('a1')
   })
 
+  // 用例：点击"删除"按钮触发 onDelete 并传递项目 id
   it('clicking "Delete" button fires onDelete with project id', () => {
     const onDelete = vi.fn()
     act(() => {
@@ -166,6 +191,7 @@ describe('AirdropDetailModal (interactive)', () => {
     expect(onDelete).toHaveBeenCalledWith('a1')
   })
 
+  // 用例：点击"关闭"按钮触发 onClose
   it('clicking "Close" button fires onClose', () => {
     const onClose = vi.fn()
     act(() => {

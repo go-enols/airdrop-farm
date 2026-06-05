@@ -1,23 +1,36 @@
+/**
+ * @file 数据存储服务测试
+ * @description 验证 StoreService 的各项 CRUD 操作，
+ *              涵盖钱包、账户、代理、任务、设置、统计、空投项目等
+ *              所有数据实体的增删改查和搜索分页功能。
+ * @module tests/main/services
+ */
+
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { StoreService } from '../../../src/main/services/store'
 import { tmpdir } from 'os'
 import { join } from 'path'
 import { randomUUID } from 'crypto'
 
+/** 全局 StoreService 实例 */
 let store: StoreService
 
+/** 创建临时数据库文件路径 */
 function createTempDbPath(): string {
   return join(tmpdir(), `test-store-${randomUUID()}.db`)
 }
 
+/** 每个测试前创建新的临时数据库实例 */
 beforeEach(() => {
   store = new StoreService(createTempDbPath())
 })
 
+/** 每个测试后关闭数据库 */
 afterEach(() => {
   store.close()
 })
 
+// describe: 钱包 CRUD 操作测试
 describe('Wallet CRUD', () => {
   it('createWallet returns object with id, createdAt and correct fields', () => {
     const wallet = store.walletRepo.createWallet({
@@ -211,6 +224,7 @@ describe('Wallet CRUD', () => {
   })
 })
 
+// describe: 账户 CRUD 操作测试
 describe('Account CRUD', () => {
   it('createAccount and getAccount work correctly', () => {
     const account = store.createAccount({
@@ -316,6 +330,7 @@ describe('Account CRUD', () => {
   })
 })
 
+// describe: 代理 CRUD 操作测试
 describe('Proxy CRUD', () => {
   it('createProxy and getProxy work correctly', () => {
     const proxy = store.proxyRepo.createProxy({
@@ -435,6 +450,7 @@ describe('Proxy CRUD', () => {
   })
 })
 
+// describe: 任务 CRUD 操作测试
 describe('Task CRUD', () => {
   it('createTask and getTask work correctly', () => {
     const task = store.taskRepo.createTask({
@@ -604,6 +620,7 @@ describe('Task CRUD', () => {
   })
 })
 
+// describe: 设置键值存储测试
 describe('Settings', () => {
   it('getSetting returns null when not set', () => {
     expect(store.getSetting('non-existent')).toBeNull()
@@ -639,6 +656,7 @@ describe('Settings', () => {
   })
 })
 
+// describe: 统计信息测试
 describe('Stats', () => {
   it('getStats returns zero stats on empty database', () => {
     const stats = store.getStats()
@@ -724,6 +742,7 @@ describe('Stats', () => {
   })
 })
 
+// describe: 应用日志测试
 describe('AppLog', () => {
   it('addAppLog and listAppLogs work correctly', () => {
     store.addAppLog('info', 'system', 'started')
@@ -785,6 +804,7 @@ describe('AppLog', () => {
   })
 })
 
+// describe: 空投项目 CRUD 操作测试
 describe('Airdrop CRUD', () => {
   it('createAirdrop and getAirdrop work correctly', () => {
     const airdrop = store.createAirdrop({

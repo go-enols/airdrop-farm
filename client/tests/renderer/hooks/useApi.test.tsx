@@ -1,3 +1,11 @@
+/**
+ * @file useApi Hook 测试
+ * @description 验证 useApi Hook 的 execute 函数引用稳定性，
+ *              防止因 apiFn 内联箭头函数导致的重渲染闪烁循环，
+ *              以及错误清除、Scheduler 闪烁回归等场景。
+ * @module tests/renderer/hooks
+ */
+
 import { describe, it, expect, vi } from 'vitest'
 import React, { useEffect, useState } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -5,18 +13,17 @@ import { act } from 'react'
 import { useApi } from '../../../src/renderer/src/hooks/useApi'
 
 /**
- * useApi must return a stable `execute` function reference across renders
- * when the caller passes a freshly-allocated `apiFn` (e.g. an inline arrow).
- * The previous implementation memoized `execute` with `[apiFn]` in its deps,
- * so `execute` was a new function every render. Callers that put `execute`
- * into a useEffect dep array (e.g. Scheduler.tsx) then re-fired the effect
- * every render, which set state, which re-rendered, which re-ran the
- * effect, etc. — a flicker loop.
+ * useApi 必须在每次渲染中返回稳定的 `execute` 函数引用，
+ * 即使调用方传入的是每次新分配的 `apiFn`（如内联箭头函数）。
  *
- * The fix mirrors the pattern used by useAsyncEffect and usePaginatedList:
- * capture `apiFn` in a ref that is updated on every render, and memoize
- * `execute` with an empty dep array so it is stable.
+ * 旧实现将 `execute` 以 `[apiFn]` 为依赖记忆化，导致每次渲染都创建新函数。
+ * 将 `execute` 放入 useEffect 依赖数组的调用方（如 Scheduler.tsx）
+ * 会因此触发无限重渲染循环（effect → setState → re-render → effect）。
+ *
+ * 修复方案：参照 useAsyncEffect 和 usePaginatedList 的模式，
+ * 将 `apiFn` 存入 ref（每次渲染更新），`execute` 以空数组记忆化。
  */
+// describe: useApi execute 稳定性测试（闪烁回归验证）
 describe('useApi — stable execute (flicker regression)', () => {
   let container: HTMLDivElement
   let root: Root
@@ -147,13 +154,13 @@ describe('useApi — stable execute (flicker regression)', () => {
 })
 
 /**
- * This test specifically guards against the Scheduler flicker. It mounts
- * the exact pattern that was broken: a useEffect that depends on
- * `execute`, with `execute` produced from an inline-arrow `useApi`. Before
- * the fix, this triggered an infinite re-render loop (effect → setState →
- * re-render → effect). After the fix, the effect runs exactly once per
- * identity change of `execute`, which is now zero.
+ * 该测试专门防御 Scheduler 闪烁问题。
+ * 它挂载了之前出问题的精确模式：useEffect 依赖 `execute`，
+ * 而 `execute` 来自内联箭头函数的 useApi。
+ * 修复前会触发无限重渲染循环（effect → setState → re-render → effect）。
+ * 修复后 effect 仅在 `execute` 引用变化时运行一次（现在为 0 次）。
  */
+// describe: useApi Scheduler 闪烁回归测试
 describe('useApi — Scheduler flicker regression test', () => {
   it('useEffect([execute]) does not refire when apiFn is a new arrow each render', () => {
     const fetchCount = vi.fn().mockResolvedValue([1, 2, 3])

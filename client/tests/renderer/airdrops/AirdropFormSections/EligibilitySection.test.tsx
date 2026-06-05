@@ -1,3 +1,10 @@
+/**
+ * @file EligibilitySection 资格条件区块测试
+ * @description 验证 EligibilitySection 组件的服务端渲染和交互行为，
+ *              包括资格条件列表渲染、添加条件、切换必填状态等功能。
+ * @module tests/renderer/airdrops/AirdropFormSections
+ */
+
 import { describe, it, expect, vi } from 'vitest'
 import { renderToString } from 'react-dom/server'
 import { createRoot, type Root } from 'react-dom/client'
@@ -5,6 +12,7 @@ import { act } from 'react'
 import EligibilitySection from '../../../../src/renderer/src/components/airdrops/AirdropFormSections/EligibilitySection'
 import type { AirdropFormData, AirdropEligibilityFormData } from '../../../../src/renderer/src/components/airdrops/airdrop-defaults'
 
+/** 模拟 react-i18next */
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (k: string) => k }) }))
 
 const baseForm = (overrides: Partial<AirdropFormData> = {}): AirdropFormData => ({
@@ -35,6 +43,7 @@ const sample: AirdropEligibilityFormData = {
   notes: 'tracked weekly'
 }
 
+// describe: EligibilitySection 服务端渲染测试
 describe('EligibilitySection (server render)', () => {
   it('shows empty hint when no criteria', () => {
     const html = renderToString(<EligibilitySection form={baseForm()} onChange={() => {}} />)
@@ -57,6 +66,7 @@ describe('EligibilitySection (server render)', () => {
   })
 })
 
+// describe: EligibilitySection 交互行为测试
 describe('EligibilitySection (interactive)', () => {
   let container: HTMLDivElement
   let root: Root

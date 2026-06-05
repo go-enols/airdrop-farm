@@ -1,3 +1,11 @@
+/**
+ * @file 空投映射函数测试
+ * @description 验证 airdrop-mappers 工具函数的正确性，
+ *              包括状态/类型的颜色映射、标签键值、摘要统计、
+ *              收益汇总等功能。
+ * @module tests/renderer/airdrops
+ */
+
 import { describe, it, expect } from 'vitest'
 import {
   statusColorMap,

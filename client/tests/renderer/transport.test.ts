@@ -1,6 +1,13 @@
-// @vitest-environment jsdom
+// @vitest-environment jsdom/**
+ * @file 双传输层测试
+ * @description 验证渲染进程传输层的 IPC 优先 / HTTP 降级策略，
+ *              包括自动切换、强制模式、健康检查、传输状态管理等场景。
+ * @module tests/renderer
+ */
+
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
+// describe: 双传输层通信测试
 describe('transport', () => {
   let call: (typeof import('../../src/renderer/src/transport'))['call']
   let checkHTTPHealth: (typeof import('../../src/renderer/src/transport'))['checkHTTPHealth']
@@ -8,6 +15,7 @@ describe('transport', () => {
   let setActiveTransport: (typeof import('../../src/renderer/src/transport'))['setActiveTransport']
   let getActiveTransport: (typeof import('../../src/renderer/src/transport'))['getActiveTransport']
 
+  // 每个测试前重置模块、清理 localStorage，重新导入 transport 模块
   beforeEach(async () => {
     vi.resetModules()
     localStorage.clear()
@@ -20,8 +28,10 @@ describe('transport', () => {
     getActiveTransport = mod.getActiveTransport
   })
 
+  // describe: IPC 调用成功场景
   describe('callIPC success', () => {
     it('returns data and sets activeTransport to ipc', async () => {
+      // 用例：IPC 调用成功时返回数据并将传输层设为 ipc
       ;(window as unknown as { electronAPI?: ElectronAPI }).electronAPI = {
         invoke: vi.fn().mockResolvedValue({ data: 'test' })
       }
@@ -31,8 +41,10 @@ describe('transport', () => {
     })
   })
 
+  // describe: IPC 失败 → HTTP 成功降级场景
   describe('callIPC fail → callHTTP success', () => {
     it('falls back to HTTP and sets activeTransport to http', async () => {
+      // 用例：IPC 不可用时自动降级到 HTTP 并将传输层设为 http
       ;(window as unknown as { electronAPI?: ElectronAPI }).electronAPI = undefined
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
@@ -46,8 +58,10 @@ describe('transport', () => {
     })
   })
 
+  // describe: 强制 HTTP 模式场景
   describe('forced HTTP mode', () => {
     it('uses HTTP when localStorage has transport=http', async () => {
+      // 用例：localStorage 设置 transport=http 时强制使用 HTTP
       localStorage.setItem('app-transport', 'http')
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
@@ -67,8 +81,10 @@ describe('transport', () => {
     })
   })
 
+  // describe: 强制 IPC 模式场景
   describe('forced IPC mode', () => {
     it('uses IPC when localStorage has transport=ipc', async () => {
+      // 用例：localStorage 设置 transport=ipc 时强制使用 IPC
       localStorage.setItem('app-transport', 'ipc')
       ;(window as unknown as { electronAPI?: ElectronAPI }).electronAPI = {
         invoke: vi.fn().mockResolvedValue({ data: 'ipc-data' })
@@ -79,8 +95,10 @@ describe('transport', () => {
     })
   })
 
+  // describe: 双通道均失败场景
   describe('both channels fail', () => {
     it('throws the IPC error', async () => {
+      // 用例：IPC 和 HTTP 都失败时抛出 IPC 错误
       ;(window as unknown as { electronAPI?: ElectronAPI }).electronAPI = {
         invoke: vi.fn().mockRejectedValue(new Error('IPC error'))
       }
@@ -95,8 +113,10 @@ describe('transport', () => {
     })
   })
 
+  // describe: HTTP 健康检查函数
   describe('checkHTTPHealth', () => {
     it('returns true when /api/health responds ok', async () => {
+      // 用例：/api/health 返回 ok 时 checkHTTPHealth 返回 true
       const mockFetch = vi.fn().mockResolvedValue({ ok: true })
       vi.stubGlobal('fetch', mockFetch)
       expect(await checkHTTPHealth()).toBe(true)
@@ -104,6 +124,7 @@ describe('transport', () => {
     })
 
     it('returns false when /api/health responds not ok', async () => {
+      // 用例：/api/health 返回非 ok 时 checkHTTPHealth 返回 false
       const mockFetch = vi.fn().mockResolvedValue({ ok: false })
       vi.stubGlobal('fetch', mockFetch)
       expect(await checkHTTPHealth()).toBe(false)
@@ -111,6 +132,7 @@ describe('transport', () => {
     })
 
     it('returns false when fetch throws', async () => {
+      // 用例：fetch 抛出异常时 checkHTTPHealth 返回 false
       const mockFetch = vi.fn().mockRejectedValue(new Error('network error'))
       vi.stubGlobal('fetch', mockFetch)
       expect(await checkHTTPHealth()).toBe(false)
@@ -118,20 +140,25 @@ describe('transport', () => {
     })
   })
 
+  // describe: IPC 健康检查函数
   describe('checkIPCHealth', () => {
     it('returns true when electronAPI is available', () => {
+      // 用例：electronAPI 可用时 checkIPCHealth 返回 true
       ;(window as unknown as { electronAPI?: ElectronAPI }).electronAPI = { invoke: vi.fn() }
       expect(checkIPCHealth()).toBe(true)
     })
 
     it('returns false when electronAPI is not available', () => {
+      // 用例：electronAPI 不可用时 checkIPCHealth 返回 false
       ;(window as unknown as { electronAPI?: ElectronAPI }).electronAPI = undefined
       expect(checkIPCHealth()).toBe(false)
     })
   })
 
+  // describe: 传输层状态管理函数
   describe('setActiveTransport / getActiveTransport', () => {
     it('sets and gets active transport', () => {
+      // 用例：setActiveTransport 设置后 getActiveTransport 返回对应值
       setActiveTransport('http')
       expect(getActiveTransport()).toBe('http')
       setActiveTransport('ipc')
@@ -139,6 +166,7 @@ describe('transport', () => {
     })
 
     it('persists to localStorage', () => {
+      // 用例：setActiveTransport 将状态持久化到 localStorage
       setActiveTransport('http')
       expect(localStorage.getItem('app-transport')).toBe('http')
     })

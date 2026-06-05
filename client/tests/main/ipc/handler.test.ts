@@ -1,3 +1,10 @@
+/**
+ * @file IPC Handler 集成测试
+ * @description 验证 IPC handler 注册表（handlerMap）和 executeHandler 函数，
+ *              确保钱包、任务、设置等各业务模块的 IPC 通道正确注册并能正常响应。
+ * @module tests/main/ipc
+ */
+
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { executeHandler, handlerMap, registerIpcHandlers } from '../../../src/main/ipc'
 import { StoreService } from '../../../src/main/services/store'
@@ -7,17 +14,20 @@ import { tmpdir } from 'os'
 import { join } from 'path'
 import { mkdtempSync, rmSync } from 'fs'
 
+/** 模拟 Electron 模块，避免真实环境依赖 */
 vi.mock('electron', () => ({
   ipcMain: { handle: vi.fn() },
   app: { getVersion: () => '0.0.1', getPath: () => '/tmp' }
 }))
 
+// describe: IPC Handler 集成测试
 describe('IPC Handler Integration', () => {
   let store: StoreService
   let walletService: WalletService
   let taskService: TaskService
   let tmpDir: string
 
+  // 每个测试前重置 handlerMap 并重新注册所有 handler
   beforeEach(() => {
     handlerMap.clear()
     tmpDir = mkdtempSync(join(tmpdir(), 'ipc-test-'))
@@ -36,16 +46,19 @@ describe('IPC Handler Integration', () => {
     })
   })
 
+  // 每个测试后关闭数据库并清理临时目录
   afterEach(() => {
     store.close()
     rmSync(tmpDir, { recursive: true, force: true })
   })
 
   it('handlerMap has registered handlers after registerIpcHandlers', () => {
+    // 用例：registerIpcHandlers 后 handlerMap 中存在已注册的处理器
     expect(handlerMap.size).toBeGreaterThan(0)
   })
 
   it('wallet:list returns empty list', async () => {
+    // 用例：wallet:list 返回空列表
     const result = await executeHandler('wallet:list', [])
     expect(result.data).toEqual({
       items: [],
@@ -57,6 +70,7 @@ describe('IPC Handler Integration', () => {
   })
 
   it('wallet:create + wallet:get creates and retrieves a wallet', async () => {
+    // 用例：wallet:create 创建钱包后 wallet:get 能正确获取
     const createResult = await executeHandler('wallet:create', [
       {
         address: '0x1234567890abcdef',
@@ -76,6 +90,7 @@ describe('IPC Handler Integration', () => {
   })
 
   it('wallet:delete removes the wallet', async () => {
+    // 用例：wallet:delete 删除已创建的钱包
     const createResult = await executeHandler('wallet:create', [
       {
         address: '0xabc',
@@ -94,6 +109,7 @@ describe('IPC Handler Integration', () => {
   })
 
   it('app:getInfo returns version and dbConnected', async () => {
+    // 用例：app:getInfo 返回版本号和数据库连接状态
     const result = await executeHandler('app:getInfo', [])
     expect(result.error).toBeUndefined()
     const info = result.data as { version: string; dbConnected: boolean }
@@ -102,12 +118,14 @@ describe('IPC Handler Integration', () => {
   })
 
   it('setting:set + setting:get sets and retrieves a value', async () => {
+    // 用例：setting:set 设置后 setting:get 能正确获取
     await executeHandler('setting:set', ['testKey', 'testValue'])
     const result = await executeHandler('setting:get', ['testKey'])
     expect(result.data).toBe('testValue')
   })
 
   it('executeHandler returns error for unknown channel', async () => {
+    // 用例：未知 channel 返回错误信息
     const result = await executeHandler('unknown:channel', [])
     expect(result.error).toEqual({
       message: 'Unknown channel: unknown:channel',
@@ -116,6 +134,7 @@ describe('IPC Handler Integration', () => {
   })
 
   it('executeHandler returns error when handler throws', async () => {
+    // 用例：handler 内部抛出异常时返回错误信息
     const result = await executeHandler('task:start', ['nonexistent-id'])
     expect(result.error).toBeDefined()
     expect(result.error?.code).toBe('UNKNOWN')
