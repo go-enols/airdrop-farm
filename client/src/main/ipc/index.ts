@@ -1,3 +1,10 @@
+/**
+ * @file IPC 处理器注册表与 API 执行引擎
+ * @description 统一注册所有 IPC channel 到 handlerMap，同时支持 IPC 和 HTTP 两种传输层调用。
+ *              registerIpcHandlers() 将所有业务 handler 注册到 IPC（ipcMain.handle）和
+ *              handlerMap（供 HTTP API 服务器使用），实现单一入口、双传输层的架构。
+ * @module main/ipc
+ */
 import { ipcMain, IpcMainInvokeEvent, app, dialog, BrowserWindow, shell } from 'electron'
 import { autoUpdater } from 'electron-updater'
 import { StoreService } from '../services/store'
@@ -17,31 +24,61 @@ import { createLogger } from '../utils/logger'
 
 const logger = createLogger('ipc')
 
+/** 所有需要注入到 IPC 处理器的服务与仓库实例集合 */
 interface Services {
+  /** 数据库存储服务 */
   store: StoreService
+  /** 钱包管理服务（密钥生成、派生） */
   walletService: WalletService
+  /** 任务执行引擎（子进程管理） */
   taskService: TaskService
+  /** 远程脚本下载器 */
   scriptFetcher: ScriptFetcher
+  /** 钱包数据仓库 */
   walletRepo: WalletRepository
+  /** 代理数据仓库 */
   proxyRepo: ProxyRepository
+  /** 任务数据仓库 */
   taskRepo: TaskRepository
 }
 
+/** API 错误信息结构 */
 export interface ApiError {
+  /** 错误描述 */
   message: string
+  /** 错误编码（如 NOT_FOUND / VALIDATION_ERROR） */
   code?: string
+  /** 错误分类（如 GENERAL / BUSINESS / SYSTEM） */
   category?: string
 }
 
+/**
+ * API 调用结果包装
+ * 无论 IPC 还是 HTTP 传输层，统一返回此结构。
+ * 正常时 data 存在，异常时 error 存在。
+ */
 export interface ApiResult<T = unknown> {
+  /** 成功响应数据 */
   data?: T
+  /** 错误信息（存在时表示调用失败） */
   error?: ApiError
 }
 
+/** API 处理器函数签名：接收任意参数数组，返回任意值或 Promise */
 export type ApiHandler = (...args: unknown[]) => unknown | Promise<unknown>
 
+/**
+ * 全局处理器映射表
+ * 存储所有已注册的 channel → handler 映射，供 IPC 和 HTTP 共享调用。
+ * HTTP API 服务器通过 executeHandler() 使用此映射表。
+ */
 export const handlerMap = new Map<string, ApiHandler>()
 
+/**
+ * 统一错误处理：将未知类型的异常转换为 ApiResult 错误结构
+ * @param err - 捕获到的任意异常
+ * @returns 包含错误信息的 ApiResult 对象
+ */
 function handleError(err: unknown): ApiResult {
   const message = err instanceof Error ? err.message : String(err)
   logger.error('handler error', { message })
@@ -60,6 +97,16 @@ function handleError(err: unknown): ApiResult {
   }
 }
 
+/**
+ * 执行指定 channel 的处理器
+ *
+ * 这是 IPC 和 HTTP 双传输层的统一执行入口。
+ * 从 handlerMap 查找 channel 对应的 handler 并执行。
+ *
+ * @param channel - 要调用的 channel 名称（如 'wallet:list'）
+ * @param args - 传递给 handler 的参数数组
+ * @returns 调用结果，成功包含 data，失败包含 error
+ */
 export async function executeHandler(channel: string, args: unknown[]): Promise<ApiResult> {
   const handler = handlerMap.get(channel)
   if (!handler) {
@@ -73,6 +120,15 @@ export async function executeHandler(channel: string, args: unknown[]): Promise<
   }
 }
 
+/**
+ * 注册 IPC channel
+ *
+ * 同时注册到 handlerMap（供 HTTP API 共享）和 ipcMain.handle（IPC 通信），
+ * 实现单一注册、双传输层可用。
+ *
+ * @param channel - channel 名称
+ * @param handler - 对应的处理器函数
+ */
 function register(channel: string, handler: ApiHandler): void {
   handlerMap.set(channel, handler)
   ipcMain.handle(
@@ -83,14 +139,25 @@ function register(channel: string, handler: ApiHandler): void {
   )
 }
 
+/**
+ * 注册所有 IPC 处理器
+ *
+ * 将业务层所有暴露的功能注册为 IPC channel，覆盖数据 CRUD、任务管理、
+ * 窗口控制、文件系统操作、市场认证等全部功能域。
+ * 每个 handler 通过 register() 同时注册到 IPC 和 HTTP 双传输层。
+ *
+ * @param services - 所有需要注入的服务与仓库实例
+ */
 export function registerIpcHandlers(services: Services): void {
   const { store, walletService, taskService, scriptFetcher, walletRepo, proxyRepo, taskRepo } =
     services
 
+  // ==================== 应用信息 ====================
   register('app:getInfo', () => store.getAppInfo(app.getVersion(), app.getPath('userData')))
   register('app:getStats', () => store.getStats())
   register('app:getTempDir', () => app.getPath('temp'))
 
+  // ==================== 钱包管理 ====================
   register('wallet:list', (_page?, _pageSize?, _search?) =>
     walletRepo.listWallets(
       _page as number | undefined,
@@ -115,6 +182,7 @@ export function registerIpcHandlers(services: Services): void {
     walletService.deriveFromMnemonic(mnemonic as string, count as number, walletTypes as string[])
   )
 
+  // ==================== 账户管理 ====================
   register('account:list', (_page?, _pageSize?, _search?) =>
     store.listAccounts(
       _page as number | undefined,
@@ -135,6 +203,7 @@ export function registerIpcHandlers(services: Services): void {
     store.batchCreateAccounts(items as Parameters<typeof store.batchCreateAccounts>[0])
   )
 
+  // ==================== 代理管理 ====================
   register('proxy:list', (_page?, _pageSize?, _search?) =>
     proxyRepo.listProxies(
       _page as number | undefined,
@@ -152,6 +221,7 @@ export function registerIpcHandlers(services: Services): void {
   register('proxy:delete', (id) => proxyRepo.deleteProxy(id as string))
   register('proxy:batchDelete', (ids) => proxyRepo.batchDeleteProxies(ids as string[]))
 
+  // ==================== 任务管理 ====================
   register('task:list', (_page?, _pageSize?, _search?) =>
     taskRepo.listTasks(
       _page as number | undefined,
@@ -187,12 +257,14 @@ export function registerIpcHandlers(services: Services): void {
   register('task:getProgress', (taskId) => taskService.getTaskProgress(taskId as string))
   register('task:getOutput', (taskId) => taskService.getTaskOutput(taskId as string))
 
+  // ==================== 脚本管理（远程 & 本地安装） ====================
   register('script:listRemote', () => scriptFetcher.fetchScriptList())
   register('script:download', (scriptId) => scriptFetcher.downloadScript(scriptId as string))
   register('script:checkUpdate', () => scriptFetcher.checkUpdates())
   register('script:listInstalled', () => scriptFetcher.getInstalledScripts())
   register('script:remove', (scriptId) => scriptFetcher.removeScript(scriptId as string))
 
+  // ==================== 账户模板 ====================
   register('template:list', (_page?, _pageSize?, _search?) =>
     store.listTemplates(
       _page as number | undefined,
@@ -210,6 +282,7 @@ export function registerIpcHandlers(services: Services): void {
   register('template:delete', (id) => store.deleteTemplate(id as string))
   register('template:checkAccounts', (id) => store.countAccountsByTemplate(id as string))
 
+  // ==================== 定时任务调度 ====================
   register('scheduler:list', (_page?, _pageSize?, _search?) =>
     store.listScheduledTasks(
       _page as number | undefined,
@@ -226,6 +299,7 @@ export function registerIpcHandlers(services: Services): void {
   )
   register('scheduler:delete', (id) => store.deleteScheduledTask(id as string))
 
+  // ==================== 任务脚本模板（已安装的脚本元数据） ====================
   register('taskTemplate:list', (_page?, _pageSize?, _search?) =>
     store.listTaskTemplates(
       _page as number | undefined,
@@ -242,6 +316,7 @@ export function registerIpcHandlers(services: Services): void {
   )
   register('taskTemplate:delete', (id) => store.deleteTaskTemplate(id as string))
 
+  // ==================== 验证码密钥管理 ====================
   register('captchaKey:list', (_page?, _pageSize?, _search?) =>
     store.listCaptchaKeys(
       _page as number | undefined,
@@ -258,6 +333,7 @@ export function registerIpcHandlers(services: Services): void {
   )
   register('captchaKey:delete', (id) => store.deleteCaptchaKey(id as string))
 
+  // ==================== 代理提供商管理 ====================
   register('proxyProvider:list', (_page?, _pageSize?, _search?) =>
     store.listProxyProviders(
       _page as number | undefined,
@@ -274,6 +350,7 @@ export function registerIpcHandlers(services: Services): void {
   )
   register('proxyProvider:delete', (id) => store.deleteProxyProvider(id as string))
 
+  // ==================== 空投项目管理 ====================
   register('airdrop:list', (_page?, _pageSize?, _search?) =>
     store.listAirdrops(
       _page as number | undefined,
@@ -291,11 +368,13 @@ export function registerIpcHandlers(services: Services): void {
   register('airdrop:delete', (id) => store.deleteAirdrop(id as string))
   register('airdrop:analytics', () => store.getAirdropAnalytics())
 
+  // ==================== 应用设置 ====================
   register('setting:get', (key) => store.getSetting(key as string))
   register('setting:set', (key, value) => store.setSetting(key as string, value as string))
   register('setting:getAll', () => store.getAllSettings())
   register('setting:delete', (key) => store.deleteSetting(key as string))
 
+  // ==================== 日志查询 ====================
   register('log:query', (level?, category?, search?, since?, until?, limit?) =>
     store.queryLogs(
       level as string | undefined,
@@ -311,7 +390,7 @@ export function registerIpcHandlers(services: Services): void {
   register('log:getLevel', () => store.getLogLevel())
   register('log:deleteLogs', () => store.deleteAllLogs())
 
-  // Auto-updater handlers
+  // ==================== 自动更新 ====================
   register('update:check', () => {
     autoUpdater.checkForUpdates()
     return null
@@ -325,6 +404,7 @@ export function registerIpcHandlers(services: Services): void {
     return null
   })
 
+  // ==================== 系统对话框（打开／保存文件、选择目录） ====================
   register('dialog:openFile', async (...args: unknown[]) => {
     const _filters = args[0] as { name: string; extensions: string[] }[] | undefined
     const win = BrowserWindow.getFocusedWindow()
@@ -367,7 +447,6 @@ export function registerIpcHandlers(services: Services): void {
     return { canceled: false, folderPath: result.filePaths[0] }
   })
 
-  // File System Handlers
   register('fs:readFile', async (...args: unknown[]) => {
     const _path = args[0] as string
     try {
@@ -399,7 +478,7 @@ export function registerIpcHandlers(services: Services): void {
     }
   })
 
-  // ZIP Handlers
+  // ==================== ZIP 压缩 ====================
   register('zip:create', async (...args: unknown[]) => {
     const zipPath = args[0] as string
     const sourceDir = args[1] as string
@@ -491,7 +570,7 @@ export function registerIpcHandlers(services: Services): void {
     }
   })
 
-  // Server Upload
+  // ==================== 服务端文件上传（multipart/form-data） ====================
   register('server:upload', async (...args: unknown[]) => {
     const url = args[0] as string
     const zipPath = args[1] as string
@@ -533,6 +612,7 @@ export function registerIpcHandlers(services: Services): void {
     }
   })
 
+  // ==================== 窗口控制 ====================
   register('window:minimize', () => {
     BrowserWindow.getFocusedWindow()?.minimize()
     return null
@@ -551,7 +631,8 @@ export function registerIpcHandlers(services: Services): void {
   register('window:isMaximized', () => BrowserWindow.getFocusedWindow()?.isMaximized() ?? false)
   register('window:platform', () => process.platform)
 
-  // Shell: open a local path in OS file manager (Explorer/Finder/xdg-open)
+  // ==================== 系统 Shell 操作 ====================
+  /** 在系统文件管理器中打开指定路径（Explorer / Finder / xdg-open） */
   register('shell:openPath', async (...args: unknown[]) => {
     const p = args[0]
     if (typeof p !== 'string' || !p) {
@@ -566,7 +647,7 @@ export function registerIpcHandlers(services: Services): void {
     }
   })
 
-  // Marketplace user system
+  // ==================== 市场认证系统 ====================
   register('market:login', async (username, password) => {
     const serverUrl = store.getSetting('marketplace_server_url') || 'http://localhost:3400'
     const apiKey = store.getSetting('marketplace_api_key')

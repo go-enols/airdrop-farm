@@ -1,3 +1,7 @@
+/**
+ * @file Electron 主进程入�? * @description 负责窗口管理、服务初始化、自动更新、生命周期管理�? *              启动时依次初始化数据库、服务层、IPC 通信、HTTP API 服务器，
+ *              并在退出时有序清理所有资源�? * @module main
+ */
 import { app, shell, BrowserWindow, dialog } from 'electron'
 import { join } from 'path'
 import { randomBytes } from 'crypto'
@@ -12,68 +16,30 @@ import { TaskService } from './services/task'
 import { ScriptFetcher } from './services/script-fetcher'
 import { SchedulerService } from './services/scheduler'
 import { HttpApiServer } from './httpapi/server'
-import { Logger, createLogger } from './utils/logger'
+import { Logger } from './utils/logger'
 
+/** 数据库服务实�?*/
 let store: StoreService
+/** HTTP API 服务器实�?*/
 let httpServer: HttpApiServer
+/** 任务执行引擎实例 */
 let taskService: TaskService
+/** 远程脚本下载器实�?*/
 let scriptFetcher: ScriptFetcher
+/** 定时任务调度器实�?*/
 let schedulerService: SchedulerService
 
-// Auto-updater configuration
+/** 自动更新：检查到更新后自动下载、退出时自动安装 */
 autoUpdater.autoDownload = true
 autoUpdater.autoInstallOnAppQuit = true
 
-function sendUpdateStatusToWindows(status: string, data?: unknown): void {
-  for (const win of BrowserWindow.getAllWindows()) {
-    win.webContents.send('update:status', { status, data })
-  }
-}
-
-autoUpdater.on('checking-for-update', () => {
-  sendUpdateStatusToWindows('checking')
-})
-
-autoUpdater.on('update-available', (info) => {
-  sendUpdateStatusToWindows('available', info)
-})
-
-autoUpdater.on('update-not-available', () => {
-  sendUpdateStatusToWindows('not-available')
-})
-
-autoUpdater.on('error', (err) => {
-  sendUpdateStatusToWindows('error', err.message)
-})
-
-autoUpdater.on('download-progress', (progress) => {
-  sendUpdateStatusToWindows('downloading', {
-    percent: progress.percent,
-    transferred: progress.transferred,
-    total: progress.total,
-    bytesPerSecond: progress.bytesPerSecond
-  })
-})
-
-autoUpdater.on('update-downloaded', () => {
-  sendUpdateStatusToWindows('downloaded')
-})
-
-process.on('uncaughtException', (error) => {
-  createLogger('main').error('Uncaught exception', { error: error.message, stack: error.stack })
-})
-
-process.on('unhandledRejection', (reason) => {
-  createLogger('main').error('Unhandled rejection', { reason: String(reason) })
-})
-
-app.commandLine.appendSwitch('disable-gpu-sandbox')
-app.commandLine.appendSwitch('disable-software-rasterizer')
-app.commandLine.appendSwitch(
-  'disable-features',
-  'VaapiVideoDecoder,VaapiVideoEncoder,VaapiVideoDecodeLinuxGL'
-)
-
+/**
+ * 创建并显示主窗口
+ *
+ * 根据当前平台（macOS / Windows / Linux）配置窗口样式（macOS 使用隐藏标题�?+ 交通灯），
+ * 注入 HTTP API 端口和令牌到渲染进程，以支持 IPC �?HTTP 双传输层降级�? *
+ * @param httpPort - HTTP API 服务端口，注入渲染进程用于传输层降级
+ * @param httpApiToken - HTTP API 认证令牌，用于渲染进程安全调�? */
 function createWindow(httpPort: number, httpApiToken: string): void {
   const isDarwin = process.platform === 'darwin'
   const mainWindow = new BrowserWindow({
@@ -94,16 +60,21 @@ function createWindow(httpPort: number, httpApiToken: string): void {
     }
   })
 
+  /** 拦截外部链接打开请求，使用系统默认浏览器打开 */
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
   })
 
+  /**
+   * 向所有窗口广播最大化状态变�?   * @param maximized - 是否已最大化
+   */
   const broadcastMaximizedChanged = (maximized: boolean): void => {
     for (const win of BrowserWindow.getAllWindows()) {
       win.webContents.send('window:maximizedChanged', maximized)
     }
   }
+  // 监听窗口最大化/还原事件
   mainWindow.on('maximize', () => broadcastMaximizedChanged(true))
   mainWindow.on('unmaximize', () => broadcastMaximizedChanged(false))
 
@@ -114,27 +85,41 @@ function createWindow(httpPort: number, httpApiToken: string): void {
   }
 }
 
+/**
+ * 应用就绪后的初始化流�? *
+ * 步骤依次为：
+ * 1. 创建加密服务与数据库实例
+ * 2. 初始化钱包服务、任务引擎、脚本下载器、定时调度器
+ * 3. 清理上次残留的孤儿任�? * 4. 注册所�?IPC 通信处理�? * 5. 启动 HTTP API 服务器（端口 34116，随机令牌认证）
+ * 6. 创建主窗口并注入 HTTP 连接信息
+ * 7. 延迟 3 秒后检查自动更�? * 8. macOS 下处�?activate 事件（无窗口时重建）
+ */
 app.whenReady().then(async () => {
   electronApp.setAppUserModelId('com.airdrop-farm')
 
+  // 数据库路径：%APPDATA%/airdrop-farm/airdrop-farm.db
   const dataDir = app.getPath('userData')
   const dbPath = join(dataDir, 'airdrop-farm.db')
 
   const encryption = new EncryptionService()
   store = new StoreService(dbPath, encryption)
+  // 初始化各业务服务
   const walletService = new WalletService(store)
   taskService = new TaskService(store, {
+    /** 向所有渲染进程窗口发送任务相关事�?*/
     rendererSender: (channel, data) => {
       for (const win of BrowserWindow.getAllWindows()) {
         win.webContents.send(channel, data)
       }
     }
   })
-  taskService.cleanOrphanTasks()
+  // 清理上次异常退出遗留的孤儿任务（worker 进程已死但状态未更新�?  taskService.cleanOrphanTasks()
   scriptFetcher = new ScriptFetcher(store)
   schedulerService = new SchedulerService(store, taskService)
+  // 启动定时任务调度器，检查并执行到期�?cron 任务
   schedulerService.start()
 
+  // 注册所�?IPC 处理器（双向通信），连接渲染进程与主进程服务
   registerIpcHandlers({
     store,
     walletService,
@@ -145,11 +130,13 @@ app.whenReady().then(async () => {
     taskRepo: store.taskRepo
   })
 
+  // 启动 HTTP API 冗余服务器（渲染进程传输层降级备用）
   const httpApiToken = randomBytes(32).toString('hex')
   httpServer = new HttpApiServer(34116, httpApiToken)
   await httpServer.start()
   const httpPort = httpServer.getPort()
 
+  // 为每个新创建的窗口注入快捷键优化
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
@@ -169,6 +156,9 @@ app.whenReady().then(async () => {
   app.quit()
 })
 
+/**
+ * 窗口全部关闭时：�?macOS 平台直接退出，macOS 保留调度器但关闭窗口
+ */
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
@@ -177,8 +167,13 @@ app.on('window-all-closed', () => {
   }
 })
 
+/** 防止重复退�?*/
 let isQuitting = false
 
+/**
+ * 应用退出前的清理流�? *
+ * 按序执行：停止日志写�?�?停止调度�?�?清理任务引擎（终止子进程）→
+ * 关闭 HTTP 服务�?�?关闭数据�?�?退出应用�? * 使用延迟确保异步关闭操作完成�? */
 app.on('before-quit', (e) => {
   if (isQuitting) return
   isQuitting = true
@@ -186,7 +181,7 @@ app.on('before-quit', (e) => {
   e.preventDefault()
   schedulerService.stop()
   taskService.cleanup()
-  // Wait 500ms for task exit handlers to flush before closing store
+
   setTimeout(() => {
     httpServer
       .stop()
