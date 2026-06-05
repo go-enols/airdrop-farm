@@ -1,290 +1,647 @@
-import { useState, useEffect, useRef } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-  Play, Square, RefreshCw, Terminal, FolderOpen, X, Bug, User, Package
+  Play,
+  Square,
+  Pause,
+  RotateCcw,
+  Bug,
+  FolderOpen,
+  FileCode,
+  User as UserIcon,
+  Terminal,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  TrendingUp
 } from 'lucide-react'
-import { taskApi, fileApi, accountApi } from '../api'
-import type { TaskLog, Task, Account } from '../types'
+import { taskApi, fileApi, accountApi, dialogApi } from '../api'
+import type { TaskLog, TaskLogLevel, Task, Account, TaskOutput } from '../../../../src/shared/types'
+import LogViewer from '../components/common/LogViewer'
+import { DynamicForm } from '../components/common'
+import { jsonSchemaToFieldMeta, type FieldMeta } from '../../../shared/schemas/task-params'
 import { toast } from '../utils/toast'
 
-const parseManifest = (raw: string): Record<string, unknown> => {
-  const stripped = raw.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
-  return JSON.parse(stripped)
+const MANIFEST_FILENAME = 'manifest.json'
+const META_FILENAME = 'meta.json'
+
+const stripJsonComments = (raw: string): string =>
+  raw.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, '')
+
+const tryParseJson = (raw: string): Record<string, unknown> | null => {
+  try {
+    return JSON.parse(stripJsonComments(raw))
+  } catch {
+    return null
+  }
 }
 
-export default function DebugPage() {
+interface FolderInfo {
+  name: string
+  entry: string
+  hasManifest: boolean
+  requiredTemplates: string[]
+  permissions: string[]
+  schema: Record<string, unknown> | null
+}
+
+const emptyFolderInfo = (path: string): FolderInfo => ({
+  name: path.split(/[/\\]/).pop() || 'unknown',
+  entry: 'index.js',
+  hasManifest: false,
+  requiredTemplates: [],
+  permissions: [],
+  schema: null
+})
+
+const formatDuration = (ms: number): string => {
+  if (ms < 1000) return `${ms}ms`
+  const s = Math.floor(ms / 1000)
+  const ms2 = ms % 1000
+  return `${s}.${String(ms2).padStart(3, '0')}s`
+}
+
+const formatBytes = (n: number): string => {
+  if (n < 1024) return `${n}B`
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)}KB`
+  return `${(n / (1024 * 1024)).toFixed(2)}MB`
+}
+
+const DebugPage: React.FC = () => {
   const { t } = useTranslation()
+  // Core state
   const [folderPath, setFolderPath] = useState('')
-  const [folderInfo, setFolderInfo] = useState<{ name: string; entry: string; hasManifest: boolean; requiredTemplates?: string[] } | null>(null)
+  const [folderInfo, setFolderInfo] = useState<FolderInfo | null>(null)
+  const [matchedAccounts, setMatchedAccounts] = useState<Account[]>([])
+  const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
+  const [useSandbox, setUseSandbox] = useState(true)
+  const [configValues, setConfigValues] = useState<Record<string, unknown>>({})
+
+  // Task state
   const [taskId, setTaskId] = useState<string | null>(null)
   const [taskStatus, setTaskStatus] = useState<Task['status']>('idle')
   const [logs, setLogs] = useState<TaskLog[]>([])
-  const [running, setRunning] = useState(false)
-  const [useSandbox, setUseSandbox] = useState(true)
-  const [matchedAccounts, setMatchedAccounts] = useState<Account[]>([])
-  const logEndRef = useRef<HTMLDivElement | null>(null)
+  const [output, setOutput] = useState<TaskOutput | null>(null)
+  const [progress, setProgress] = useState<{ percent: number; message: string } | null>(null)
 
-  const handleSelectFolder = async () => {
-    const result = await fileApi.selectFolder()
-    if (result.canceled || !result.folderPath) return
-    const dir = result.folderPath
-
-    setFolderPath(dir)
-    setFolderInfo(null)
+  // Reset on new folder pick
+  const reset = useCallback((): void => {
     setMatchedAccounts([])
+    setSelectedAccountId(null)
     setTaskId(null)
     setTaskStatus('idle')
     setLogs([])
+    setOutput(null)
+    setProgress(null)
+    setConfigValues({})
+  }, [])
 
+  // Stable refs for the poller so the interval survives re-renders
+  // (refs are mirrored from state via useEffect — never assign ref.current during render)
+  const taskIdRef = useRef<string | null>(null)
+  const statusRef = useRef<Task['status']>('idle')
+  const folderPathRef = useRef<string>('')
+  useEffect(() => {
+    taskIdRef.current = taskId
+  }, [taskId])
+  useEffect(() => {
+    statusRef.current = taskStatus
+  }, [taskStatus])
+  useEffect(() => {
+    folderPathRef.current = folderPath
+  }, [folderPath])
+
+  // -------- Folder selection + manifest parse --------
+  const handleSelectFolder = useCallback(async () => {
+    const result = await fileApi.selectFolder()
+    if (result.canceled || !result.folderPath) return
+    const dir = result.folderPath
+    setFolderPath(dir)
+    setFolderInfo(emptyFolderInfo(dir))
+    reset()
+
+    // Try manifest.json first, then meta.json (legacy / installed scripts)
     let manifest: Record<string, unknown> | null = null
-
-    // 扫描文件夹：读取 manifest.json
-    try {
-      const manifestRes = await fileApi.readFile(`${dir}/manifest.json`)
-      if (manifestRes.success && manifestRes.content) {
-        try { manifest = parseManifest(manifestRes.content) } catch (err) { console.error('[Debug] manifest parse error:', err) }
-      }
-    } catch (err) {
-      console.error('[Debug] Failed to read manifest.json:', err)
-    }
-
-    // 也尝试 meta.json
-    if (!manifest) {
+    for (const filename of [MANIFEST_FILENAME, META_FILENAME]) {
       try {
-        const metaRes = await fileApi.readFile(`${dir}/meta.json`)
-        if (metaRes.success && metaRes.content) {
-          try { manifest = parseManifest(metaRes.content) } catch (err) { console.error('[Debug] meta parse error:', err) }
+        const res = await fileApi.readFile(`${dir}/${filename}`)
+        if (res.success && res.content) {
+          manifest = tryParseJson(res.content)
+          if (manifest) break
         }
       } catch (err) {
-        console.error('[Debug] Failed to read meta.json:', err)
+        console.error(`[Debug] Failed to read ${filename}:`, err)
       }
     }
 
-    const info: { name: string; entry: string; hasManifest: boolean; requiredTemplates?: string[] } = {
-      name: dir.split(/[/\\]/).pop() || 'unknown',
-      entry: 'index.js',
-      hasManifest: manifest !== null && 'schema' in (manifest || {})
-    }
-
+    const info = emptyFolderInfo(dir)
     if (manifest) {
       info.name = (manifest.name as string) || info.name
       info.entry = (manifest.entryPoint as string) || 'index.js'
+      info.hasManifest = 'schema' in manifest
       if (Array.isArray(manifest.requiredAccountTemplateIds)) {
         info.requiredTemplates = manifest.requiredAccountTemplateIds as string[]
       }
+      if (Array.isArray(manifest.permissions)) {
+        info.permissions = manifest.permissions as string[]
+      }
+      if (manifest.schema && typeof manifest.schema === 'object') {
+        info.schema = manifest.schema as Record<string, unknown>
+      }
     }
-
     setFolderInfo(info)
 
-    // 根据 requiredAccountTemplateIds 自动匹配账户
-    if (info.requiredTemplates && info.requiredTemplates.length > 0) {
+    // Auto-match accounts by requiredAccountTemplateIds
+    if (info.requiredTemplates.length > 0) {
       try {
         const res = await accountApi.list(1, 9999)
-        const allAccounts = res.items || []
-        const matched = allAccounts.filter((a) => info.requiredTemplates!.includes(a.templateId))
+        const all = res.items || []
+        const matched = all.filter((a) => info.requiredTemplates.includes(a.templateId))
         setMatchedAccounts(matched)
+        if (matched.length > 0) setSelectedAccountId(matched[0].id)
       } catch (err) {
         console.error('[Debug] Failed to load matched accounts:', err)
       }
     }
-  }
+  }, [reset])
 
+  // -------- IPC push subscriptions (status, logs) --------
   useEffect(() => {
-    const handleStatus = (data: { id: string; status: string }) => {
-      if (data.id === taskId) {
-        setTaskStatus(data.status as Task['status'])
-        if (data.status === 'complete' || data.status === 'error' || data.status === 'stopped') setRunning(false)
+    if (!window.electronAPI?.on) return
+    const unsubStatus = window.electronAPI.on('task:statusChanged', (data) => {
+      const d = data as { id: string; status: string }
+      if (d.id === taskIdRef.current) {
+        setTaskStatus(d.status as Task['status'])
+        if (['complete', 'error', 'stopped'].includes(d.status)) {
+          // Stop polling; fetch final output
+          taskApi.getOutput(d.id).then(setOutput).catch(() => undefined)
+        }
       }
-    }
-    const handleLog = (data: { taskId: string; logs: Array<{ level: string; message: string; timestamp: string }> }) => {
-      if (data.taskId === taskId) {
-        setLogs((prev) => {
-          const newLogs = data.logs.map((l, i) => ({ id: -(prev.length + i), taskId: data.taskId, timestamp: l.timestamp, level: l.level as TaskLog['level'], message: l.message }))
-          const combined = [...prev, ...newLogs]
-          return combined.length > 1000 ? combined.slice(-1000) : combined
-        })
-      }
-    }
-    const unsub1 = window.electronAPI?.on?.('task:statusChanged', (data) =>
-      handleStatus(data as { id: string; status: string })
-    )
-    const unsub2 = window.electronAPI?.on?.('task:log', (data) =>
-      handleLog(
-        data as { taskId: string; logs: Array<{ level: string; message: string; timestamp: string }> }
-      )
-    )
+    })
+    const unsubLog = window.electronAPI.on('task:log', (data) => {
+      const d = data as { taskId: string; logs: Array<{ id: number; level: string; message: string; timestamp: string }> }
+      if (d.taskId !== taskIdRef.current) return
+      setLogs((prev) => {
+        const next = [...prev, ...d.logs.map<TaskLog>((l) => ({
+          id: l.id,
+          taskId: d.taskId,
+          timestamp: l.timestamp,
+          level: l.level as TaskLogLevel,
+          message: l.message
+        }))]
+        return next.length > 500 ? next.slice(-500) : next
+      })
+    })
     return () => {
-      if (typeof unsub1 === 'function') unsub1()
-      if (typeof unsub2 === 'function') unsub2()
+      unsubStatus()
+      unsubLog()
+    }
+  }, [])
+
+  // -------- Progress polling while running --------
+  useEffect(() => {
+    if (taskStatus !== 'running' || !taskId) return
+    let cancelled = false
+    const tick = async (): Promise<void> => {
+      try {
+        const p = await taskApi.getProgress(taskId)
+        if (!cancelled) setProgress(p)
+      } catch {
+        // ignore
+      }
+    }
+    void tick()
+    const id = setInterval(tick, 1500)
+    return () => {
+      cancelled = true
+      clearInterval(id)
+    }
+  }, [taskStatus, taskId])
+
+  // -------- Run / Stop / Pause / Resume / Clear --------
+  const handleRun = useCallback(async () => {
+    if (!folderPath) return
+    const acc = matchedAccounts.find((a) => a.id === selectedAccountId)
+    const config: Record<string, unknown> = { ...configValues }
+    if (acc) {
+      config._account_id = acc.id
+      config._account_data = acc.data
+      config._account_pool = acc.pool
+    }
+
+    try {
+      const task = await taskApi.create({
+        scriptFolder: folderPath,
+        config,
+        isSandbox: useSandbox
+      })
+      setTaskId(task.id)
+      setTaskStatus('running')
+      setLogs([])
+      setOutput(null)
+      setProgress(null)
+      await taskApi.start(task.id)
+      toast.success(`${t('debug.runStarted')}: ${folderInfo?.name || folderPath}${useSandbox ? ' 🔒' : ''}`)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t('common.operationFailed'))
+    }
+  }, [folderPath, folderInfo, matchedAccounts, selectedAccountId, configValues, useSandbox, t])
+
+  const handleStop = useCallback(async () => {
+    if (!taskId) return
+    try {
+      await taskApi.stop(taskId)
+    } catch (e) {
+      console.error('[Debug] Failed to stop task:', e)
     }
   }, [taskId])
 
-  useEffect(() => {
-    if (logs.length > 0) logEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [logs])
-
-  const handleRun = async () => {
-    if (!folderPath) return
-    setRunning(true)
-    setLogs([])
-
-    try {
-      const config: Record<string, unknown> = {}
-      if (matchedAccounts.length > 0) {
-        config._accounts = matchedAccounts.map((a) => ({ id: a.id, templateId: a.templateId, data: a.data, pool: a.pool }))
-        if (matchedAccounts.length === 1) {
-          config._account_id = matchedAccounts[0].id
-          config._account_data = matchedAccounts[0].data
-          config._account_pool = matchedAccounts[0].pool
-        }
-      }
-
-      const task = await taskApi.create({ scriptFolder: folderPath, config, isSandbox: useSandbox })
-      setTaskId(task.id)
-      setTaskStatus('running')
-      await taskApi.start(task.id)
-      toast.success(`调试运行: ${folderInfo?.name || folderPath}${useSandbox ? ' (沙箱)' : ''}`)
-    } catch (e) {
-      setRunning(false)
-      toast.error(e instanceof Error ? e.message : t('common.operationFailed'))
-    }
-  }
-
-  const handleStop = async () => {
+  const handlePause = useCallback(async () => {
     if (!taskId) return
-    try { await taskApi.stop(taskId); setRunning(false) } catch (err) { console.error('[Debug] Failed to stop task:', err) }
-  }
+    try {
+      await taskApi.pause(taskId)
+    } catch (e) {
+      console.error('[Debug] Failed to pause task:', e)
+    }
+  }, [taskId])
 
-  const logLevelColor: Record<string, string> = {
-    info: 'text-text-secondary', warn: 'text-warning', error: 'text-danger', debug: 'text-text-muted'
-  }
+  const handleResume = useCallback(async () => {
+    if (!taskId) return
+    try {
+      await taskApi.resume(taskId)
+    } catch (e) {
+      console.error('[Debug] Failed to resume task:', e)
+    }
+  }, [taskId])
+
+  const handleClearLogs = useCallback(async () => {
+    if (taskId) {
+      try {
+        await taskApi.clearLogs(taskId)
+      } catch (e) {
+        console.error('[Debug] clearLogs failed:', e)
+      }
+    }
+    setLogs([])
+  }, [taskId])
+
+  const handleExportLogs = useCallback(async (exportLogs: TaskLog[]) => {
+    const text = exportLogs
+      .map((l) => `${l.timestamp} [${l.level.toUpperCase()}] ${l.message}`)
+      .join('\n')
+    const res = await dialogApi.saveFile(`debug-logs-${Date.now()}.log`, text)
+    if (res?.filePath) toast.success(t('debug.exported'))
+  }, [t])
+
+  const isRunning = taskStatus === 'running'
+  const isPaused = taskStatus === 'paused'
+  const canRun = !!folderPath && (matchedAccounts.length === 0 || !!selectedAccountId) && !isRunning
+
+  const schemaFields: FieldMeta[] = folderInfo?.schema
+    ? jsonSchemaToFieldMeta(folderInfo.schema)
+    : []
+
+  const matchedTemplateIds = folderInfo?.requiredTemplates ?? []
+  const selectedAccount = matchedAccounts.find((a) => a.id === selectedAccountId) ?? null
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3" data-testid="debug-page">
+      {/* Header */}
       <div className="flex items-center gap-2">
         <Bug className="w-5 h-5 text-primary" />
-        <h1 className="text-2xl font-bold text-text-primary">调试</h1>
-        <span className="text-xs text-text-muted ml-2">选择本地项目文件夹，自动匹配账户数据</span>
+        <h1 className="text-2xl font-bold text-text-primary">{t('debug.title')}</h1>
+        <span className="text-xs text-text-muted ml-2">{t('debug.subtitle')}</span>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* 左侧面板 */}
-        <div className="bg-bg-card rounded-xl border border-border-light p-4 space-y-4">
-          <div>
-            <h2 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
-              <FolderOpen size={14} />项目文件夹
-            </h2>
-            <button onClick={handleSelectFolder} disabled={running}
-              className="flex items-center gap-2 w-full px-3 py-2 rounded-lg border border-border-light text-text-secondary text-sm hover:border-primary/50 hover:text-primary transition-colors disabled:opacity-50">
-              <FolderOpen size={16} />选择本地文件夹
-            </button>
+      {/* Top strip: project info + sandbox */}
+      <div className="bg-bg-card rounded-xl border border-border-light p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-text-primary flex items-center gap-2 min-w-fit">
+            <FolderOpen size={14} className="text-text-muted" />
+            {t('debug.projectFolder')}
+          </h2>
+          <button
+            type="button"
+            data-testid="debug-select-folder"
+            onClick={() => void handleSelectFolder()}
+            disabled={isRunning}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border-light text-text-secondary text-xs hover:border-primary/50 hover:text-primary transition-colors disabled:opacity-50"
+          >
+            <FolderOpen size={14} />
+            {folderPath ? t('debug.changeFolder') : t('debug.selectFolder')}
+          </button>
+          <label className="ml-auto inline-flex items-center gap-1.5 text-xs cursor-pointer select-none">
+            <input
+              type="checkbox"
+              data-testid="debug-sandbox"
+              checked={useSandbox}
+              onChange={(e) => setUseSandbox(e.target.checked)}
+              disabled={isRunning}
+              className="rounded"
+            />
+            <span className="text-text-secondary">{t('debug.sandbox')}</span>
+            <span className="text-text-muted">({useSandbox ? t('debug.sandboxOn') : t('debug.sandboxOff')})</span>
+          </label>
+        </div>
+
+        {folderPath && (
+          <div className="font-mono text-[11px] text-text-secondary bg-bg-page rounded px-2 py-1 break-all">
+            {folderPath}
           </div>
+        )}
 
-          {folderPath && (
-            <>
-              <div className="font-mono text-xs text-text-primary bg-bg-page rounded-lg p-2 break-all">{folderPath}</div>
-              {folderInfo && (
-                <div className="space-y-1 text-xs">
-                  <div className="flex items-center gap-2"><span className="text-text-muted w-10">名称:</span><span className="text-text-primary font-medium truncate">{folderInfo.name}</span></div>
-                  <div className="flex items-center gap-2"><span className="text-text-muted w-10">入口:</span><span className="text-text-primary font-mono">{folderInfo.entry}</span></div>
-                  <div className="flex items-center gap-2"><span className="text-text-muted w-10">配置:</span><span className={folderInfo.hasManifest ? 'text-success' : 'text-text-muted'}>{folderInfo.hasManifest ? 'manifest.json' : 'meta.json / 自动推断'}</span></div>
-                  <div className="flex items-center gap-2"><span className="text-text-muted w-10">依赖:</span><Package size={12} className="text-text-muted" /><span className="text-text-muted">自动安装</span></div>
-                  {folderInfo.requiredTemplates && folderInfo.requiredTemplates.length > 0 && (
-                    <div className="flex items-start gap-2">
-                      <span className="text-text-muted w-10 shrink-0">模板:</span>
-                      <span className="text-text-primary font-mono text-[10px] leading-relaxed">{folderInfo.requiredTemplates.join(', ')}</span>
-                    </div>
-                  )}
-                </div>
-              )}
-              <label className="flex items-center gap-2 text-xs cursor-pointer">
-                <input type="checkbox" checked={useSandbox} onChange={(e) => setUseSandbox(e.target.checked)} className="rounded" disabled={running} />
-                <span className="text-text-secondary">沙箱模式</span>
-                <span className="text-text-muted">({useSandbox ? '限制网络/文件系统' : '允许所有权限'})</span>
-              </label>
-            </>
-          )}
+        {folderInfo && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px]">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-text-muted">{t('debug.field.name')}</span>
+              <span className="text-text-primary font-medium truncate">{folderInfo.name}</span>
+            </div>
+            <div className="flex flex-col gap-0.5">
+              <span className="text-text-muted">{t('debug.field.entry')}</span>
+              <span className="text-text-primary font-mono">{folderInfo.entry}</span>
+            </div>
+            <div className="flex flex-col gap-0.5">
+              <span className="text-text-muted">{t('debug.field.config')}</span>
+              <span className={folderInfo.hasManifest ? 'text-success' : 'text-text-muted'}>
+                {folderInfo.hasManifest ? MANIFEST_FILENAME : `${META_FILENAME} / ${t('debug.inferred')}`}
+              </span>
+            </div>
+            <div className="flex flex-col gap-0.5">
+              <span className="text-text-muted">{t('debug.field.deps')}</span>
+              <span className="text-text-muted">{t('debug.autoInstall')}</span>
+            </div>
+            {matchedTemplateIds.length > 0 && (
+              <div className="col-span-2 md:col-span-4 flex flex-col gap-0.5">
+                <span className="text-text-muted">{t('debug.field.templates')}</span>
+                <span className="text-text-primary font-mono text-[10px]">{matchedTemplateIds.join(', ')}</span>
+              </div>
+            )}
+            {folderInfo.permissions.length > 0 && (
+              <div className="col-span-2 md:col-span-4 flex items-center gap-1.5 flex-wrap">
+                <span className="text-text-muted">{t('debug.field.permissions')}:</span>
+                {folderInfo.permissions.map((p) => (
+                  <span
+                    key={p}
+                    className="inline-block px-1.5 py-0.5 text-[10px] bg-bg-tertiary text-text-secondary rounded"
+                  >
+                    {p}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
-          {/* 匹配的账户 */}
-          {folderInfo?.requiredTemplates && folderInfo.requiredTemplates.length > 0 && (
-            <div className="border-t border-border-light pt-3">
-              <h2 className="text-sm font-semibold text-text-primary mb-2 flex items-center gap-2">
-                <User size={14} />匹配账户 ({matchedAccounts.length})
-              </h2>
+      {/* Main 2-column area */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        {/* LEFT: matched accounts + schema form + run controls */}
+        <div className="space-y-3">
+          {/* Matched accounts */}
+          {folderInfo && matchedTemplateIds.length > 0 && (
+            <div className="bg-bg-card rounded-xl border border-border-light p-4 space-y-2">
+              <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+                <UserIcon size={14} className="text-text-muted" />
+                {t('debug.matchedAccounts')}
+                <span className="text-[10px] text-text-muted">
+                  ({matchedAccounts.length} {t('debug.of')} {matchedTemplateIds.length})
+                </span>
+              </h3>
               {matchedAccounts.length === 0 ? (
-                <p className="text-xs text-text-muted">未找到匹配的账户，请先在「账户管理」中创建对应模板的账户</p>
+                <p className="text-xs text-text-muted">{t('debug.noMatchedAccounts')}</p>
               ) : (
-                <div className="space-y-0.5 max-h-48 overflow-y-auto">
-                  {matchedAccounts.map((a) => (
-                    <div key={a.id} className="flex items-center gap-2 px-2 py-1.5 rounded text-xs bg-bg-page border border-border-light">
-                      <span className="text-text-primary truncate flex-1">
-                        {typeof a.data === 'object' && a.data ? Object.values(a.data as Record<string, unknown>).slice(0, 2).join(' / ') : a.id.slice(0, 8)}
-                      </span>
-                      <span className="text-text-muted shrink-0">{a.pool}</span>
-                    </div>
-                  ))}
+                <div className="space-y-1 max-h-48 overflow-y-auto">
+                  {matchedAccounts.map((a) => {
+                    const summary =
+                      typeof a.data === 'object' && a.data
+                        ? Object.values(a.data as Record<string, unknown>)
+                            .slice(0, 2)
+                            .map((v) => String(v).slice(0, 16))
+                            .join(' / ')
+                        : a.id.slice(0, 8)
+                    return (
+                      <label
+                        key={a.id}
+                        className={`flex items-center gap-2 p-1.5 rounded border cursor-pointer transition-colors ${
+                          selectedAccountId === a.id
+                            ? 'border-primary/50 bg-primary/5'
+                            : 'border-border-light hover:bg-bg-tertiary/40'
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="debug-account"
+                          value={a.id}
+                          checked={selectedAccountId === a.id}
+                          onChange={() => setSelectedAccountId(a.id)}
+                          disabled={isRunning}
+                          className="rounded-full"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs text-text-primary font-mono truncate">
+                            {a.id.slice(0, 8)}
+                          </div>
+                          <div className="text-[10px] text-text-muted truncate">
+                            {summary || a.pool}
+                          </div>
+                        </div>
+                      </label>
+                    )
+                  })}
                 </div>
               )}
             </div>
           )}
 
-          {/* 钱包提示 */}
-          <div className="border-t border-border-light pt-3">
-            <h2 className="text-sm font-semibold text-text-primary mb-2 flex items-center gap-2">
-              <User size={14} />钱包数据
-            </h2>
-            <p className="text-xs text-text-muted">钱包数据通过 <code className="text-primary">TASK_WALLETS</code> 环境变量自动注入</p>
+          {/* Schema form */}
+          {folderInfo && schemaFields.length > 0 && (
+            <div className="bg-bg-card rounded-xl border border-border-light p-4 space-y-2">
+              <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+                <FileCode size={14} className="text-text-muted" />
+                {t('debug.config')}
+              </h3>
+              <DynamicForm
+                key={folderPath}
+                fields={schemaFields}
+                defaultValues={configValues}
+                onValuesChange={setConfigValues}
+                onSubmit={() => undefined}
+                submitLabel=""
+              />
+            </div>
+          )}
+
+          {/* Run controls */}
+          <div className="bg-bg-card rounded-xl border border-border-light p-4 flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              data-testid="debug-run"
+              onClick={() => void handleRun()}
+              disabled={!canRun}
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-medium bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <Play size={12} />
+              {t('debug.run')}
+            </button>
+            <button
+              type="button"
+              data-testid="debug-pause"
+              onClick={() => void handlePause()}
+              disabled={!isRunning}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-text-secondary border border-border-light rounded-lg hover:bg-bg-tertiary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <Pause size={12} />
+              {t('debug.pause')}
+            </button>
+            <button
+              type="button"
+              data-testid="debug-resume"
+              onClick={() => void handleResume()}
+              disabled={!isPaused}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-text-secondary border border-border-light rounded-lg hover:bg-bg-tertiary disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <RotateCcw size={12} />
+              {t('debug.resume')}
+            </button>
+            <button
+              type="button"
+              data-testid="debug-stop"
+              onClick={() => void handleStop()}
+              disabled={!isRunning && !isPaused}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-danger border border-danger/30 rounded-lg hover:bg-danger-light disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <Square size={12} />
+              {t('debug.stop')}
+            </button>
+
+            <div className="ml-auto flex items-center gap-2">
+              <span
+                className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                  taskStatus === 'running'
+                    ? 'bg-primary-light text-primary'
+                    : taskStatus === 'complete'
+                      ? 'bg-success-light text-success'
+                      : taskStatus === 'error'
+                        ? 'bg-danger-light text-danger'
+                        : taskStatus === 'paused'
+                          ? 'bg-warning-light text-warning'
+                          : 'bg-bg-tertiary text-text-secondary'
+                }`}
+              >
+                {isRunning && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                )}
+                {taskStatus}
+              </span>
+              {selectedAccount && (
+                <span className="inline-flex items-center gap-1 text-[10px] text-text-muted">
+                  <UserIcon size={10} />
+                  {selectedAccount.id.slice(0, 8)}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* 日志面板 */}
-        <div className="lg:col-span-2 bg-bg-card rounded-xl border border-border-light p-4 flex flex-col">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-text-primary flex items-center gap-2">
-              <Terminal size={14} />运行日志
-              {taskStatus === 'running' && <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />}
-            </h2>
-            <div className="flex items-center gap-2">
-              {taskStatus && (
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                  taskStatus === 'running' ? 'bg-primary/10 text-primary' : taskStatus === 'complete' ? 'bg-success/10 text-success' : taskStatus === 'error' ? 'bg-danger/10 text-danger' : 'bg-bg-tertiary text-text-muted'}`}>
-                  {taskStatus}
-                </span>
-              )}
-              {running ? (
-                <button onClick={handleStop} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-danger text-white text-xs hover:bg-danger-hover transition-colors">
-                  <Square size={12} />停止
-                </button>
+        {/* RIGHT: live output (logs + progress + final output) */}
+        <div className="space-y-3">
+          {/* Progress bar (only while running) */}
+          {isRunning && (
+            <div className="bg-bg-card rounded-xl border border-border-light px-3 py-2 flex items-center gap-3">
+              <TrendingUp size={14} className="text-primary shrink-0" />
+              {progress ? (
+                <>
+                  <div className="flex-1 h-1.5 bg-bg-tertiary rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min(100, Math.max(0, progress.percent))}%` }}
+                    />
+                  </div>
+                  <span className="text-[11px] font-mono text-text-secondary tabular-nums shrink-0">
+                    {progress.percent}%
+                  </span>
+                  {progress.message && (
+                    <span className="text-[11px] text-text-muted truncate flex-1 min-w-0">
+                      {progress.message}
+                    </span>
+                  )}
+                </>
               ) : (
-                <button onClick={handleRun} disabled={!folderPath}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary text-white text-xs hover:bg-primary-hover disabled:opacity-50 transition-colors">
-                  <Play size={12} />运行
-                </button>
+                <span className="text-[11px] text-text-muted">{t('debug.startingUp')}</span>
               )}
-              <button onClick={() => setLogs([])}
-                className="p-1.5 rounded-lg text-text-muted hover:text-text-secondary hover:bg-bg-tertiary transition-colors" title="清空日志">
-                <X size={14} />
-              </button>
             </div>
+          )}
+
+          {/* Log viewer */}
+          <div className="bg-bg-card rounded-xl border border-border-light overflow-hidden h-96">
+            <LogViewer
+              logs={logs}
+              onClear={taskId ? handleClearLogs : undefined}
+              onExport={handleExportLogs}
+            />
           </div>
-          <div className="flex-1 bg-[#1a1a2e] rounded-lg p-3 font-mono text-xs overflow-y-auto max-h-[65vh] min-h-[200px]">
-            {logs.length === 0 ? (
-              <div className="text-text-muted flex items-center justify-center h-full">
-                {running ? (<span className="flex items-center gap-2"><RefreshCw size={12} className="animate-spin" />等待输出...</span>) : '选择一个文件夹并点击「运行」开始调试'}
-              </div>
-            ) : (
-              logs.map((log) => (
-                <div key={log.id} className={`flex gap-2 leading-relaxed ${logLevelColor[log.level] || 'text-text-secondary'}`}>
-                  <span className="text-text-muted shrink-0 w-20">{new Date(log.timestamp).toLocaleTimeString()}</span>
-                  <span className="shrink-0 w-12 text-right text-[10px] uppercase opacity-60">{log.level}</span>
-                  <span className="break-all">{log.message}</span>
+
+          {/* Final output panel (shown after task ends) */}
+          {output && (
+            <div
+              data-testid="debug-output-panel"
+              className="bg-bg-card rounded-xl border border-border-light p-3 space-y-2"
+            >
+              <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+                {output.exitCode === 0 ? (
+                  <CheckCircle2 size={14} className="text-success" />
+                ) : (
+                  <XCircle size={14} className="text-danger" />
+                )}
+                {t('debug.result')}
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px]">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-text-muted">{t('debug.exitCode')}</span>
+                  <span
+                    className={`font-mono font-medium ${
+                      output.exitCode === 0 ? 'text-success' : 'text-danger'
+                    }`}
+                  >
+                    {output.exitCode}
+                  </span>
                 </div>
-              ))
-            )}
-            <div ref={logEndRef} />
-          </div>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-text-muted inline-flex items-center gap-1">
+                    <Clock size={10} />
+                    {t('debug.duration')}
+                  </span>
+                  <span className="font-mono text-text-primary">
+                    {formatDuration(output.durationMs)}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-text-muted">stdout</span>
+                  <span className="font-mono text-text-primary">
+                    {formatBytes(new Blob([output.stdout]).size)}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-text-muted">stderr</span>
+                  <span className="font-mono text-text-primary">
+                    {formatBytes(new Blob([output.stderr]).size)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Empty state hint */}
+          {!taskId && (
+            <div className="bg-bg-card rounded-xl border border-dashed border-border-light p-4 flex flex-col items-center gap-2 text-text-muted text-xs">
+              <Terminal size={20} className="opacity-50" />
+              {t('debug.emptyHint')}
+            </div>
+          )}
         </div>
       </div>
     </div>
   )
 }
+
+export default DebugPage
