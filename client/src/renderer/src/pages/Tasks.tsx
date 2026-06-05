@@ -1,3 +1,10 @@
+/**
+ * @file Tasks — 任务管理页
+ * @description 管理任务的完整生命周期：创建、启动、暂停、恢复、停止、编辑和删除。
+ *              支持脚本浏览器、日志查看、账户匹配和沙箱模式。
+ * @module renderer/pages
+ */
+
 import React, { useState, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -34,8 +41,10 @@ import { usePaginatedList } from '../hooks'
 import { SearchInput, Pagination, Modal, DynamicForm } from '../components/common'
 import { toast } from '../utils/toast'
 
+/** 每页显示任务数 */
 const PAGE_SIZE = 20
 
+/** 日志级别对应的文字颜色样式 */
 const LOG_LEVEL_STYLES: Record<TaskLog['level'], string> = {
   info: 'text-success',
   warn: 'text-warning',
@@ -43,6 +52,12 @@ const LOG_LEVEL_STYLES: Record<TaskLog['level'], string> = {
   debug: 'text-text-muted'
 }
 
+/**
+ * Tasks — 任务管理页面组件
+ *
+ * 提供任务分页列表，支持运行控制（启动/暂停/恢复/停止）、
+ * 实时日志查看、进度跟踪、账户匹配和脚本浏览器。
+ */
 const Tasks: React.FC = () => {
   const { t } = useTranslation()
   const { items, totalPages, page, loading, setPage, setSearch, search, refresh } =
@@ -91,7 +106,8 @@ const Tasks: React.FC = () => {
       return
     }
 
-    const fetchProgress = async (): Promise<void> => {
+    /** 轮询正在运行的任务进度 */
+  const fetchProgress = async (): Promise<void> => {
       const entries = await Promise.all(
         runningTasks.map(async (task) => {
           try {
@@ -209,6 +225,7 @@ const Tasks: React.FC = () => {
     }
   }, [logs, expandedId])
 
+  /** 执行任务操作：启动/暂停/恢复/停止 */
   const handleAction = async (
     action: 'start' | 'stop' | 'pause' | 'resume' | 'delete',
     id: string
@@ -514,6 +531,7 @@ const Tasks: React.FC = () => {
     }
   }
 
+  /** 切换单个任务的选择状态 */
   const toggleSelect = (id: string): void => {
     setSelectedIds((prev) => {
       const next = new Set(prev)
@@ -659,6 +677,7 @@ const Tasks: React.FC = () => {
 
   return (
     <div className="space-y-4">
+      {/* 页面标题与操作按钮 */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-text-primary">{t('tasks.title')}</h1>
         <div className="flex items-center gap-2">

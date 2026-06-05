@@ -1,3 +1,10 @@
+/**
+ * @file LoginPage — 登录/注册/初始化页面
+ * @description 提供管理员初始化（setup）、用户登录和注册功能。
+ *              首次启动时自动检测服务端是否需要初始化。
+ * @module renderer/pages
+ */
+
 import React, { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../contexts/AuthContext'
@@ -6,8 +13,17 @@ import { toast } from '../utils/toast'
 import { Server, UserPlus, LogIn, Shield } from 'lucide-react'
 import TitleBar from '../components/TitleBar'
 
+/** 页面模式：登录 / 注册 / 管理员初始化 */
 type Mode = 'login' | 'register' | 'setup'
 
+/**
+ * LoginPage — 登录/注册/初始化页面组件
+ *
+ * 根据服务端 health 检查结果自动切换模式：
+ * - needsSetup === true → setup 模式（创建第一个管理员）
+ * - 已有用户 → login 模式（默认）
+ * 用户也可手动切换到 register 模式注册新账号。
+ */
 export default function LoginPage(): React.ReactElement {
   const { t } = useTranslation()
   const { login, register, setup } = useAuth()
@@ -22,6 +38,7 @@ export default function LoginPage(): React.ReactElement {
   const [detecting, setDetecting] = useState(true)
   const [needsSetup, setNeedsSetup] = useState(true)
 
+  /** 检查服务端是否需要管理员初始化，自动切换页面模式 */
   const checkSetup = useCallback(async () => {
     setDetecting(true)
     try {
@@ -41,10 +58,11 @@ export default function LoginPage(): React.ReactElement {
 
   useEffect(() => {
     getMarketplaceUrl().then((url) => setServerUrl(url))
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+
     checkSetup()
   }, [checkSetup])
 
+  /** 保存并测试服务端 URL 连接 */
   const handleSaveUrl = async () => {
     if (!serverUrl.trim()) {
       toast.error(t('login.connectFailed'))
@@ -64,6 +82,7 @@ export default function LoginPage(): React.ReactElement {
     }
   }
 
+  /** 提交登录/注册/初始化表单 */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!username.trim()) {
@@ -104,6 +123,7 @@ export default function LoginPage(): React.ReactElement {
     }
   }
 
+  /** 三种模式的标签页标题与图标映射 */
   const modeTitles: Record<Mode, { titleKey: string; icon: React.ReactNode }> = {
     login: { titleKey: 'login.tabLogin', icon: <LogIn className="w-4 h-4" /> },
     register: { titleKey: 'login.tabRegister', icon: <UserPlus className="w-4 h-4" /> },
@@ -180,6 +200,7 @@ export default function LoginPage(): React.ReactElement {
             ))}
           </div>
 
+          {/* 登录/注册/初始化表单 */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {(mode === 'register' || mode === 'setup') && (
               <div>

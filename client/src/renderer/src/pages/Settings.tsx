@@ -1,3 +1,10 @@
+/**
+ * @file Settings — 设置页
+ * @description 提供用户配置界面，按角色展示不同设置区块：个人资料、任务默认配置、
+ *              验证码 API 密钥、代理提供商、Marketplace 服务器、日志管理等。
+ * @module renderer/pages
+ */
+
 import React, { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -35,8 +42,10 @@ import { getVisibleSections, type SectionId, type UserRole } from './settings-se
 /* ── Section definitions live in ./settings-sections.ts (separated to keep
  *  this module's exports purely components, so React Fast Refresh is happy). ── */
 
+/** 日志级别选项 */
 const LOG_LEVELS = ['debug', 'info', 'warn', 'error'] as const
 
+/** 用户角色对应的徽章样式 */
 const roleBadgeClass: Record<string, string> = {
   admin: 'bg-danger/10 text-danger border-danger/30',
   developer: 'bg-primary/10 text-primary border-primary/30',
@@ -45,6 +54,19 @@ const roleBadgeClass: Record<string, string> = {
 
 /* ── Reusable section card ── */
 
+/**
+ * SectionCard — 设置区块卡片组件
+ *
+ * 包装设置项的区块容器，带标题、副标题、图标和可选底部栏。
+ * tone 控制卡片边框色调（personal=普通, computer=系统强调）。
+ *
+ * @param title    - 区块标题
+ * @param subtitle - 副标题
+ * @param icon     - 图标组件
+ * @param tone     - 卡片色调（'personal' | 'computer'）
+ * @param children - 内部设置项内容
+ * @param footer   - 可选底部操作栏
+ */
 const SectionCard: React.FC<{
   title: string
   subtitle?: string
@@ -76,6 +98,12 @@ const SectionCard: React.FC<{
 
 /* ── Main component (terminal model: single page, all visible sections stacked) ── */
 
+/**
+ * Settings — 设置页面组件
+ *
+ * 根据用户角色动态展示可见的设置区块，包括个人资料、任务默认配置、
+ * 验证码密钥、代理提供商、Marketplace 服务器和日志管理等。
+ */
 const Settings: React.FC = () => {
   const { t } = useTranslation()
   const { user: marketUser, role, logout } = useAuth()
@@ -243,35 +271,30 @@ const ProfileSection: React.FC = () => {
 
   return (
     <>
-      <SectionCard
-        title={t('settings.sections.profile')}
-        subtitle={t('settings.profile.username')}
-      >
-        <Field label={t('settings.profile.username')} hint={t('settings.profile.usernameReadonly')}>
-          <input
-            value={marketUser.username}
-            disabled
-            className="w-full px-3 py-2 text-sm border border-border-light rounded-lg bg-bg-input-disabled text-text-muted cursor-not-allowed"
-          />
-        </Field>
-        <Field label={t('settings.profile.displayName')}>
-          <input
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            placeholder={t('settings.profile.displayNamePlaceholder')}
-            className="w-full px-3 py-2 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
-          />
-        </Field>
-        <Field label={t('settings.profile.role')}>
-          <span
-            className={`inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full border ${
-              roleBadgeClass[marketUser.role] || ''
-            }`}
-          >
-            {t(`roles.${marketUser.role}`)}
-          </span>
-        </Field>
-      </SectionCard>
+      <Field label={t('settings.profile.username')} hint={t('settings.profile.usernameReadonly')}>
+        <input
+          value={marketUser.username}
+          disabled
+          className="w-full px-3 py-2 text-sm border border-border-light rounded-lg bg-bg-input-disabled text-text-muted cursor-not-allowed"
+        />
+      </Field>
+      <Field label={t('settings.profile.displayName')}>
+        <input
+          value={displayName}
+          onChange={(e) => setDisplayName(e.target.value)}
+          placeholder={t('settings.profile.displayNamePlaceholder')}
+          className="w-full px-3 py-2 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+      </Field>
+      <Field label={t('settings.profile.role')}>
+        <span
+          className={`inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full border ${
+            roleBadgeClass[marketUser.role] || ''
+          }`}
+        >
+          {t(`roles.${marketUser.role}`)}
+        </span>
+      </Field>
 
       <div className="flex justify-end gap-2">
         <button
@@ -434,13 +457,13 @@ const PasswordChangeModal: React.FC<{ open: boolean; onClose: () => void }> = ({
 const AppearanceSection: React.FC = () => {
   const { t } = useTranslation()
   return (
-    <SectionCard title={t('settings.sections.appearance')}>
+    <>
       <Field label={t('settings.theme')}>
         <div className="w-64">
           <ThemeToggle />
         </div>
       </Field>
-    </SectionCard>
+    </>
   )
 }
 
@@ -500,22 +523,7 @@ const TaskDefaultsSection: React.FC = () => {
   }
 
   return (
-    <SectionCard
-      title={t('settings.sections.taskDefaults')}
-      subtitle={t('settings.taskDefaults.subtitle')}
-      footer={
-        <div className="flex justify-end">
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex items-center gap-1.5 px-4 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors"
-          >
-            <Save size={14} />
-            {saving ? t('common.loading') : t('common.save')}
-          </button>
-        </div>
-      }
-    >
+    <>
       <div className="flex items-center justify-between">
         <div>
           <div className="text-sm text-text-primary">{t('settings.taskDefaults.sandboxDefault')}</div>
@@ -546,7 +554,17 @@ const TaskDefaultsSection: React.FC = () => {
           className="w-32 px-3 py-2 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
         />
       </Field>
-    </SectionCard>
+      <div className="flex justify-end pt-2">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="flex items-center gap-1.5 px-4 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors"
+        >
+          <Save size={14} />
+          {saving ? t('common.loading') : t('common.save')}
+        </button>
+      </div>
+    </>
   )
 }
 
@@ -668,69 +686,64 @@ const MarketplaceSection: React.FC = () => {
 
   return (
     <>
-      <SectionCard
-        title={t('settings.sections.marketplace')}
-        subtitle={t('settings.marketplaceSettings.subtitle')}
-      >
-        <Field label={t('settings.marketplaceSettings.serverUrl')} hint={t('settings.marketplaceSettings.serverUrlHint')}>
+      <Field label={t('settings.marketplaceSettings.serverUrl')} hint={t('settings.marketplaceSettings.serverUrlHint')}>
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="http://localhost:3400"
+            className="flex-1 px-3 py-2 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+          <button
+            onClick={handleTest}
+            disabled={testing}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover disabled:opacity-50 transition-colors"
+          >
+            {testing ? <RefreshCw size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+            {t('settings.marketplaceSettings.testConnection')}
+          </button>
+          <button
+            onClick={handleSaveUrl}
+            disabled={savingUrl}
+            className="flex items-center gap-1.5 px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors"
+          >
+            <Save size={14} />
+            {t('common.save')}
+          </button>
+        </div>
+      </Field>
+
+      {me && (
+        <Field label={t('settings.marketplaceSettings.myApiKey')} hint={t('settings.marketplaceSettings.myApiKeyHint')}>
           <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="http://localhost:3400"
-              className="flex-1 px-3 py-2 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
-            />
+            <code className="flex-1 px-3 py-2 text-xs font-mono bg-bg-input border border-border-light rounded-lg text-text-primary">
+              {revealKey ? me.apiKey : maskedKey}
+            </code>
             <button
-              onClick={handleTest}
-              disabled={testing}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover disabled:opacity-50 transition-colors"
+              onClick={() => setRevealKey((v) => !v)}
+              className="p-2 text-text-muted hover:text-text-primary hover:bg-bg-tertiary rounded-lg transition-colors"
+              title={revealKey ? t('wallets.hidePrivateKey') : t('wallets.showPrivateKey')}
             >
-              {testing ? <RefreshCw size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-              {t('settings.marketplaceSettings.testConnection')}
+              {revealKey ? <EyeOff size={14} /> : <Eye size={14} />}
             </button>
             <button
-              onClick={handleSaveUrl}
-              disabled={savingUrl}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover disabled:opacity-50 transition-colors"
+              onClick={handleCopyKey}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover transition-colors"
             >
-              <Save size={14} />
-              {t('common.save')}
+              <Copy size={14} />
+              {t('settings.marketplaceSettings.copyKey')}
+            </button>
+            <button
+              onClick={() => setRegenerateOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 text-sm border border-warning/40 text-warning rounded-lg hover:bg-warning/10 transition-colors"
+            >
+              <RotateCcw size={14} />
+              {t('settings.marketplaceSettings.regenerateKey')}
             </button>
           </div>
         </Field>
-
-        {me && (
-          <Field label={t('settings.marketplaceSettings.myApiKey')} hint={t('settings.marketplaceSettings.myApiKeyHint')}>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 px-3 py-2 text-xs font-mono bg-bg-input border border-border-light rounded-lg text-text-primary">
-                {revealKey ? me.apiKey : maskedKey}
-              </code>
-              <button
-                onClick={() => setRevealKey((v) => !v)}
-                className="p-2 text-text-muted hover:text-text-primary hover:bg-bg-tertiary rounded-lg transition-colors"
-                title={revealKey ? t('wallets.hidePrivateKey') : t('wallets.showPrivateKey')}
-              >
-                {revealKey ? <EyeOff size={14} /> : <Eye size={14} />}
-              </button>
-              <button
-                onClick={handleCopyKey}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover transition-colors"
-              >
-                <Copy size={14} />
-                {t('settings.marketplaceSettings.copyKey')}
-              </button>
-              <button
-                onClick={() => setRegenerateOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-2 text-sm border border-warning/40 text-warning rounded-lg hover:bg-warning/10 transition-colors"
-              >
-                <RotateCcw size={14} />
-                {t('settings.marketplaceSettings.regenerateKey')}
-              </button>
-            </div>
-          </Field>
-        )}
-      </SectionCard>
+      )}
 
       <ConfirmDialog
         open={regenerateOpen}
@@ -825,64 +838,57 @@ const SecuritySection: React.FC = () => {
 
   return (
     <>
-      <SectionCard
-        title={t('settings.sections.security')}
-        subtitle={t('settings.security.subtitle')}
-        footer={
-          <div className="flex justify-end">
-            <button
-              onClick={openAdd}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
-            >
-              <Plus size={14} />
-              {t('settings.addCaptchaKey')}
-            </button>
-          </div>
-        }
-      >
-        <p className="text-xs text-text-muted">{t('settings.security.captchaKeysHint')}</p>
-        {items.length === 0 ? (
-          <div className="text-sm text-text-muted py-4 text-center">{t('settings.noCaptchaKeys')}</div>
-        ) : (
-          <div className="border border-border-light rounded-lg overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-bg-tertiary">
-                <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-text-muted">{t('settings.provider')}</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-text-muted">{t('settings.apiKey')}</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-text-muted">{t('settings.balance')}</th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-text-muted">{t('common.actions')}</th>
+      <p className="text-xs text-text-muted">{t('settings.security.captchaKeysHint')}</p>
+      {items.length === 0 ? (
+        <div className="text-sm text-text-muted py-4 text-center">{t('settings.noCaptchaKeys')}</div>
+      ) : (
+        <div className="border border-border-light rounded-lg overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-bg-tertiary">
+              <tr>
+                <th className="px-4 py-2 text-left text-xs font-medium text-text-muted">{t('settings.provider')}</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-text-muted">{t('settings.apiKey')}</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-text-muted">{t('settings.balance')}</th>
+                <th className="px-4 py-2 text-right text-xs font-medium text-text-muted">{t('common.actions')}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border-light/50">
+              {items.map((item) => (
+                <tr key={item.id} className="hover:bg-bg-card-hover transition-colors">
+                  <td className="px-4 py-2.5">{item.provider}</td>
+                  <td className="px-4 py-2.5 font-mono text-xs">{item.apiKey.slice(0, 8)}...</td>
+                  <td className="px-4 py-2.5">{item.balance}</td>
+                  <td className="px-4 py-2.5 text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => openEdit(item)}
+                        className="p-1 text-text-muted hover:text-primary hover:bg-primary-light rounded transition-colors"
+                      >
+                        <Edit3 size={14} />
+                      </button>
+                      <button
+                        onClick={() => setDeletingId(item.id)}
+                        className="p-1 text-danger hover:bg-danger-light rounded transition-colors"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-border-light/50">
-                {items.map((item) => (
-                  <tr key={item.id} className="hover:bg-bg-card-hover transition-colors">
-                    <td className="px-4 py-2.5">{item.provider}</td>
-                    <td className="px-4 py-2.5 font-mono text-xs">{item.apiKey.slice(0, 8)}...</td>
-                    <td className="px-4 py-2.5">{item.balance}</td>
-                    <td className="px-4 py-2.5 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <button
-                          onClick={() => openEdit(item)}
-                          className="p-1 text-text-muted hover:text-primary hover:bg-primary-light rounded transition-colors"
-                        >
-                          <Edit3 size={14} />
-                        </button>
-                        <button
-                          onClick={() => setDeletingId(item.id)}
-                          className="p-1 text-danger hover:bg-danger-light rounded transition-colors"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </SectionCard>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <div className="flex justify-end pt-2">
+        <button
+          onClick={openAdd}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
+        >
+          <Plus size={14} />
+          {t('settings.addCaptchaKey')}
+        </button>
+      </div>
 
       <Modal
         open={adding || !!editing}
@@ -968,7 +974,7 @@ const SystemSection: React.FC = () => {
   }
 
   return (
-    <SectionCard title={t('settings.sections.system')} subtitle={t('settings.system.subtitle')}>
+    <>
       <Field label={t('settings.system.logLevel')} hint={t('settings.system.logLevelHint')}>
         <div className="flex items-center gap-2">
           <select
@@ -992,7 +998,7 @@ const SystemSection: React.FC = () => {
           </button>
         </div>
       </Field>
-    </SectionCard>
+    </>
   )
 }
 
@@ -1054,10 +1060,7 @@ const UpdatesSection: React.FC = () => {
   }
 
   return (
-    <SectionCard
-      title={t('settings.sections.updates')}
-      subtitle={t('settings.descriptions.updates')}
-    >
+    <>
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-medium text-text-primary">
           {t('updates.checkNow')}
@@ -1122,7 +1125,7 @@ const UpdatesSection: React.FC = () => {
       {updateStatus === 'not-available' && (
         <p className="text-sm text-text-muted">{t('updates.noUpdates')}</p>
       )}
-    </SectionCard>
+    </>
   )
 }
 
@@ -1209,7 +1212,7 @@ const DataSection: React.FC = () => {
   }
 
   return (
-    <SectionCard title={t('settings.sections.data')} subtitle={t('settings.dataSection.subtitle')}>
+    <>
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           <StatBox label={t('dashboard.stats.wallets')} value={stats.walletCount} />
@@ -1296,7 +1299,7 @@ const DataSection: React.FC = () => {
         cancelText={t('common.cancel')}
         danger
       />
-    </SectionCard>
+    </>
   )
 }
 
@@ -1394,61 +1397,56 @@ const AdvancedSection: React.FC = () => {
 
   return (
     <>
-      <SectionCard
-        title={t('settings.sections.advanced')}
-        subtitle={t('settings.advanced.subtitle')}
-      >
-        <p className="text-xs text-text-muted">{t('settings.advanced.customSettingsHint')}</p>
-        {Object.keys(edited).length === 0 ? (
-          <div className="text-sm text-text-muted py-3 text-center">{t('settings.advanced.noCustom')}</div>
-        ) : (
-          <div className="space-y-2">
-            {Object.entries(edited).map(([k, v]) => (
-              <div key={k} className="flex items-center gap-2">
-                <code className="w-44 px-2 py-1.5 text-xs font-mono bg-bg-input border border-border-light rounded text-text-muted shrink-0 truncate" title={k}>
-                  {k}
-                </code>
-                <input
-                  value={v}
-                  onChange={(e) => setEdited((p) => ({ ...p, [k]: e.target.value }))}
-                  className="flex-1 px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                <button
-                  onClick={() => handleCopy(k, v)}
-                  className="p-1.5 text-text-muted hover:text-primary hover:bg-primary-light rounded transition-colors"
-                  title={t('common.copySuccess')}
-                >
-                  {copiedKey === k ? <Check size={14} /> : <Copy size={14} />}
-                </button>
-                <button
-                  onClick={() => setDeletingKey(k)}
-                  className="p-1.5 text-danger hover:bg-danger-light rounded transition-colors"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="flex items-center gap-2 pt-2 border-t border-border-light">
-          <input
-            value={newKey}
-            onChange={(e) => setNewKey(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
-            placeholder={t('common.newKey') + '...'}
-            className="flex-1 px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary font-mono"
-          />
-          <button
-            onClick={handleAdd}
-            disabled={!newKey.trim()}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover disabled:opacity-40 transition-colors"
-          >
-            <Plus size={14} />
-            {t('settings.advanced.addKey')}
-          </button>
+      <p className="text-xs text-text-muted">{t('settings.advanced.customSettingsHint')}</p>
+      {Object.keys(edited).length === 0 ? (
+        <div className="text-sm text-text-muted py-3 text-center">{t('settings.advanced.noCustom')}</div>
+      ) : (
+        <div className="space-y-2">
+          {Object.entries(edited).map(([k, v]) => (
+            <div key={k} className="flex items-center gap-2">
+              <code className="w-44 px-2 py-1.5 text-xs font-mono bg-bg-input border border-border-light rounded text-text-muted shrink-0 truncate" title={k}>
+                {k}
+              </code>
+              <input
+                value={v}
+                onChange={(e) => setEdited((p) => ({ ...p, [k]: e.target.value }))}
+                className="flex-1 px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <button
+                onClick={() => handleCopy(k, v)}
+                className="p-1.5 text-text-muted hover:text-primary hover:bg-primary-light rounded transition-colors"
+                title={t('common.copySuccess')}
+              >
+                {copiedKey === k ? <Check size={14} /> : <Copy size={14} />}
+              </button>
+              <button
+                onClick={() => setDeletingKey(k)}
+                className="p-1.5 text-danger hover:bg-danger-light rounded transition-colors"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
+          ))}
         </div>
-      </SectionCard>
+      )}
+
+      <div className="flex items-center gap-2 pt-2 border-t border-border-light">
+        <input
+          value={newKey}
+          onChange={(e) => setNewKey(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+          placeholder={t('common.newKey') + '...'}
+          className="flex-1 px-3 py-1.5 text-sm border border-border-light rounded-lg bg-bg-card focus:outline-none focus:ring-2 focus:ring-primary font-mono"
+        />
+        <button
+          onClick={handleAdd}
+          disabled={!newKey.trim()}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm border border-border-light rounded-lg hover:bg-bg-card-hover disabled:opacity-40 transition-colors"
+        >
+          <Plus size={14} />
+          {t('settings.advanced.addKey')}
+        </button>
+      </div>
 
       {hasChanges && (
         <div className="flex justify-end">
@@ -1517,10 +1515,7 @@ const AboutSection: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   }
 
   return (
-    <SectionCard
-      title={t('settings.sections.about')}
-      subtitle={t('settings.aboutSection.subtitle')}
-    >
+    <>
       <DataRow label={t('settings.aboutSection.version')}>
         <span className="font-mono">{info?.version ?? '—'}</span>
       </DataRow>
@@ -1598,7 +1593,7 @@ const AboutSection: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
         cancelText={t('common.cancel')}
         danger
       />
-    </SectionCard>
+    </>
   )
 }
 

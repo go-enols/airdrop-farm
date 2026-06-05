@@ -1,3 +1,10 @@
+/**
+ * @file Airdrops — 空投项目管理页
+ * @description 管理空投项目的完整生命周期：创建、编辑、查看详情、删除。
+ *              含 KPI 统计条、卡片网格、搜索分页和关联脚本/账号池选择。
+ * @module renderer/pages
+ */
+
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Plus, AlertCircle, Inbox } from 'lucide-react'
@@ -23,8 +30,10 @@ import {
 } from '../components/common'
 import { toast } from '../utils/toast'
 
+/** 每页显示空投项目数 */
 const PAGE_SIZE = 12
 
+/** 空投分析数据的默认空值 */
 const DEFAULT_ANALYTICS: AirdropAnalytics = {
   totalAirdrops: 0,
   ongoingCount: 0,
@@ -36,6 +45,12 @@ const DEFAULT_ANALYTICS: AirdropAnalytics = {
   upcomingDeadlines: []
 }
 
+/**
+ * Airdrops — 空投项目管理页面组件
+ *
+ * 主页面包含 KPI 统计条、搜索栏、空投卡片网格和分页。
+ * 支持创建/编辑/查看详情/删除空投项目，关联任务脚本模板和账号池。
+ */
 const Airdrops: React.FC = () => {
   const { t } = useTranslation()
   const { items, total, page, totalPages, loading, error, setPage, setSearch, search, refresh } =
@@ -280,6 +295,7 @@ const Airdrops: React.FC = () => {
   // Render
   return (
     <div className="space-y-4">
+      {/* 页面标题、搜索与创建按钮 */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h1 className="text-2xl font-bold">{t('airdrops.title')}</h1>
         <div className="flex items-center gap-2.5">

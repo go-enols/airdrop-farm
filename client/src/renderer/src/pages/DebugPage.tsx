@@ -1,3 +1,10 @@
+﻿/**
+ * @file DebugPage — 脚本调试页
+ * @description 提供脚本的实时调试环境：选择项目文件夹、查看 Schema、匹配账户、
+ *              设置沙箱模式、运行/暂停/恢复/停止任务、查看实时日志与输出。
+ * @module renderer/pages
+ */
+
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -22,12 +29,16 @@ import { DynamicForm } from '../components/common'
 import { jsonSchemaToFieldMeta, type FieldMeta } from '../../../shared/schemas/task-params'
 import { toast } from '../utils/toast'
 
+/** manifest.json 文件名常量 */
 const MANIFEST_FILENAME = 'manifest.json'
+/** meta.json 文件名常量 */
 const META_FILENAME = 'meta.json'
 
+/** 移除 JSON 字符串中的块注释和行内注释 */
 const stripJsonComments = (raw: string): string =>
-  raw.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, '')
+  raw.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*/g, '')
 
+/** 尝试解析 JSON（支持带注释的 JSON），失败返回 null */
 const tryParseJson = (raw: string): Record<string, unknown> | null => {
   try {
     return JSON.parse(stripJsonComments(raw))
@@ -36,15 +47,23 @@ const tryParseJson = (raw: string): Record<string, unknown> | null => {
   }
 }
 
+/** 项目文件夹元信息 */
 interface FolderInfo {
+  /** 文件夹名 */
   name: string
+  /** 入口文件名（如 index.js） */
   entry: string
+  /** 是否包含 manifest.json */
   hasManifest: boolean
+  /** 需要的账户模板 ID 列表 */
   requiredTemplates: string[]
+  /** 脚本声明的权限列表 */
   permissions: string[]
+  /** 任务配置 Schema */
   schema: Record<string, unknown> | null
 }
 
+/** 创建空文件夹信息对象 */
 const emptyFolderInfo = (path: string): FolderInfo => ({
   name: path.split(/[/\\]/).pop() || 'unknown',
   entry: 'index.js',
@@ -54,6 +73,7 @@ const emptyFolderInfo = (path: string): FolderInfo => ({
   schema: null
 })
 
+/** 格式化毫秒数为可读时长（如 1.500s） */
 const formatDuration = (ms: number): string => {
   if (ms < 1000) return `${ms}ms`
   const s = Math.floor(ms / 1000)
@@ -61,12 +81,19 @@ const formatDuration = (ms: number): string => {
   return `${s}.${String(ms2).padStart(3, '0')}s`
 }
 
+/** 格式化字节数为可读大小（B/KB/MB） */
 const formatBytes = (n: number): string => {
   if (n < 1024) return `${n}B`
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)}KB`
   return `${(n / (1024 * 1024)).toFixed(2)}MB`
 }
 
+/**
+ * DebugPage — 脚本调试页面组件
+ *
+ * 提供完整的脚本调试流程：选择项目文件夹 → 解析 manifest →
+ * 匹配账户 → 配置参数 → 运行/暂停/恢复/停止 → 查看日志和结果。
+ */
 const DebugPage: React.FC = () => {
   const { t } = useTranslation()
   // Core state

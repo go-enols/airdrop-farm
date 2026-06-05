@@ -1,3 +1,10 @@
+/**
+ * @file Dashboard — 仪表盘页面
+ * @description 系统首页，展示统计概览（钱包、账户、代理、任务数量）、任务状态分布、
+ *              快捷操作入口、近期活动任务列表和空投项目概览。
+ * @module renderer/pages
+ */
+
 import React, { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
@@ -25,6 +32,7 @@ import { statusLabel } from '../utils/i18n-status'
 import { useAuth } from '../contexts/AuthContext'
 import Skeleton from '../components/common/Skeleton'
 
+/** 任务状态到对应图标的映射 */
 const statusIcons: Record<string, React.ReactNode> = {
   running: <Activity className="w-4 h-4 animate-pulse" />,
   complete: <CheckCircle className="w-4 h-4" />,
@@ -34,6 +42,17 @@ const statusIcons: Record<string, React.ReactNode> = {
   stopped: <XCircle className="w-4 h-4" />
 }
 
+/**
+ * StatCard — 统计卡片组件
+ *
+ * 显示单一统计指标，包含图标、标签、数值和可选趋势数据。
+ *
+ * @param icon  - lucide-react 图标组件
+ * @param label - 卡片标签文字
+ * @param value - 主数值
+ * @param color - 图标背景色（Tailwind class）
+ * @param trend - 可选趋势数据 {value, isUp}
+ */
 function StatCard({
   icon: Icon,
   label,
@@ -72,6 +91,14 @@ function StatCard({
   )
 }
 
+/**
+ * StatusBadge — 状态徽章组件
+ *
+ * 根据任务状态显示对应颜色的圆角徽章（含状态图标）。
+ *
+ * @param status - 任务状态标识
+ * @param label  - 显示文字
+ */
 function StatusBadge({ status, label }: { status: string; label: string }): React.JSX.Element {
   const statusClass = `bg-status-${status}-bg text-status-${status}-text border-status-${status}-text/20`
 
@@ -85,6 +112,15 @@ function StatusBadge({ status, label }: { status: string; label: string }): Reac
   )
 }
 
+/**
+ * QuickActionButton — 快捷操作按钮组件
+ *
+ * 在 Dashboard 上提供导航快捷入口。
+ *
+ * @param icon   - lucide-react 图标组件
+ * @param label  - 按钮文字
+ * @param onClick - 点击回调
+ */
 function QuickActionButton({
   icon: Icon,
   label,
@@ -255,6 +291,7 @@ export default function Dashboard(): React.JSX.Element {
         </button>
       </div>
 
+      {/* 当前用户角色横幅 */}
       {user && (
         <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${roleBannerColors[user.role] || 'bg-bg-card border-border-light'}`}>
           <Shield className="w-5 h-5 shrink-0" />

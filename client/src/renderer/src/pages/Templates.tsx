@@ -1,3 +1,10 @@
+/**
+ * @file Templates — 模板市场页
+ * @description 展示远端和本地的账户模板及任务脚本，支持浏览、安装、删除和管理。
+ *              包含模板编辑器入口和脚本模板列表。
+ * @module renderer/pages
+ */
+
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { templateApi, marketplaceApi, getMarketplaceUrl, scriptApi, dialogApi } from '../api'
@@ -18,6 +25,12 @@ import {
   Upload
 } from 'lucide-react'
 
+/**
+ * Templates — 模板市场页面组件
+ *
+ * 三个标签页：账户模板（远程/已安装）、任务脚本（远程/已安装）、模板编辑器。
+ * 支持搜索、安装/卸载、以及管理可见性操作。
+ */
 const Templates: React.FC = () => {
   const { t } = useTranslation()
   const { user: marketUser, isAdmin, isDeveloper } = useAuth()

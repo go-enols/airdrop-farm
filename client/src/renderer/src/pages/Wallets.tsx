@@ -1,3 +1,10 @@
+/**
+ * @file Wallets — 钱包管理页
+ * @description 管理 EVM/Solana/Sui 钱包，支持创建（密钥对/助记词）、
+ *              助记词导入、JSON 导入、私钥查看/复制、批量选择和删除、导出。
+ * @module renderer/pages
+ */
+
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from '../utils/toast'
@@ -21,8 +28,11 @@ import type { Wallet } from '../types'
 import { parseWalletJson, type ParsedWallet } from '../utils/wallet-import'
 import Modal from '../components/common/Modal'
 
+/** 钱包类型 */
 type WalletType = 'evm' | 'solana' | 'sui'
+/** 创建标签页：密钥对 / 助记词 */
 type CreateTab = 'keypair' | 'mnemonic'
+/** 导入标签页：助记词 / JSON */
 type ImportTab = 'mnemonic' | 'json'
 
 const WALLET_TYPE_OPTIONS: { value: WalletType; label: string; color: string }[] = [
@@ -40,6 +50,12 @@ const WALLET_TYPE_BADGE: Record<string, string> = {
 const truncateAddress = (addr: string): string =>
   addr.length > 10 ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr
 
+/**
+ * Wallets — 钱包管理页面组件
+ *
+ * 提供钱包的完整 CRUD：创建（密钥对/助记词派生）、导入（助记词/JSON）、
+ * 编辑标签、查看/隐藏私钥、复制地址、批量选择和删除、导出 CSV/JSON。
+ */
 const Wallets: React.FC = () => {
   const { t } = useTranslation()
 

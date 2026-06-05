@@ -6,25 +6,41 @@ import { getMarketplaceUrl, getMarketplaceHeaders } from '../api'
 import { ConfirmDialog } from '../components/common'
 import { useAuth } from '../contexts/AuthContext'
 
+/**
+ * @file UserManagement — 用户管理页
+ * @description 管理员管理所有用户，支持创建、编辑角色、重置 API Key 和删除用户。
+ * @module renderer/pages
+ */
+
 /* ── Types ── */
 
+/** 用户数据结构 */
 interface User {
+  /** 用户 UUID */
   id: string
+  /** 登录用户名 */
   username: string
+  /** 显示名称 */
   displayName: string
+  /** 角色标识：admin / developer / user */
   role: 'admin' | 'developer' | 'user'
+  /** API 密钥 */
   apiKey: string
+  /** 创建时间 ISO 8601 */
   createdAt: string
+  /** 更新时间 ISO 8601 */
   updatedAt: string
 }
 
 /* ── Helpers ── */
 
+/** 将 API Key 中间部分替换为省略号显示 */
 function maskKey(key: string): string {
   if (key.length <= 12) return key
   return `${key.slice(0, 8)}...${key.slice(-4)}`
 }
 
+/** 格式化 ISO 日期为本地化可读字符串 */
 function formatDate(iso: string): string {
   try {
     return new Date(iso).toLocaleDateString(undefined, {
@@ -45,6 +61,12 @@ const roleBadge: Record<string, string> = {
 
 /* ── Component ── */
 
+/**
+ * UserManagement — 用户管理页面组件
+ *
+ * 以表格展示所有用户，管理员可创建用户、编辑角色/显示名/密码、
+ * 重置 API Key 或删除用户。仅 admin 角色有访问权限。
+ */
 export default function UserManagement() {
   const { t } = useTranslation()
   const { isAdmin } = useAuth()
@@ -72,6 +94,7 @@ export default function UserManagement() {
   const [regenerating, setRegenerating] = useState(false)
 
   // ── Helper to call marketplace API ──
+  /** 封装对 Marketplace Server 的 HTTP 请求（带认证头） */
   const marketFetch = useCallback(async (method: string, path: string, body?: unknown) => {
     const base = await getMarketplaceUrl()
     const headers = await getMarketplaceHeaders()

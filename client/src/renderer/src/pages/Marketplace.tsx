@@ -1,10 +1,23 @@
+/**
+ * @file Marketplace — 市场管理页面
+ * @description 管理员视角的市场管理页，列出所有脚本/模板，支持查看可见性和下载量等元信息。
+ * @module renderer/pages
+ */
+
 import React, { useState, useEffect, useCallback } from 'react'
 import { RefreshCw, Eye, EyeOff, Package, FileCode, Shield } from 'lucide-react'
 import { marketplaceApi } from '../api'
 import { useAuth } from '../contexts/AuthContext'
 
+/** 标签页模式：脚本 / 模板 */
 type TabMode = 'scripts' | 'templates'
 
+/**
+ * MarketplacePage — 市场管理页面组件
+ *
+ * 以表格形式展示所有脚本或模板的列表（名称、版本、下载量、可见性、更新时间）。
+ * 仅 admin 角色可访问。
+ */
 export default function MarketplacePage(): React.ReactElement {
   const { isAdmin } = useAuth()
   const [mode, setMode] = useState<TabMode>('scripts')
@@ -12,6 +25,7 @@ export default function MarketplacePage(): React.ReactElement {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  /** 根据当前标签页拉取脚本或模板列表 */
   const fetchData = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -48,6 +62,7 @@ export default function MarketplacePage(): React.ReactElement {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* 页面标题与操作栏 */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-text-primary">Marketplace 管理</h1>
@@ -56,6 +71,7 @@ export default function MarketplacePage(): React.ReactElement {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {/* 脚本/模板切换与刷新 */}
           <div className="flex bg-bg-tertiary rounded-lg p-1">
             <button
               onClick={() => setMode('scripts')}

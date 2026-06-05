@@ -1,30 +1,54 @@
+/**
+ * @file TemplateEditor — 账户模板编辑器
+ * @description 提供可视化界面创建和编辑账户模板 Schema，支持字段增删改、
+ *              JSON 导入/导出、以及上传到 Marketplace Server。
+ * @module renderer/pages
+ */
+
 import { useState, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Plus, Trash2, Upload, Download, FileJson } from 'lucide-react'
 import { dialogApi, fileApi, getMarketplaceUrl, getMarketplaceHeaders } from '../api'
 import { toast } from '../utils/toast'
 
+/** 字段类型枚举 */
 type FieldType = 'text' | 'number' | 'boolean' | 'select' | 'object'
 
+/** Schema 字段定义 */
 interface SchemaField {
+  /** 字段唯一 ID（用于前端列表 key） */
   id: number
+  /** 字段类型 */
   type: FieldType
+  /** 字段名（JSON key） */
   name: string
+  /** 字段显示标题 */
   title: string
+  /** 字段描述 */
   desc: string
+  /** 是否必填 */
   required: boolean
+  /** select 类型的枚举选项（逗号分隔） */
   options: string
 }
 
+/** 模板元信息 */
 interface TemplateMeta {
+  /** 模板唯一 ID */
   id: string
+  /** 模板名称 */
   name: string
+  /** 模板类型（如 evm-wallet） */
   type: string
+  /** 语义化版本 */
   version: string
+  /** 模板描述 */
   description: string
 }
 
+/** 自增字段 ID 计数器（确保每个新字段有唯一 id） */
 let fieldIdCounter = 0
+/** 创建新字段，可用 overrides 覆盖默认值 */
 function createField(overrides?: Partial<SchemaField>): SchemaField {
   return {
     id: ++fieldIdCounter,
@@ -38,6 +62,12 @@ function createField(overrides?: Partial<SchemaField>): SchemaField {
   }
 }
 
+/**
+ * TemplateEditor — 模板编辑器主组件
+ *
+ * 包含模板元信息编辑区、Schema 字段构建器、JSON 预览区和上传栏。
+ * 字段可拖拽增删，支持从 JSON 文件导入和导出。
+ */
 export default function TemplateEditor() {
   const { t } = useTranslation()
   const [meta, setMeta] = useState<TemplateMeta>({

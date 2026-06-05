@@ -1,3 +1,10 @@
+/**
+ * @file Scheduler — 定时任务调度页
+ * @description 管理和配置定时任务，支持创建、编辑、启用/禁用和删除调度任务。
+ *              通过 Cron 表达式设置执行间隔，可选择绑定的任务脚本模板。
+ * @module renderer/pages
+ */
+
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { schedulerApi, taskTemplateApi } from '../api'
@@ -13,6 +20,7 @@ import { Modal, DynamicForm, Skeleton, ConfirmDialog } from '../components/commo
 import { useApi } from '../hooks'
 import { toastError } from '../utils/toast'
 
+/** 预设 Cron 表达式列表 */
 const PRESETS: { label: string; cron: string }[] = [
   { label: 'scheduler.preset30min', cron: '*/30 * * * *' },
   { label: 'scheduler.preset1hour', cron: '0 * * * *' },
@@ -24,12 +32,18 @@ const PRESETS: { label: string; cron: string }[] = [
   { label: 'scheduler.presetCustom', cron: '' }
 ]
 
+/** 将预设 Cron 表达式转为本地化描述（匹配预设则返回翻译，否则返回原始表达式） */
 function cronDescription(expr: string, t: (k: string) => string): string {
   const preset = PRESETS.find((p) => p.cron === expr)
   if (preset && preset.cron) return t(preset.label)
   return expr
 }
 
+/**
+ * Scheduler — 定时任务调度页面组件
+ *
+ * 列出所有定时任务，支持创建、编辑、切换启用/禁用状态和删除。
+ */
 const Scheduler: React.FC = () => {
   const { t } = useTranslation()
   const [items, setItems] = useState<ScheduledTask[]>([])
@@ -224,10 +238,12 @@ const Scheduler: React.FC = () => {
     return new Date(time).toLocaleString()
   }
 
+  /** 判断是否为自定义 Cron（预设列表最后一项） */
   const isCustom = (idx: number): boolean => idx === PRESETS.length - 1
 
   return (
     <div className="space-y-4">
+      {/* 页面标题与创建按钮 */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t('scheduler.title')}</h1>
         <button

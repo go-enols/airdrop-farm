@@ -1,3 +1,9 @@
+/**
+ * @file Stats — 统计页面
+ * @description 展示钱包、代理、任务、账户模板等维度的统计数据，包括数量汇总与分布图表。
+ * @module renderer/pages
+ */
+
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { appApi } from '../api'
@@ -5,11 +11,18 @@ import type { StatsAggregate } from '../types'
 import { RefreshCw, BarChart3 } from 'lucide-react'
 import { statusLabel } from '../utils/i18n-status'
 
+/**
+ * Stats — 统计概览页面组件
+ *
+ * 从主进程获取聚合统计信息并以卡片形式展示钱包链分布、代理协议分布、
+ * 任务状态分布、模板使用排行等。
+ */
 const Stats: React.FC = () => {
   const { t } = useTranslation()
   const [stats, setStats] = useState<StatsAggregate | null>(null)
   const [loading, setLoading] = useState(false)
 
+  /** 从主进程拉取统计数据 */
   const fetchData = useCallback(async (): Promise<void> => {
     setLoading(true)
     try {
@@ -27,11 +40,13 @@ const Stats: React.FC = () => {
     fetchData()
   }, [fetchData])
 
+  /** 格式化成功率（null 时显示占位符） */
   const formatRate = (rate: number | null): string => {
     if (rate === null) return '—'
     return `${(rate * 100).toFixed(1)}%`
   }
 
+  /** 将分布统计转为按值降序排列的键值对数组 */
   const distributionEntries = (
     dist: Record<string, number> | null | undefined
   ): Array<[string, number]> => {
@@ -40,6 +55,7 @@ const Stats: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* 页面标题与刷新按钮 */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t('stats.title')}</h1>
         <button
@@ -63,7 +79,9 @@ const Stats: React.FC = () => {
         </div>
       ) : (
         <>
+          {/* 四列统计卡片：钱包总数、代理总数、任务总数、成功率 */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* 钱包总数卡片（含链分布明细） */}
             <div className="bg-bg-card rounded-xl border border-border-light p-5">
               <div className="text-sm text-text-muted mb-1">{t('stats.walletTotal')}</div>
               <div className="text-3xl font-bold mb-2">{stats.walletTotal}</div>
@@ -79,6 +97,7 @@ const Stats: React.FC = () => {
               )}
             </div>
 
+            {/* 代理总数卡片（含协议分布明细） */}
             <div className="bg-bg-card rounded-xl border border-border-light p-5">
               <div className="text-sm text-text-muted mb-1">{t('stats.proxyTotal')}</div>
               <div className="text-3xl font-bold mb-2">{stats.proxyTotal}</div>
@@ -94,6 +113,7 @@ const Stats: React.FC = () => {
               )}
             </div>
 
+            {/* 任务总数卡片（含状态分布明细） */}
             <div className="bg-bg-card rounded-xl border border-border-light p-5">
               <div className="text-sm text-text-muted mb-1">{t('stats.taskTotal')}</div>
               <div className="text-3xl font-bold mb-2">{stats.taskTotal}</div>
@@ -109,6 +129,7 @@ const Stats: React.FC = () => {
               )}
             </div>
 
+            {/* 任务成功率卡片（含完成/失败明细） */}
             <div className="bg-bg-card rounded-xl border border-border-light p-5">
               <div className="text-sm text-text-muted mb-1">{t('stats.successRate')}</div>
               <div className="text-3xl font-bold mb-2">{formatRate(stats.taskSuccessRate)}</div>
@@ -125,6 +146,7 @@ const Stats: React.FC = () => {
             </div>
           </div>
 
+          {/* 任务耗时分布条形图 */}
           {Object.keys(stats.taskDurationDistribution || {}).length > 0 && (
             <div className="bg-bg-card rounded-xl border border-border-light p-5">
               <h2 className="text-base font-semibold mb-4">{t('stats.taskDuration')}</h2>
@@ -155,6 +177,7 @@ const Stats: React.FC = () => {
             </div>
           )}
 
+          {/* 模板使用排行表 */}
           {(stats.templateUsage || []).length > 0 && (
             <div className="bg-bg-card rounded-xl border border-border-light p-5">
               <h2 className="text-base font-semibold mb-4">{t('stats.templateUsage')}</h2>
@@ -184,6 +207,7 @@ const Stats: React.FC = () => {
             </div>
           )}
 
+          {/* 模板成功率排名表 */}
           {(stats.templateRanking || []).length > 0 && (
             <div className="bg-bg-card rounded-xl border border-border-light p-5">
               <h2 className="text-base font-semibold mb-4">{t('stats.templateRanking')}</h2>

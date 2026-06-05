@@ -1,3 +1,10 @@
+/**
+ * @file Proxies — 代理管理页
+ * @description 管理 HTTP/HTTPS/SOCKS5/WS 代理列表，支持添加、编辑、批量删除、
+ *              地址复制、标签管理和多格式支持。
+ * @module renderer/pages
+ */
+
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { proxyApi } from '../api'
@@ -16,14 +23,17 @@ import {
 import { statusLabel } from '../utils/i18n-status'
 import { toast } from '../utils/toast'
 
+/** 每页显示代理数 */
 const PAGE_SIZE = 20
 
+/** 代理状态对应的 Tailwind 样式 */
 const statusColor: Record<string, string> = {
   active: 'bg-status-active-bg text-status-active-text',
   inactive: 'bg-status-inactive-bg text-status-inactive-text',
   expired: 'bg-status-expired-bg text-status-expired-text'
 }
 
+/** 新建代理的初始空表单值 */
 const emptyForm = {
   protocol: 'http' as Proxy['protocol'],
   host: '',
@@ -35,6 +45,12 @@ const emptyForm = {
   labels: [] as string[]
 }
 
+/**
+ * Proxies — 代理管理页面组件
+ *
+ * 支持多种代理格式（manual/api/ip/ws）和协议，提供分页列表、
+ * 批量选择/删除、地址一键复制、标签管理和搜索筛选。
+ */
 const Proxies: React.FC = () => {
   const { t } = useTranslation()
   const [data, setData] = useState<ListResponse<Proxy> | null>(null)
@@ -80,6 +96,7 @@ const Proxies: React.FC = () => {
     fetchData()
   }, [fetchData])
 
+  /** 创建新代理 */
   const handleAdd = async (): Promise<void> => {
     try {
       await proxyApi.create({

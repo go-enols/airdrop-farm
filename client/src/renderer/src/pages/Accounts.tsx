@@ -1,3 +1,10 @@
+/**
+ * @file Accounts — 账户管理页
+ * @description 管理账户池中的账户，支持创建（基于模板动态表单）、编辑、
+ *              批量 JSON 导入、文件导入、导出和删除操作。
+ * @module renderer/pages
+ */
+
 import { useState, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from '../utils/toast'
@@ -11,8 +18,14 @@ import { Pagination, SearchInput, Modal, ConfirmDialog } from '../components/com
 import DynamicForm from '../components/DynamicForm'
 import { jsonSchemaToFieldMeta } from '../../../shared/schemas/task-params'
 
+/** 每页显示的账户数 */
 const PAGE_SIZE = 10
 
+/**
+ * Accounts — 账户管理页面组件
+ *
+ * 提供分页列表、搜索、按模板动态表单创建账户、批量 JSON 导入、文件导入和导出功能。
+ */
 const Accounts: React.FC = () => {
   const { t } = useTranslation()
   const { templates } = useTemplateList()

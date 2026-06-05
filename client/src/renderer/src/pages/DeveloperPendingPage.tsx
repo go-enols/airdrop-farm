@@ -1,3 +1,9 @@
+/**
+ * @file DeveloperPendingPage — 开发者待审核页面
+ * @description 开发者查看自己已提交的脚本和模板的审核状态（待审核/已通过/已拒绝）。
+ * @module renderer/pages
+ */
+
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { marketplaceApi } from '../api'
@@ -6,8 +12,15 @@ import { toast } from '../utils/toast'
 import { Clock, FileText, Zap, CheckCircle, XCircle, MessageSquare } from 'lucide-react'
 import type { RemoteScript, RemoteTemplate } from '../types'
 
+/** 标签页模式：脚本 / 模板 */
 type TabType = 'scripts' | 'templates'
 
+/**
+ * DeveloperPendingPage — 开发者待审核项目页面
+ *
+ * 提供标签页切换（脚本/模板），列表展示每个项目的名称、版本、提交时间、
+ * 审核状态及管理员评论。非 developer 角色无权限访问。
+ */
 export default function DeveloperPendingPage() {
   const { t } = useTranslation()
   const { isDeveloper } = useAuth()
@@ -16,6 +29,7 @@ export default function DeveloperPendingPage() {
   const [templates, setTemplates] = useState<RemoteTemplate[]>([])
   const [loading, setLoading] = useState(true)
 
+  /** 拉取当前开发者的所有待审核脚本和模板 */
   const fetchPending = useCallback(async () => {
     setLoading(true)
     try {
@@ -48,6 +62,7 @@ export default function DeveloperPendingPage() {
   const items = activeTab === 'scripts' ? scripts : templates
   const totalPending = scripts.length + templates.length
 
+  /** 根据审核状态返回对应徽章（待审核/已批准/已拒绝） */
   const getStatusBadge = (status?: string) => {
     switch (status) {
       case 'approved':
@@ -92,6 +107,7 @@ export default function DeveloperPendingPage() {
         </button>
       </div>
 
+      {/* 脚本/模板标签页切换 */}
       <div className="flex gap-2 border-b border-border-light pb-0">
         <button
           onClick={() => setActiveTab('scripts')}

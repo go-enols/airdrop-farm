@@ -1,3 +1,9 @@
+/**
+ * @file AdminReviewPage — 管理员审核页面
+ * @description 管理员审核开发者提交的脚本和模板，支持批准/拒绝操作并附审核意见。
+ * @module renderer/pages
+ */
+
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { marketplaceApi, getMarketplaceUrl } from '../api'
@@ -6,8 +12,15 @@ import { toast } from '../utils/toast'
 import { Check, X, Clock, FileText, Zap, ChevronDown, ChevronRight, Download } from 'lucide-react'
 import type { RemoteScript, RemoteTemplate } from '../types'
 
+/** 标签页模式：脚本 / 模板 */
 type TabType = 'scripts' | 'templates'
 
+/**
+ * AdminReviewPage — 管理员审核页面组件
+ *
+ * 以标签页切换待审核的脚本和模板列表，每项可展开查看详情（Schema、标签、更新日志等），
+ * 管理员可填写审核意见并执行批准或拒绝操作。
+ */
 export default function AdminReviewPage() {
   const { t } = useTranslation()
   const { isAdmin } = useAuth()
@@ -19,6 +32,7 @@ export default function AdminReviewPage() {
   const [reviewingId, setReviewingId] = useState<string | null>(null)
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set())
 
+  /** 切换项目的展开/折叠状态（查看详情） */
   const toggleExpanded = (id: string) => {
     setExpandedItems((prev) => {
       const next = new Set(prev)
@@ -28,6 +42,7 @@ export default function AdminReviewPage() {
     })
   }
 
+  /** 拉取所有待审核的脚本和模板 */
   const fetchPending = useCallback(async () => {
     setLoading(true)
     try {
