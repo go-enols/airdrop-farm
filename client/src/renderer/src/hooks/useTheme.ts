@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 export type ThemePref = 'auto' | 'light' | 'dark'
 export type ResolvedTheme = 'light' | 'dark'
@@ -48,30 +48,35 @@ export function useTheme(): {
 } {
   const [pref, setPrefState] = useState<ThemePref>(() => readPref())
   const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(() => getSystemTheme())
+  const prefRef = useRef<ThemePref>(pref)
 
-  // Apply theme to DOM whenever pref changes (no setState in effect needed since theme is derived)
+  // 保持 ref 与 state 同步，确保 onChange 始终读最新值
+  useEffect(() => {
+    prefRef.current = pref
+  }, [pref])
+
   useEffect(() => {
     applyTheme(pref)
   }, [pref])
 
+  // 监听系统主题变化（用 ref 避免闭包捕获旧 pref 值）
   useEffect(() => {
     const mql = window.matchMedia('(prefers-color-scheme: dark)')
     const onChange = (): void => {
       setSystemTheme(mql.matches ? 'dark' : 'light')
-      if (pref === 'auto') {
+      if (prefRef.current === 'auto') {
         applyTheme('auto')
       }
     }
     mql.addEventListener('change', onChange)
     return () => mql.removeEventListener('change', onChange)
-  }, [pref])
+  }, [])
 
   const setPref = useCallback((p: ThemePref) => {
     localStorage.setItem(STORAGE_KEY, p)
     setPrefState(p)
   }, [])
 
-  // Derived state - no effect needed
   const theme: ResolvedTheme = pref === 'auto' ? systemTheme : pref
 
   return { theme, pref, setPref }
